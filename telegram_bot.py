@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from typing import Dict, List, Optional, Tuple
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -16,16 +17,35 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip()
-BOT_DEFAULT_USER_ID = int(os.getenv("BOT_DEFAULT_USER_ID", "1"))
-BOT_DEFAULT_TIMEZONE = os.getenv("BOT_DEFAULT_TIMEZONE", "America/Sao_Paulo").strip()
-BOT_POLL_SECONDS = int(os.getenv("BOT_POLL_SECONDS", "60"))
-BOT_AI_ENABLED = os.getenv("BOT_AI_ENABLED", "true").strip().lower() in ("1", "true", "yes", "on")
+def env_str(name: str, default: str = "") -> str:
+    value = str(os.getenv(name, default) or "").strip()
+    if len(value) >= 2 and ((value[0] == '"' and value[-1] == '"') or (value[0] == "'" and value[-1] == "'")):
+        value = value[1:-1].strip()
+    return value
+
+
+def env_int(name: str, default: int) -> int:
+    try:
+        return int(env_str(name, str(default)))
+    except Exception:
+        return default
+
+
+def is_valid_http_url(value: str) -> bool:
+    parsed = urlparse(value)
+    return parsed.scheme in ("http", "https") and bool(parsed.netloc)
+
+
+TELEGRAM_BOT_TOKEN = env_str("TELEGRAM_BOT_TOKEN")
+SUPABASE_URL = env_str("SUPABASE_URL")
+SUPABASE_KEY = env_str("SUPABASE_KEY")
+BOT_DEFAULT_USER_ID = env_int("BOT_DEFAULT_USER_ID", 1)
+BOT_DEFAULT_TIMEZONE = env_str("BOT_DEFAULT_TIMEZONE", "America/Sao_Paulo")
+BOT_POLL_SECONDS = env_int("BOT_POLL_SECONDS", 60)
+BOT_AI_ENABLED = env_str("BOT_AI_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 GEMINI_MODELS = [
     m.strip()
-    for m in os.getenv(
+    for m in env_str(
         "GEMINI_MODELS",
         "gemini-flash-latest,gemini-2.5-flash,gemini-2.5-pro,gemini-2.0-flash,gemini-2.0-flash-001,gemini-2.0-flash-exp-image-generation",
     ).split(",")
@@ -153,6 +173,10 @@ class StudySecretaryBot:
             raise RuntimeError("TELEGRAM_BOT_TOKEN not configured in .env")
         if not SUPABASE_URL or not SUPABASE_KEY:
             raise RuntimeError("SUPABASE_URL/SUPABASE_KEY not configured in .env")
+        if not is_valid_http_url(SUPABASE_URL):
+            raise RuntimeError(
+                f"SUPABASE_URL invalid: {SUPABASE_URL!r}. Expected format: https://<project-ref>.supabase.co"
+            )
 
         self.supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
         self.application: Application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
