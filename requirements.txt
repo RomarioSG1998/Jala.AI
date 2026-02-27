@@ -5,4 +5,4 @@ schedule
 supabase
 python-telegram-bot==21.7
 APScheduler==3.10.4
-
+gunicorn
