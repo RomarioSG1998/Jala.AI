@@ -4,6 +4,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     BOT_AI_ENABLED=true \
     OT_AI_ENABLED=true \
+    BOT_AUDIO_STT_PROVIDER=gemini \
     BOT_DEFAULT_TIMEZONE=America/Sao_Paulo \
     BOT_DEFAULT_USER_ID=1 \
     GEMINI_MODELS=gemini-flash-latest,gemini-2.5-flash,gemini-2.5-pro \

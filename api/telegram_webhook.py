@@ -1,5 +1,6 @@
 import asyncio
 import os
+import threading
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -150,6 +151,19 @@ def _handle_audio_message(chat_id: str, message: Dict[str, Any]) -> List[str]:
     return asyncio.run(_bot_instance.handle_incoming_text(str(chat_id), transcript))
 
 
+def _process_message(chat_id: str, text: Optional[str], has_audio: bool, message: Dict[str, Any]) -> None:
+    try:
+        if has_audio:
+            responses = _handle_audio_message(chat_id, message)
+        elif text is not None:
+            responses = asyncio.run(_bot_instance.handle_incoming_text(chat_id, str(text)))
+        else:
+            return
+        _send_messages(chat_id, responses)
+    except Exception as exc:
+        print(f"[webhook] excecao ao processar update chat={chat_id}: {exc}")
+
+
 @app.route("/", methods=["POST", "GET"])
 def telegram_webhook():
     _ensure_telegram_webhook()
@@ -172,15 +186,16 @@ def telegram_webhook():
     if not chat_id:
         return jsonify({"ok": True, "ignored": True})
 
-    if has_audio:
-        responses = _handle_audio_message(str(chat_id), message)
-    elif text is not None:
-        responses = asyncio.run(_bot_instance.handle_incoming_text(str(chat_id), str(text)))
-    else:
+    if not has_audio and text is None:
         return jsonify({"ok": True, "ignored": True})
 
-    _send_messages(str(chat_id), responses)
-    return jsonify({"ok": True, "sent": len(responses)})
+    worker = threading.Thread(
+        target=_process_message,
+        args=(str(chat_id), text, has_audio, message),
+        daemon=True,
+    )
+    worker.start()
+    return jsonify({"ok": True, "queued": True})
 
 
 # Configure webhook as soon as service boots; route call remains as backup.
