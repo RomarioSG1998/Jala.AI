@@ -14,4 +14,6 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY . /app
 
-# command defined per service in docker-compose.yml
+# Default command for platforms like Render Docker service.
+# docker-compose overrides this command per service.
+CMD ["sh", "-c", "gunicorn api.telegram_webhook:app --bind 0.0.0.0:${PORT:-8080} --workers ${WEB_CONCURRENCY:-1} --threads 4 --timeout 120"]
