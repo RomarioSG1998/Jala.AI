@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+import base64
 import os
 import re
+import tempfile
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from typing import Dict, List, Optional, Tuple
@@ -42,7 +44,14 @@ SUPABASE_KEY = env_str("SUPABASE_KEY")
 BOT_DEFAULT_USER_ID = env_int("BOT_DEFAULT_USER_ID", 1)
 BOT_DEFAULT_TIMEZONE = env_str("BOT_DEFAULT_TIMEZONE", "America/Sao_Paulo")
 BOT_POLL_SECONDS = env_int("BOT_POLL_SECONDS", 60)
+BOT_PROACTIVE_ENABLED = env_str("BOT_PROACTIVE_ENABLED", "false").lower() in ("1", "true", "yes", "on")
 BOT_AI_ENABLED = env_str("BOT_AI_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+BOT_AUDIO_STT_PROVIDER = env_str("BOT_AUDIO_STT_PROVIDER", "local").lower()
+BOT_AUDIO_MAX_SECONDS = env_int("BOT_AUDIO_MAX_SECONDS", 60)
+BOT_AUDIO_MAX_BYTES = env_int("BOT_AUDIO_MAX_BYTES", 8 * 1024 * 1024)
+WHISPER_MODEL_SIZE = env_str("WHISPER_MODEL_SIZE", "tiny")
+WHISPER_COMPUTE_TYPE = env_str("WHISPER_COMPUTE_TYPE", "int8")
+BOT_DIRECT_GEMINI_MODE = env_str("BOT_DIRECT_GEMINI_MODE", "true").lower() in ("1", "true", "yes", "on")
 GEMINI_MODELS = [
     m.strip()
     for m in env_str(
@@ -129,9 +138,47 @@ def parse_time_only(value: Optional[str], fallback: time) -> time:
     return fallback
 
 
-def is_done_task(status: str) -> bool:
-    s = normalize_text(status)
-    return any(x in s for x in ("conclu", "entregue", "corrigida", "finalizada"))
+def is_done_task(task: dict) -> bool:
+    """Interpreta status vindo da sincronizacao Canvas->DB.
+
+    Regras principais:
+    - data_entrega preenchida => concluida
+    - situacao iniciando com "nota:" => concluida
+    - termos positivos (concluida/corrigida/finalizada/avaliada/entregue)
+      desde que nao tenha marcador negativo de "nao entregue"
+    """
+    status = normalize_text(task.get("situacao"))
+
+    submitted_at = str(task.get("data_entrega") or "").strip()
+    if submitted_at:
+        return True
+
+    if status.startswith("nota:"):
+        return True
+
+    negative_markers = ("nao entregue", "não entregue", "sem entrega")
+    if any(marker in status for marker in negative_markers):
+        return False
+
+    positive_markers = ("conclu", "corrigida", "finalizada", "avaliada", "entregue")
+    return any(marker in status for marker in positive_markers)
+
+
+def task_status_flags(task: dict) -> Dict[str, bool]:
+    """Mapeia uma task Canvas em flags usadas pelo bot."""
+    status = normalize_text(task.get("situacao"))
+    done = is_done_task(task)
+
+    in_progress = any(k in status for k in ("andamento", "em andamento", "em progresso"))
+    pending = any(k in status for k in ("pendente", "nao entregue", "não entregue", "atrasada"))
+    overdue_hint = any(k in status for k in ("atrasada", "vencida", "fora do prazo"))
+
+    return {
+        "done": done,
+        "in_progress": in_progress and not done,
+        "pending": pending and not done,
+        "overdue_hint": overdue_hint and not done,
+    }
 
 
 def is_disciplina_in_study_period(disciplina: dict, ref_date: date, require_valid_dates: bool = False) -> bool:
@@ -189,6 +236,8 @@ class StudySecretaryBot:
         self._last_priority_by_chat: Dict[str, List[dict]] = {}
         self._last_disciplinas_by_chat: Dict[str, Dict[int, dict]] = {}
         self._user_name_cache: Dict[int, str] = {}
+        self._dialog_history_by_chat: Dict[str, List[str]] = {}
+        self._whisper_model = None
 
         self.application.add_handler(CommandHandler("start", self.cmd_start))
         self.application.add_handler(CommandHandler("help", self.cmd_help))
@@ -202,6 +251,7 @@ class StudySecretaryBot:
         self.application.add_handler(CommandHandler("usuario", self.cmd_usuario))
         self.application.add_handler(CommandHandler("config", self.cmd_config))
         self.application.add_handler(CommandHandler("horario", self.cmd_horario))
+        self.application.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, self.on_audio_message))
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.on_free_text))
 
     def load_gemini_keys(self) -> List[str]:
@@ -416,7 +466,12 @@ class StudySecretaryBot:
                 continue
         return out
 
-    def build_summary(self, user_id: int, now: datetime) -> Tuple[DashboardSummary, Dict[int, dict]]:
+    def build_summary(
+        self,
+        user_id: int,
+        now: datetime,
+        strict_active_disciplines: bool = False,
+    ) -> Tuple[DashboardSummary, Dict[int, dict]]:
         today = now.date()
         end_week = today + timedelta(days=7)
 
@@ -431,8 +486,8 @@ class StudySecretaryBot:
         pending: List[dict] = []
 
         for task in tasks:
-            status = normalize_text(task.get("situacao"))
-            if is_done_task(status):
+            flags = task_status_flags(task)
+            if flags["done"]:
                 continue
 
             disc_id = task.get("id_disciplina")
@@ -442,19 +497,26 @@ class StudySecretaryBot:
                 disc_id_int = None
             disciplina = disciplinas_map.get(disc_id_int) if disc_id_int is not None else None
 
-            # Only include tasks from disciplines that are truly active for alerts.
-            if not is_disciplina_active_for_alerts(disciplina, today):
+            # For conversational context, include open Canvas tasks even if discipline
+            # status/date is stale. Keep strict mode for proactive alerting.
+            if strict_active_disciplines and not is_disciplina_active_for_alerts(disciplina, today):
                 continue
+            if not strict_active_disciplines:
+                from_canvas = bool(task.get("canvas_id")) or bool(str(task.get("link_canvas") or "").strip())
+                disc_canvas_sync = bool((disciplina or {}).get("canvas_sync"))
+                if not (from_canvas or disc_canvas_sync):
+                    continue
 
             due = parse_date_only(task.get("data_fim"))
-            if "andamento" in status:
+            if flags["in_progress"]:
                 in_progress.append(task)
-            if "pendente" in status or "nao entregue" in status:
+            if flags["pending"]:
                 pending.append(task)
 
+            # Sem prazo mapeado: nao classifica em vencida/hoje/semana.
             if due is None:
                 continue
-            if due < today:
+            if due < today or (flags["overdue_hint"] and due <= today):
                 overdue.append(task)
             elif due == today:
                 due_today.append(task)
@@ -508,18 +570,76 @@ class StudySecretaryBot:
 
     def build_priority_text(self, summary: DashboardSummary, disciplinas_map: Dict[int, dict], now: datetime) -> str:
         priority = self.build_today_priority_list(summary)
-        lines = [f"Prioridades de hoje ({now.date()}):"]
-        lines.append(f"- Vencidas: {len(summary.overdue)}")
-        lines.append(f"- Vencem hoje: {len(summary.due_today)}")
-        lines.append(f"- Semana no radar: {len(summary.due_week)}")
-        lines.append("")
+        lines = [f"Olhei sua semana ({now.date()})."]
         if not priority:
-            lines.append("Sem tarefas críticas para hoje.")
+            lines.append("No momento, voce nao tem tarefa critica em aberto.")
             return "\n".join(lines)
-        lines.append("Ordem de execução (pontuação > prazo):")
-        for task in priority[:8]:
+        lines.append("Eu focaria nisso agora:")
+        for task in priority[:4]:
             lines.append(self.format_task_line(task, disciplinas_map))
+        lines.append("Se quiser, eu quebro isso em plano de hoje (manha/tarde/noite).")
         return "\n".join(lines)
+
+    def build_concrete_chat_fallback(
+        self,
+        summary: DashboardSummary,
+        disciplinas_map: Dict[int, dict],
+        now: datetime,
+    ) -> str:
+        priority = self.build_today_priority_list(summary)
+        if not priority:
+            return (
+                f"Hoje ({now.date()}) voce esta sem tarefa critica aberta. "
+                "Se quiser, eu te monto um plano leve pra manter ritmo na semana."
+            )
+
+        lines = ["Beleza, olhando seu contexto agora, eu focaria nisso:"]
+        for idx, task in enumerate(priority[:3], start=1):
+            lines.append(f"{idx}. {self.format_task_natural(task, disciplinas_map)}")
+        if summary.overdue:
+            lines.append("Comeca pela primeira, porque ela esta mais critica.")
+        else:
+            lines.append("Comeca pela primeira e me chama quando terminar que eu recalculo.")
+        return "\n".join(lines)
+
+    @staticmethod
+    def extract_priority_reference_index(text: str) -> Optional[int]:
+        t = normalize_text(text)
+        if any(w in t for w in ("primeira", "1", "um")):
+            return 0
+        if any(w in t for w in ("segunda", "2", "dois")):
+            return 1
+        if any(w in t for w in ("terceira", "3", "tres", "três")):
+            return 2
+        m = re.search(r"\b([1-9])\b", t)
+        if m:
+            return int(m.group(1)) - 1
+        return None
+
+    def build_follow_up_for_task(self, task: dict, disciplinas_map: Dict[int, dict]) -> str:
+        due = str(task.get("data_fim") or "-")[:10]
+        status = str(task.get("situacao") or "sem status").strip()
+        link = str(task.get("link_canvas") or "").strip()
+        base = f"Essa tarefa e: {self.format_task_natural(task, disciplinas_map)}. Situacao: {status}."
+        if link:
+            return f"{base}\nSe quiser abrir direto no Canvas: {link}"
+        return base
+
+    def add_dialog_turn(self, chat_id: str, role: str, text: str) -> None:
+        line = f"{role}: {str(text or '').strip()}"
+        if not line.strip():
+            return
+        history = self._dialog_history_by_chat.get(chat_id) or []
+        history.append(line)
+        self._dialog_history_by_chat[chat_id] = history[-8:]
+
+    def build_dialog_history_block(self, chat_id: Optional[str]) -> str:
+        if not chat_id:
+            return ""
+        rows = self._dialog_history_by_chat.get(chat_id) or []
+        if not rows:
+            return ""
+        return "\n".join(rows[-6:])
 
     def build_runtime_info_text(self, cfg: dict, user_name: str) -> str:
         return (
@@ -548,7 +668,74 @@ class StudySecretaryBot:
         except Exception:
             pass
         peso_txt = f" | peso: {peso:g}" if peso > 0 else ""
-        return f"- {task.get('nome', 'Sem nome')} | {disc_name} | prazo: {due}{peso_txt}"
+        due = str(due)[:10]
+        return f"- {task.get('nome', 'Sem nome')} ({disc_name}) | prazo {due}{peso_txt}"
+
+    @staticmethod
+    def format_task_natural(task: dict, disciplinas_map: Dict[int, dict]) -> str:
+        due = str(task.get("data_fim") or "-")[:10]
+        disc_name = "disciplina"
+        try:
+            disc = disciplinas_map.get(int(task.get("id_disciplina")))
+            if disc and disc.get("nome"):
+                disc_name = disc["nome"]
+        except Exception:
+            pass
+        return f"{task.get('nome', 'Sem nome')} ({disc_name}, prazo {due})"
+
+    def build_canvas_context_block(
+        self,
+        summary: DashboardSummary,
+        disciplinas_map: Dict[int, dict],
+        now: datetime,
+        chat_id: Optional[str] = None,
+    ) -> str:
+        def task_line(task: dict) -> str:
+            due = str(task.get("data_fim") or "-")[:10]
+            status = str(task.get("situacao") or "sem status").strip()
+            link = str(task.get("link_canvas") or "").strip()
+            base = f"- {self.format_task_natural(task, disciplinas_map)} | status: {status}"
+            if link:
+                base += f" | link: {link}"
+            return base
+
+        lines: List[str] = []
+        lines.append(f"Data de referencia: {now.date()}")
+        lines.append(
+            f"Resumo: vencidas={len(summary.overdue)}, hoje={len(summary.due_today)}, semana={len(summary.due_week)}, pendentes={len(summary.pending)}, andamento={len(summary.in_progress)}"
+        )
+        lines.append("")
+        lines.append("Vencidas (ate 8):")
+        for task in summary.overdue[:8]:
+            lines.append(task_line(task))
+        if not summary.overdue:
+            lines.append("- nenhuma")
+
+        lines.append("")
+        lines.append("Hoje + Semana (ate 10):")
+        merged = (summary.due_today + summary.due_week)[:10]
+        for task in merged:
+            lines.append(task_line(task))
+        if not merged:
+            lines.append("- nenhuma")
+
+        lines.append("")
+        lines.append("Pendentes/andamento sem perder contexto (ate 8):")
+        pending_pool = (summary.pending + summary.in_progress)[:8]
+        for task in pending_pool:
+            lines.append(task_line(task))
+        if not pending_pool:
+            lines.append("- nenhuma")
+
+        if chat_id:
+            last_priority = self._last_priority_by_chat.get(chat_id) or []
+            if last_priority:
+                lines.append("")
+                lines.append("Ultimas prioridades mostradas ao usuario (ate 5):")
+                for task in last_priority[:5]:
+                    lines.append(task_line(task))
+
+        return "\n".join(lines)
 
     def _build_ai_prompt(self, summary: DashboardSummary, disciplinas_map: Dict[int, dict], now: datetime) -> str:
         def section(title: str, tasks: List[dict], limit: int) -> str:
@@ -560,14 +747,15 @@ class StudySecretaryBot:
             return "\n".join(lines)
 
         return (
-            "Você é um secretário de estudos objetivo. Responda em português do Brasil.\n"
+            "Você é um assistente pessoal de estudos. Responda em português do Brasil.\n"
+            "Seja claro, humano e direto, sem texto longo.\n"
             "Monte um plano de execução para hoje e para os próximos 7 dias.\n"
             "Formato obrigatório:\n"
-            "1) Foco de hoje (máx 5 bullets)\n"
-            "2) Risco da semana (máx 5 bullets)\n"
-            "3) Ordem sugerida de execução (máx 6 itens numerados)\n"
-            "4) Avisos de prazo (curto e direto)\n"
-            "Sem introdução longa.\n\n"
+            "1) Foco de hoje (máx 3 bullets)\n"
+            "2) Risco da semana (máx 3 bullets)\n"
+            "3) Ordem sugerida (máx 5 itens numerados)\n"
+            "4) Próxima ação imediata (1 linha)\n"
+            "Sem introdução longa e sem repetir dados.\n\n"
             f"Data atual: {now.date()}\n\n"
             + section("Tarefas vencidas", summary.overdue, 10)
             + "\n\n"
@@ -596,7 +784,7 @@ class StudySecretaryBot:
                         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
                         "generationConfig": {
                             "temperature": 0.35,
-                            "maxOutputTokens": 700
+                            "maxOutputTokens": 420
                         }
                     }
                     resp = requests.post(url, json=payload, timeout=25)
@@ -623,6 +811,7 @@ class StudySecretaryBot:
         summary: DashboardSummary,
         disciplinas_map: Dict[int, dict],
         now: datetime,
+        chat_id: Optional[str] = None,
     ) -> Optional[str]:
         if not BOT_AI_ENABLED or not self._gemini_keys:
             return None
@@ -631,31 +820,49 @@ class StudySecretaryBot:
         if not user_text:
             return None
 
-        context_lines = [
-            f"Hoje: {now.date()}",
-            f"Vencidas: {len(summary.overdue)}",
-            f"Hoje: {len(summary.due_today)}",
-            f"Semana: {len(summary.due_week)}",
-            f"Em andamento: {len(summary.in_progress)}",
-            "",
-            "Top tarefas de hoje/semana priorizadas por pontuacao:",
-        ]
-        top_items = self.build_today_priority_list(summary)[:8]
-        if top_items:
-            for task in top_items:
-                context_lines.append(self.format_task_line(task, disciplinas_map))
-        else:
-            context_lines.append("- Sem tarefas urgentes no momento.")
+        def task_line(task: dict) -> str:
+            status = str(task.get("situacao") or "sem status").strip()
+            return f"{self.format_task_natural(task, disciplinas_map)} | status: {status}"
 
+        week_items = summary.due_today + summary.due_week
+        overdue_items = summary.overdue
+        pending_items = summary.pending
+
+        lines: List[str] = []
+        lines.append(f"Data de referencia: {now.date()}")
+        lines.append(
+            f"Resumo: vencidas={len(overdue_items)}, hoje={len(summary.due_today)}, semana={len(summary.due_week)}, pendentes={len(pending_items)}"
+        )
+        lines.append("")
+        lines.append("Tarefas vencidas:")
+        if overdue_items:
+            for task in overdue_items[:8]:
+                lines.append(f"- {task_line(task)}")
+        else:
+            lines.append("- nenhuma")
+        lines.append("")
+        lines.append("Tarefas desta semana (inclui hoje):")
+        if week_items:
+            for task in week_items[:12]:
+                lines.append(f"- {task_line(task)}")
+        else:
+            lines.append("- nenhuma")
+        lines.append("")
+        lines.append("Pendentes sem prazo claro para esta semana:")
+        if pending_items:
+            for task in pending_items[:8]:
+                lines.append(f"- {task_line(task)}")
+        else:
+            lines.append("- nenhuma")
+
+        tasks_context = "\n".join(lines)
         prompt = (
-            "Você é um secretário pessoal de estudos no Telegram.\n"
-            "Responda de forma natural, objetiva, amigável e útil, em português do Brasil.\n"
-            "Se o usuário pedir organização, devolva em passos acionáveis.\n"
-            "Se o usuário perguntar por prazo, destaque urgências primeiro.\n"
-            "Evite resposta longa demais (máx. ~12 linhas).\n\n"
-            "Contexto de tarefas do usuário:\n"
-            + "\n".join(context_lines)
-            + "\n\nMensagem do usuário:\n"
+            "Responda ao usuario com base no contexto de tarefas abaixo.\n"
+            "Use esse contexto como fonte principal para responder perguntas sobre atividades, prazos e prioridades.\n"
+            "Se a pergunta envolver tarefas, cite itens concretos (nome, prazo e status).\n\n"
+            "CONTEXTO DAS TAREFAS DA SEMANA:\n"
+            + tasks_context
+            + "\n\nPERGUNTA DO USUARIO:\n"
             + user_text
         )
 
@@ -667,11 +874,7 @@ class StudySecretaryBot:
                 try:
                     url = endpoint_tpl.format(model=model, key=key)
                     payload = {
-                        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                        "generationConfig": {
-                            "temperature": 0.5,
-                            "maxOutputTokens": 420
-                        }
+                        "contents": [{"role": "user", "parts": [{"text": prompt}]}]
                     }
                     resp = requests.post(url, json=payload, timeout=25)
                     if resp.status_code >= 400:
@@ -685,30 +888,169 @@ class StudySecretaryBot:
                     answer = "\n".join(text_parts).strip()
                     if answer:
                         self._preferred_model = model
-                        return answer[:2500]
+                        return answer
                 except Exception:
                     continue
         return None
+
+    @staticmethod
+    def split_text_for_telegram(text: str, max_len: int = 3500) -> List[str]:
+        raw = str(text or "").replace("*", "").strip()
+        if not raw:
+            return []
+        if len(raw) <= max_len:
+            return [raw]
+
+        chunks: List[str] = []
+        remaining = raw
+        while remaining:
+            if len(remaining) <= max_len:
+                chunks.append(remaining)
+                break
+            cut = remaining.rfind("\n\n", 0, max_len)
+            if cut < 800:
+                cut = remaining.rfind("\n", 0, max_len)
+            if cut < 400:
+                cut = max_len
+            chunks.append(remaining[:cut].strip())
+            remaining = remaining[cut:].strip()
+        return [c for c in chunks if c]
+
+    async def reply_text_chunks(self, message, text: str) -> None:
+        parts = self.split_text_for_telegram(text)
+        for part in parts:
+            await message.reply_text(part)
+
+    def _get_whisper_model(self):
+        if self._whisper_model is not None:
+            return self._whisper_model
+        try:
+            from faster_whisper import WhisperModel
+
+            self._whisper_model = WhisperModel(
+                WHISPER_MODEL_SIZE,
+                device="cpu",
+                compute_type=WHISPER_COMPUTE_TYPE,
+            )
+            return self._whisper_model
+        except Exception:
+            self._whisper_model = None
+            return None
+
+    def transcribe_audio_with_whisper(self, audio_bytes: bytes, mime_type: str = "audio/ogg") -> Optional[str]:
+        if not audio_bytes:
+            return None
+        model = self._get_whisper_model()
+        if model is None:
+            return None
+
+        suffix = ".ogg"
+        mt = (mime_type or "").lower()
+        if "mpeg" in mt or "mp3" in mt:
+            suffix = ".mp3"
+        elif "wav" in mt:
+            suffix = ".wav"
+        elif "mp4" in mt or "m4a" in mt:
+            suffix = ".m4a"
+
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as f:
+                f.write(audio_bytes)
+                tmp_path = f.name
+            segments, _ = model.transcribe(
+                tmp_path,
+                language="pt",
+                vad_filter=True,
+                beam_size=1,
+            )
+            text = " ".join((seg.text or "").strip() for seg in segments).strip()
+            return text[:1200] if text else None
+        except Exception:
+            return None
+        finally:
+            if tmp_path:
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
+
+    def transcribe_audio_with_gemini(self, audio_bytes: bytes, mime_type: str = "audio/ogg") -> Optional[str]:
+        if not BOT_AI_ENABLED or not self._gemini_keys:
+            return None
+        if not audio_bytes:
+            return None
+
+        b64_audio = base64.b64encode(audio_bytes).decode("ascii")
+        prompt = (
+            "Transcreva este audio em portugues do Brasil.\n"
+            "Retorne apenas o texto transcrito, sem explicacoes."
+        )
+        endpoint_tpl = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
+        model_order = self.get_model_order()
+
+        for model in model_order:
+            for key in self._gemini_keys:
+                try:
+                    url = endpoint_tpl.format(model=model, key=key)
+                    payload = {
+                        "contents": [
+                            {
+                                "role": "user",
+                                "parts": [
+                                    {"text": prompt},
+                                    {
+                                        "inline_data": {
+                                            "mime_type": mime_type or "audio/ogg",
+                                            "data": b64_audio,
+                                        }
+                                    },
+                                ],
+                            }
+                        ],
+                        "generationConfig": {
+                            "temperature": 0.1,
+                            "maxOutputTokens": 300,
+                        },
+                    }
+                    resp = requests.post(url, json=payload, timeout=45)
+                    if resp.status_code >= 400:
+                        continue
+                    body = resp.json()
+                    candidates = body.get("candidates") or []
+                    if not candidates:
+                        continue
+                    parts = (((candidates[0] or {}).get("content") or {}).get("parts") or [])
+                    text_parts = [str(p.get("text", "")).strip() for p in parts if p.get("text")]
+                    transcript = "\n".join([p for p in text_parts if p]).strip()
+                    if transcript:
+                        return transcript[:1200]
+                except Exception:
+                    continue
+        return None
+
+    def transcribe_audio(self, audio_bytes: bytes, mime_type: str = "audio/ogg") -> Optional[str]:
+        provider = BOT_AUDIO_STT_PROVIDER
+        if provider == "gemini":
+            return self.transcribe_audio_with_gemini(audio_bytes, mime_type=mime_type)
+
+        # Default: local Whisper first, fallback to Gemini.
+        local_text = self.transcribe_audio_with_whisper(audio_bytes, mime_type=mime_type)
+        if local_text:
+            return local_text
+        return self.transcribe_audio_with_gemini(audio_bytes, mime_type=mime_type)
 
     async def cmd_start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         chat_id = str(update.effective_chat.id)
         cfg = self.get_config_for_chat(chat_id)
         user_name = self.get_user_name(int(cfg.get("id_usuario") or BOT_DEFAULT_USER_ID))
         text = (
-            f"Bot secretário ativado, {user_name}.\n\n"
-            f"Usuario vinculado: {cfg.get('id_usuario')}\n"
-            f"Timezone: {cfg.get('timezone')}\n\n"
-            "Comandos:\n"
-            "/hoje - tarefas vencidas e de hoje\n"
-            "/semana - tarefas dos proximos 7 dias\n"
-            "/urgentes - tarefas criticas\n"
-            "/disciplinas - status das disciplinas\n"
-            "/agenda - resumo completo\n"
-            "/plano - plano inteligente com IA\n"
-            "/modelo - verifica modelo Gemini ativo\n"
-            "/usuario - ver/trocar id_usuario deste chat\n"
-            "/config - ver/alterar preferencias\n"
-            "/horario HH:MM - define horario do resumo diario"
+            f"Pronto, {user_name}. Vou te responder de forma objetiva e organizada.\n\n"
+            f"Usuario: {cfg.get('id_usuario')} | Timezone: {cfg.get('timezone')}\n\n"
+            "Comandos principais:\n"
+            "/hoje | /semana | /urgentes | /plano\n"
+            "/agenda | /disciplinas | /config | /horario HH:MM\n\n"
+            "Também pode mandar mensagem normal, tipo: 'o que priorizo hoje?'"
         )
         await update.message.reply_text(text)
 
@@ -725,15 +1067,16 @@ class StudySecretaryBot:
         today_priority = self.build_today_priority_list(summary)
 
         lines = [f"{user_name}, resumo de hoje ({now.date()}):"]
-        lines.append(f"- Vencidas: {len(summary.overdue)}")
-        lines.append(f"- Vencem hoje: {len(summary.due_today)}")
-        lines.append(f"- Semana no radar de hoje: {len(summary.due_week)}")
-        lines.append(f"- Em andamento: {len(summary.in_progress)}")
+        lines.append(
+            f"Resumo: vencidas {len(summary.overdue)} | hoje {len(summary.due_today)} | semana {len(summary.due_week)} | andamento {len(summary.in_progress)}"
+        )
         lines.append("")
         if today_priority:
-            lines.append("Fazer hoje (inclui semana), prioridade por pontuacao:")
-            for item in today_priority[:8]:
+            lines.append("Ordem sugerida:")
+            for item in today_priority[:5]:
                 lines.append(self.format_task_line(item, disciplinas_map))
+        else:
+            lines.append("Sem tarefa critica para hoje.")
 
         await update.message.reply_text("\n".join(lines))
 
@@ -756,23 +1099,24 @@ class StudySecretaryBot:
             key=lambda r: parse_date_only(r.get("data_fim")) or date.max,
         )
 
-        lines = [f"{user_name}, planejamento da semana (ate {(now.date() + timedelta(days=7))}):"]
-        lines.append(f"- Vencidas: {len(summary.overdue)}")
-        lines.append(f"- Hoje: {len(summary.due_today)}")
-        lines.append(f"- Proximos 7 dias: {len(summary.due_week)}")
-        lines.append(f"- Em andamento na semana: {len(in_progress_week)}")
+        lines = [f"{user_name}, semana ate {end_week}:"]
+        lines.append(
+            f"Resumo: vencidas {len(summary.overdue)} | hoje {len(summary.due_today)} | 7 dias {len(summary.due_week)} | andamento {len(in_progress_week)}"
+        )
         lines.append("")
 
         if in_progress_week:
-            lines.append("Atividades em andamento (semana):")
-            for item in in_progress_week:
+            lines.append("Em andamento:")
+            for item in in_progress_week[:5]:
                 lines.append(self.format_task_line(item, disciplinas_map))
             lines.append("")
 
         if summary.due_week:
-            lines.append("Demais tarefas dos proximos 7 dias:")
-            for item in summary.due_week:
+            lines.append("Proximos prazos:")
+            for item in summary.due_week[:8]:
                 lines.append(self.format_task_line(item, disciplinas_map))
+        else:
+            lines.append("Sem prazo para os proximos 7 dias.")
         await update.message.reply_text("\n".join(lines))
 
     async def cmd_urgentes(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -788,7 +1132,7 @@ class StudySecretaryBot:
         if not critical:
             lines.append("Nenhuma tarefa critica no momento.")
         else:
-            for item in critical[:15]:
+            for item in critical[:8]:
                 lines.append(self.format_task_line(item, disciplinas_map))
         await update.message.reply_text("\n".join(lines))
 
@@ -1061,43 +1405,74 @@ class StudySecretaryBot:
         summary, disciplinas_map = self.build_summary(int(cfg["id_usuario"]), now)
         user_text = update.message.text or ""
         normalized = normalize_text(user_text)
+        priority = self.build_today_priority_list(summary)
+        self._last_priority_by_chat[chat_id] = priority
+        self._last_disciplinas_by_chat[chat_id] = disciplinas_map
+        self.add_dialog_turn(chat_id, "usuario", user_text)
 
-        # Automatic guidance on every user text message.
-        await update.message.reply_text(self.build_runtime_info_text(cfg, user_name))
+        ai_reply = self.generate_ai_chat_reply(user_text, summary, disciplinas_map, now, chat_id=chat_id)
+        if ai_reply:
+            await self.reply_text_chunks(update.message, ai_reply)
+            self.add_dialog_turn(chat_id, "assistente", ai_reply)
+            return
 
-        if is_greeting_text(user_text):
-            await update.message.reply_text(
-                f"Oi, {user_name}. Manda \"o que tenho hoje\" que eu te passo as prioridades direto."
+        msg = "Nao consegui responder agora. Tenta reformular sua mensagem."
+        await self.reply_text_chunks(update.message, msg)
+        self.add_dialog_turn(chat_id, "assistente", msg)
+        return
+
+    async def on_audio_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        if not update.message or not update.effective_chat:
+            return
+
+        media = update.message.voice or update.message.audio
+        if not media:
+            await self.reply_text_chunks(update.message, "Nao consegui ler esse audio. Tente novamente.")
+            return
+
+        mime_type = getattr(media, "mime_type", None) or "audio/ogg"
+        duration = int(getattr(media, "duration", 0) or 0)
+        file_size = int(getattr(media, "file_size", 0) or 0)
+
+        if BOT_AUDIO_MAX_SECONDS > 0 and duration > BOT_AUDIO_MAX_SECONDS:
+            await self.reply_text_chunks(
+                update.message,
+                f"Audio muito longo ({duration}s). Envie ate {BOT_AUDIO_MAX_SECONDS}s para eu responder rapido."
             )
             return
 
-        # Follow-up curto para continuar o último contexto de tarefas.
-        if normalized in {"quais", "quais?", "e quais", "quero ver", "me mostra"}:
-            last_priority = self._last_priority_by_chat.get(chat_id) or []
-            last_map = self._last_disciplinas_by_chat.get(chat_id) or {}
-            if last_priority:
-                lines = ["Aqui estão as prioridades:"]
-                for task in last_priority[:8]:
-                    lines.append(self.format_task_line(task, last_map))
-                await update.message.reply_text("\n".join(lines))
-                return
-
-        if is_planning_request(user_text):
-            priority = self.build_today_priority_list(summary)
-            self._last_priority_by_chat[chat_id] = priority
-            self._last_disciplinas_by_chat[chat_id] = disciplinas_map
-            await update.message.reply_text(self.build_priority_text(summary, disciplinas_map, now))
-            return
-
-        if not is_planning_request(user_text):
-            ai_reply = self.generate_ai_chat_reply(user_text, summary, disciplinas_map, now)
-            if ai_reply:
-                await update.message.reply_text(ai_reply)
-                return
-            await update.message.reply_text(
-                "Posso te ajudar com estudos e prazos. Tente /plano, /hoje ou /semana."
+        if BOT_AUDIO_MAX_BYTES > 0 and file_size > BOT_AUDIO_MAX_BYTES:
+            await self.reply_text_chunks(
+                update.message,
+                "Arquivo de audio muito grande. Envie um audio menor ou em texto."
             )
             return
+
+        try:
+            telegram_file = await context.bot.get_file(media.file_id)
+            audio_buffer = await telegram_file.download_as_bytearray()
+            transcript = self.transcribe_audio(bytes(audio_buffer), mime_type=mime_type)
+        except Exception:
+            transcript = None
+
+        if not transcript:
+            await self.reply_text_chunks(
+                update.message,
+                "Nao consegui entender o audio. Pode tentar de novo ou mandar em texto?"
+            )
+            return
+
+        responses = await self.handle_incoming_text(str(update.effective_chat.id), transcript)
+        if not responses:
+            await self.reply_text_chunks(
+                update.message,
+                "Entendi seu audio, mas nao consegui montar resposta agora. Tente reformular."
+            )
+            return
+
+        for response in responses:
+            if response:
+                await self.reply_text_chunks(update.message, response)
 
     def has_notification(self, chat_id: str, kind: str, dedupe_key: str) -> bool:
         try:
@@ -1135,6 +1510,8 @@ class StudySecretaryBot:
             raise
 
     async def run_scheduled_cycle(self) -> None:
+        if not BOT_PROACTIVE_ENABLED:
+            return
         try:
             resp = self.supabase.table("bot_config").select("*").execute()
             configs = resp.data or []
@@ -1161,7 +1538,7 @@ class StudySecretaryBot:
         user_name = self.get_user_name(user_id)
         tz = ZoneInfo(cfg.get("timezone") or BOT_DEFAULT_TIMEZONE)
         now = datetime.now(tz)
-        summary, disciplinas_map = self.build_summary(user_id, now)
+        summary, disciplinas_map = self.build_summary(user_id, now, strict_active_disciplines=True)
 
         daily_time = parse_time_only(cfg.get("daily_time"), time(7, 30))
         weekly_time = parse_time_only(cfg.get("weekly_time"), time(18, 0))
@@ -1249,6 +1626,9 @@ class StudySecretaryBot:
                     self.mark_notification(chat_id, "urgent", key, {"task_id": task_id})
 
     async def on_startup(self, _: Application) -> None:
+        if not BOT_PROACTIVE_ENABLED:
+            print("[bot] proactive notifications disabled")
+            return
         self.scheduler.add_job(self.run_scheduled_cycle, "interval", seconds=BOT_POLL_SECONDS)
         self.scheduler.start()
         print(f"[bot] scheduler started (interval={BOT_POLL_SECONDS}s)")

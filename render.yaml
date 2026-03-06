@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: jala-ai-webhook
+    runtime: python
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn api.telegram_webhook:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
+      - key: BOT_DEFAULT_USER_ID
+        value: "1"
+      - key: BOT_DEFAULT_TIMEZONE
+        value: America/Sao_Paulo
+      - key: BOT_AI_ENABLED
+        value: "true"
+      - key: GEMINI_MODELS
+        value: gemini-flash-latest,gemini-2.5-flash,gemini-2.5-pro
+
+  - type: cron
+    name: jala-ai-cron
+    runtime: python
+    autoDeploy: true
+    schedule: "*/1 * * * *"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python api/run_cycle.py
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: BOT_DEFAULT_USER_ID
+        value: "1"
+      - key: BOT_DEFAULT_TIMEZONE
+        value: America/Sao_Paulo
+      - key: BOT_AI_ENABLED
+        value: "true"
+      - key: GEMINI_MODELS
+        value: gemini-flash-latest,gemini-2.5-flash,gemini-2.5-pro

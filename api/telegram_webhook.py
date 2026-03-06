@@ -21,8 +21,11 @@ def _send_messages(chat_id: str, messages: List[str]) -> None:
     for msg in messages:
         if not msg:
             continue
+        cleaned = str(msg).replace("*", "").strip()
+        if not cleaned:
+            continue
         try:
-            requests.post(url, json={"chat_id": int(chat_id), "text": msg}, timeout=20)
+            requests.post(url, json={"chat_id": int(chat_id), "text": cleaned}, timeout=20)
         except Exception:
             continue
 
