@@ -31,10 +31,13 @@ def _resolve_webhook_url() -> str:
 def _ensure_telegram_webhook() -> None:
     global _webhook_ensured
     if _webhook_ensured or not _token:
+        if not _token:
+            print("[webhook] TELEGRAM_BOT_TOKEN ausente; nao foi possivel configurar webhook")
         return
 
     webhook_url = _resolve_webhook_url()
     if not webhook_url:
+        print("[webhook] URL de webhook ausente (use TELEGRAM_WEBHOOK_URL ou RENDER_EXTERNAL_URL)")
         return
 
     api = f"https://api.telegram.org/bot{_token}/setWebhook"
@@ -46,7 +49,11 @@ def _ensure_telegram_webhook() -> None:
         data = resp.json() if resp.content else {}
         if bool(data.get("ok")):
             _webhook_ensured = True
-    except Exception:
+            print(f"[webhook] Telegram webhook configurado: {webhook_url}")
+            return
+        print(f"[webhook] setWebhook falhou: {data}")
+    except Exception as exc:
+        print(f"[webhook] excecao ao configurar webhook: {exc}")
         return
 
 
@@ -79,10 +86,15 @@ def _send_messages(chat_id: str, messages: List[str]) -> None:
                 if audio:
                     files = {"voice": ("reply.ogg", audio, "audio/ogg")}
                     data = {"chat_id": int(chat_id)}
-                    requests.post(voice_url, data=data, files=files, timeout=40)
+                    resp = requests.post(voice_url, data=data, files=files, timeout=40)
+                    if resp.status_code >= 300:
+                        print(f"[webhook] erro sendVoice status={resp.status_code} body={resp.text[:300]}")
                     continue
-            requests.post(url, json={"chat_id": int(chat_id), "text": cleaned}, timeout=20)
-        except Exception:
+            resp = requests.post(url, json={"chat_id": int(chat_id), "text": cleaned}, timeout=20)
+            if resp.status_code >= 300:
+                print(f"[webhook] erro sendMessage status={resp.status_code} body={resp.text[:300]}")
+        except Exception as exc:
+            print(f"[webhook] excecao ao enviar mensagem para Telegram: {exc}")
             continue
 
 
@@ -110,3 +122,7 @@ def telegram_webhook():
     responses = asyncio.run(_bot_instance.handle_incoming_text(str(chat_id), str(text)))
     _send_messages(str(chat_id), responses)
     return jsonify({"ok": True, "sent": len(responses)})
+
+
+# Configure webhook as soon as service boots; route call remains as backup.
+_ensure_telegram_webhook()
