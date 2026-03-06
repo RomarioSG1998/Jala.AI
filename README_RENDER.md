@@ -41,6 +41,7 @@ Variaveis uteis:
 - `BOT_AUDIO_MAX_BYTES` (padrao 8388608)
 - `WHISPER_MODEL_SIZE` (padrao `tiny`)
 - `WHISPER_COMPUTE_TYPE` (padrao `int8`)
+- `BOT_REPLY_AUDIO_ONLY` (padrao `true`, respostas da IA em audio)
 
 ## Ambiente 100% Docker (local ou servidor)
 

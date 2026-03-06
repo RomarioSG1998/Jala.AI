@@ -12,12 +12,16 @@ app = Flask(__name__)
 _bot_instance = StudySecretaryBot()
 _token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 _secret = os.getenv("TELEGRAM_WEBHOOK_SECRET", "").strip()
+_audio_only = str(os.getenv("BOT_REPLY_AUDIO_ONLY", "true")).strip().lower() in ("1", "true", "yes", "on")
+_tts_engine = str(os.getenv("BOT_TTS_ENGINE", "edge")).strip().lower()
+_tts_edge_timeout = int(str(os.getenv("BOT_TTS_EDGE_TIMEOUT_SEC", "12")).strip() or "12")
 
 
 def _send_messages(chat_id: str, messages: List[str]) -> None:
     if not _token:
         return
     url = f"https://api.telegram.org/bot{_token}/sendMessage"
+    voice_url = f"https://api.telegram.org/bot{_token}/sendVoice"
     for msg in messages:
         if not msg:
             continue
@@ -25,6 +29,25 @@ def _send_messages(chat_id: str, messages: List[str]) -> None:
         if not cleaned:
             continue
         try:
+            if _audio_only:
+                audio = None
+                if _tts_engine == "edge":
+                    try:
+                        audio = asyncio.run(
+                            asyncio.wait_for(
+                                _bot_instance.synthesize_speech_edge_ogg(cleaned),
+                                timeout=max(4, _tts_edge_timeout),
+                            )
+                        )
+                    except Exception:
+                        audio = None
+                if not audio:
+                    audio = _bot_instance.synthesize_speech_ogg(cleaned)
+                if audio:
+                    files = {"voice": ("reply.ogg", audio, "audio/ogg")}
+                    data = {"chat_id": int(chat_id)}
+                    requests.post(voice_url, data=data, files=files, timeout=40)
+                    continue
             requests.post(url, json={"chat_id": int(chat_id), "text": cleaned}, timeout=20)
         except Exception:
             continue

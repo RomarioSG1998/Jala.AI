@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+import asyncio
 import base64
+import io
 import os
 import re
+import subprocess
 import tempfile
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
@@ -52,6 +55,10 @@ BOT_AUDIO_MAX_BYTES = env_int("BOT_AUDIO_MAX_BYTES", 8 * 1024 * 1024)
 WHISPER_MODEL_SIZE = env_str("WHISPER_MODEL_SIZE", "tiny")
 WHISPER_COMPUTE_TYPE = env_str("WHISPER_COMPUTE_TYPE", "int8")
 BOT_DIRECT_GEMINI_MODE = env_str("BOT_DIRECT_GEMINI_MODE", "true").lower() in ("1", "true", "yes", "on")
+BOT_REPLY_AUDIO_ONLY = env_str("BOT_REPLY_AUDIO_ONLY", "true").lower() in ("1", "true", "yes", "on")
+BOT_TTS_ENGINE = env_str("BOT_TTS_ENGINE", "edge").lower()
+BOT_TTS_MAX_CHARS = env_int("BOT_TTS_MAX_CHARS", 0)
+BOT_TTS_EDGE_TIMEOUT_SEC = env_int("BOT_TTS_EDGE_TIMEOUT_SEC", 12)
 GEMINI_MODELS = [
     m.strip()
     for m in env_str(
@@ -921,6 +928,176 @@ class StudySecretaryBot:
         for part in parts:
             await message.reply_text(part)
 
+    @staticmethod
+    def synthesize_speech_ogg(text: str) -> Optional[bytes]:
+        raw = str(text or "").strip()
+        if not raw:
+            return None
+
+        wav_path = None
+        ogg_path = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as wav_tmp:
+                wav_path = wav_tmp.name
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".ogg") as ogg_tmp:
+                ogg_path = ogg_tmp.name
+
+            # Offline and free TTS engine.
+            p1 = subprocess.run(
+                ["espeak-ng", "-v", "pt-br", "-s", "165", "-w", wav_path, raw],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            if p1.returncode != 0:
+                return None
+
+            # Telegram voice note friendly format.
+            p2 = subprocess.run(
+                [
+                    "ffmpeg",
+                    "-y",
+                    "-i",
+                    wav_path,
+                    "-c:a",
+                    "libopus",
+                    "-b:a",
+                    "32k",
+                    "-vbr",
+                    "on",
+                    ogg_path,
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            if p2.returncode != 0:
+                return None
+
+            with open(ogg_path, "rb") as f:
+                return f.read()
+        except Exception:
+            return None
+        finally:
+            for path in (wav_path, ogg_path):
+                if path:
+                    try:
+                        os.remove(path)
+                    except Exception:
+                        pass
+
+    @staticmethod
+    async def synthesize_speech_edge_mp3(text: str) -> Optional[bytes]:
+        raw = str(text or "").strip()
+        if not raw:
+            return None
+
+        try:
+            import edge_tts
+        except Exception:
+            return None
+
+        mp3_path = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as mp3_tmp:
+                mp3_path = mp3_tmp.name
+
+            communicate = edge_tts.Communicate(raw, voice="pt-BR-FranciscaNeural")
+            await communicate.save(mp3_path)
+
+            with open(mp3_path, "rb") as f:
+                return f.read()
+        except Exception:
+            return None
+        finally:
+            if mp3_path:
+                try:
+                    os.remove(mp3_path)
+                except Exception:
+                    pass
+
+    async def synthesize_speech_edge_ogg(self, text: str) -> Optional[bytes]:
+        mp3_audio = await self.synthesize_speech_edge_mp3(text)
+        if not mp3_audio:
+            return None
+
+        mp3_path = None
+        ogg_path = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as mp3_tmp:
+                mp3_path = mp3_tmp.name
+                mp3_tmp.write(mp3_audio)
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".ogg") as ogg_tmp:
+                ogg_path = ogg_tmp.name
+
+            p = subprocess.run(
+                [
+                    "ffmpeg",
+                    "-y",
+                    "-i",
+                    mp3_path,
+                    "-c:a",
+                    "libopus",
+                    "-b:a",
+                    "32k",
+                    "-vbr",
+                    "on",
+                    ogg_path,
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            if p.returncode != 0:
+                return None
+
+            with open(ogg_path, "rb") as f:
+                return f.read()
+        except Exception:
+            return None
+        finally:
+            for path in (mp3_path, ogg_path):
+                if path:
+                    try:
+                        os.remove(path)
+                    except Exception:
+                        pass
+
+    async def reply_voice_or_text(self, message, text: str) -> None:
+        if BOT_REPLY_AUDIO_ONLY:
+            spoken_text = str(text or "").strip()
+            if BOT_TTS_MAX_CHARS > 0:
+                spoken_text = spoken_text[:BOT_TTS_MAX_CHARS]
+            if BOT_TTS_ENGINE == "edge":
+                audio_ogg = None
+                try:
+                    audio_ogg = await asyncio.wait_for(
+                        self.synthesize_speech_edge_ogg(spoken_text),
+                        timeout=max(4, BOT_TTS_EDGE_TIMEOUT_SEC),
+                    )
+                except Exception:
+                    audio_ogg = None
+                if audio_ogg:
+                    bio = io.BytesIO(audio_ogg)
+                    bio.name = "reply.ogg"
+                    try:
+                        await message.reply_voice(voice=bio)
+                        return
+                    except Exception:
+                        pass
+
+            # Fallback local/offline.
+            audio_ogg = self.synthesize_speech_ogg(spoken_text)
+            if audio_ogg:
+                bio = io.BytesIO(audio_ogg)
+                bio.name = "reply.ogg"
+                try:
+                    await message.reply_voice(voice=bio)
+                    return
+                except Exception:
+                    pass
+        await self.reply_text_chunks(message, text)
+
     def _get_whisper_model(self):
         if self._whisper_model is not None:
             return self._whisper_model
@@ -1412,7 +1589,7 @@ class StudySecretaryBot:
 
         ai_reply = self.generate_ai_chat_reply(user_text, summary, disciplinas_map, now, chat_id=chat_id)
         if ai_reply:
-            await self.reply_text_chunks(update.message, ai_reply)
+            await self.reply_voice_or_text(update.message, ai_reply)
             self.add_dialog_turn(chat_id, "assistente", ai_reply)
             return
 
@@ -1472,7 +1649,7 @@ class StudySecretaryBot:
 
         for response in responses:
             if response:
-                await self.reply_text_chunks(update.message, response)
+                await self.reply_voice_or_text(update.message, response)
 
     def has_notification(self, chat_id: str, kind: str, dedupe_key: str) -> bool:
         try:
