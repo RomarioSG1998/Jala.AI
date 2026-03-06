@@ -7,11 +7,11 @@ services:
     startCommand: gunicorn api.telegram_webhook:app --bind 0.0.0.0:$PORT
     envVars:
       - key: TELEGRAM_BOT_TOKEN
-        sync: false
+        value: 8659979783:AAG7lIs2HSSAEOIgu4Kvmcf8iSt487U1Yvs
       - key: SUPABASE_URL
-        sync: false
+        value: https://zzrylgsjksrjotgcwavt.supabase.co
       - key: SUPABASE_KEY
-        sync: false
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cnlsZ3Nqa3Nyam90Z2N3YXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4Mjc0OTYsImV4cCI6MjA2NDQwMzQ5Nn0.caBlCmOqKonuxTPacPIHH1FeVZFr8AJKwpz_v1Q3BwM
       - key: TELEGRAM_WEBHOOK_SECRET
         sync: false
       - key: BOT_DEFAULT_USER_ID
@@ -19,6 +19,8 @@ services:
       - key: BOT_DEFAULT_TIMEZONE
         value: America/Sao_Paulo
       - key: BOT_AI_ENABLED
+        value: "true"
+      - key: OT_AI_ENABLED
         value: "true"
       - key: GEMINI_MODELS
         value: gemini-flash-latest,gemini-2.5-flash,gemini-2.5-pro
@@ -32,16 +34,18 @@ services:
     startCommand: python api/run_cycle.py
     envVars:
       - key: TELEGRAM_BOT_TOKEN
-        sync: false
+        value: 8659979783:AAG7lIs2HSSAEOIgu4Kvmcf8iSt487U1Yvs
       - key: SUPABASE_URL
-        sync: false
+        value: https://zzrylgsjksrjotgcwavt.supabase.co
       - key: SUPABASE_KEY
-        sync: false
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cnlsZ3Nqa3Nyam90Z2N3YXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4Mjc0OTYsImV4cCI6MjA2NDQwMzQ5Nn0.caBlCmOqKonuxTPacPIHH1FeVZFr8AJKwpz_v1Q3BwM
       - key: BOT_DEFAULT_USER_ID
         value: "1"
       - key: BOT_DEFAULT_TIMEZONE
         value: America/Sao_Paulo
       - key: BOT_AI_ENABLED
+        value: "true"
+      - key: OT_AI_ENABLED
         value: "true"
       - key: GEMINI_MODELS
         value: gemini-flash-latest,gemini-2.5-flash,gemini-2.5-pro

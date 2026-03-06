@@ -15,6 +15,39 @@ _secret = os.getenv("TELEGRAM_WEBHOOK_SECRET", "").strip()
 _audio_only = str(os.getenv("BOT_REPLY_AUDIO_ONLY", "true")).strip().lower() in ("1", "true", "yes", "on")
 _tts_engine = str(os.getenv("BOT_TTS_ENGINE", "edge")).strip().lower()
 _tts_edge_timeout = int(str(os.getenv("BOT_TTS_EDGE_TIMEOUT_SEC", "12")).strip() or "12")
+_webhook_ensured = False
+
+
+def _resolve_webhook_url() -> str:
+    manual = str(os.getenv("TELEGRAM_WEBHOOK_URL", "")).strip()
+    if manual:
+        return manual
+    render_external = str(os.getenv("RENDER_EXTERNAL_URL", "")).strip()
+    if render_external:
+        return render_external.rstrip("/") + "/"
+    return ""
+
+
+def _ensure_telegram_webhook() -> None:
+    global _webhook_ensured
+    if _webhook_ensured or not _token:
+        return
+
+    webhook_url = _resolve_webhook_url()
+    if not webhook_url:
+        return
+
+    api = f"https://api.telegram.org/bot{_token}/setWebhook"
+    payload = {"url": webhook_url}
+    if _secret:
+        payload["secret_token"] = _secret
+    try:
+        resp = requests.post(api, data=payload, timeout=20)
+        data = resp.json() if resp.content else {}
+        if bool(data.get("ok")):
+            _webhook_ensured = True
+    except Exception:
+        return
 
 
 def _send_messages(chat_id: str, messages: List[str]) -> None:
@@ -55,6 +88,8 @@ def _send_messages(chat_id: str, messages: List[str]) -> None:
 
 @app.route("/", methods=["POST", "GET"])
 def telegram_webhook():
+    _ensure_telegram_webhook()
+
     if request.method == "GET":
         return jsonify({"ok": True, "service": "telegram_webhook"})
 

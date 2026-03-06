@@ -41,14 +41,23 @@ def is_valid_http_url(value: str) -> bool:
     return parsed.scheme in ("http", "https") and bool(parsed.netloc)
 
 
+def normalize_supabase_url(raw: str) -> str:
+    value = env_str(raw, "") if raw in os.environ else str(raw or "").strip()
+    if not value:
+        return ""
+    if not value.startswith(("http://", "https://")):
+        value = f"https://{value}"
+    return value.rstrip("/")
+
+
 TELEGRAM_BOT_TOKEN = env_str("TELEGRAM_BOT_TOKEN")
-SUPABASE_URL = env_str("SUPABASE_URL")
+SUPABASE_URL = normalize_supabase_url(env_str("SUPABASE_URL"))
 SUPABASE_KEY = env_str("SUPABASE_KEY")
 BOT_DEFAULT_USER_ID = env_int("BOT_DEFAULT_USER_ID", 1)
 BOT_DEFAULT_TIMEZONE = env_str("BOT_DEFAULT_TIMEZONE", "America/Sao_Paulo")
 BOT_POLL_SECONDS = env_int("BOT_POLL_SECONDS", 60)
 BOT_PROACTIVE_ENABLED = env_str("BOT_PROACTIVE_ENABLED", "false").lower() in ("1", "true", "yes", "on")
-BOT_AI_ENABLED = env_str("BOT_AI_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+BOT_AI_ENABLED = env_str("BOT_AI_ENABLED", env_str("OT_AI_ENABLED", "true")).lower() in ("1", "true", "yes", "on")
 BOT_AUDIO_STT_PROVIDER = env_str("BOT_AUDIO_STT_PROVIDER", "local").lower()
 BOT_AUDIO_MAX_SECONDS = env_int("BOT_AUDIO_MAX_SECONDS", 60)
 BOT_AUDIO_MAX_BYTES = env_int("BOT_AUDIO_MAX_BYTES", 8 * 1024 * 1024)
