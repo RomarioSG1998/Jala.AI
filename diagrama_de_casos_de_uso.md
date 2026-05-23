@@ -3,26 +3,27 @@
 Abaixo está a representação dos principais casos de uso do sistema AquaGestor.
 
 ```mermaid
-usecaseDiagram
-    actor Produtor as "Produtor (Admin)"
-    actor Funcionario as "Funcionário"
-    actor Sistema as "Sistema AquaGestor"
+flowchart LR
+    %% Atores
+    Produtor(("Produtor (Admin)"))
+    Funcionario(("Funcionário"))
+    Sistema(("Sistema AquaGestor"))
 
-    package "App AquaGestor" {
-        
-        usecase UC_Auth as "Autenticação e Gestão de Perfil"
-        usecase UC_GestaoTanques as "Gerenciar Tanques"
-        usecase UC_RegistrarAlimentacao as "Registrar Alimentação"
-        usecase UC_MedirAgua as "Monitorar Qualidade da Água"
-        usecase UC_Dashboard as "Visualizar Dashboard e Relatórios"
-        usecase UC_Financas as "Gestão Financeira (Receitas e Despesas)"
-        usecase UC_GerenciarEquipe as "Gerenciar Funcionários e Permissões"
-        usecase UC_GerenciarEstoque as "Gerenciar Estoque e Fornecedores"
-        usecase UC_Assinatura as "Gerenciar Plano de Assinatura"
-        
-        usecase UC_Notificacoes as "Gerar Alertas e Notificações"
-    }
+    %% App
+    subgraph AppAquaGestor ["App AquaGestor"]
+        UC_Auth([Autenticação e Gestão de Perfil])
+        UC_GestaoTanques([Gerenciar Tanques])
+        UC_RegistrarAlimentacao([Registrar Alimentação])
+        UC_MedirAgua([Monitorar Qualidade da Água])
+        UC_Dashboard([Visualizar Dashboard e Relatórios])
+        UC_Financas([Gestão Financeira])
+        UC_GerenciarEquipe([Gerenciar Equipe e Permissões])
+        UC_GerenciarEstoque([Gerenciar Estoque e Fornecedores])
+        UC_Assinatura([Gerenciar Plano de Assinatura])
+        UC_Notificacoes([Gerar Alertas e Notificações])
+    end
 
+    %% Relacionamentos
     Produtor --> UC_Auth
     Produtor --> UC_GestaoTanques
     Produtor --> UC_RegistrarAlimentacao
@@ -39,5 +40,5 @@ usecaseDiagram
     Funcionario --> UC_MedirAgua
     
     Sistema --> UC_Notificacoes
-    UC_Notificacoes -.-> Produtor : Envia alertas (ex: pH fora do ideal)
+    UC_Notificacoes -. "Envia alertas (ex: pH fora do ideal)" .-> Produtor
 ```
