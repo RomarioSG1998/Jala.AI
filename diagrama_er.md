@@ -1,44 +1,79 @@
 # Diagrama ER (Entidade-Relacionamento)
 
-Abaixo está o modelo conceitual inicial do banco de dados do sistema AquaGestor, focado nos requisitos levantados até o momento.
+Abaixo está o modelo conceitual atualizado para uma arquitetura SaaS robusta, utilizando nomenclaturas explícitas que "denunciam" exatamente o papel de cada entidade no sistema Multi-Tenant.
 
 ```mermaid
 erDiagram
-    USUARIO {
+    %% ==========================================
+    %% MÓDULO: NÚCLEO SaaS (CONTAS E ACESSOS GLOBAIS)
+    %% ==========================================
+    
+    %% Usuário Global: A pessoa que faz login, seja ela Dona do SaaS ou Cliente.
+    USUARIO_GLOBAL {
         uuid id PK
         string nome
         string email
         string senha
-        string plano_assinatura "Gratuito, Basico, Profissional, Empresarial"
+        string tipo_conta "SAAS_ADMIN (Dono do SaaS) ou CLIENTE"
         datetime data_cadastro
     }
 
-    PROPRIEDADE {
+    %% ==========================================
+    %% MÓDULO: INQUILINOS (O ESPAÇO DE CADA CLIENTE)
+    %% ==========================================
+    
+    %% Tenant Fazenda: O ambiente isolado (Workspace) de uma piscicultura.
+    TENANT_FAZENDA {
         uuid id PK
-        uuid usuario_id FK
-        string nome
+        uuid usuario_dono_id FK
+        string nome_fazenda
         string localizacao
     }
 
-    FUNCIONARIO {
-        uuid id PK
-        uuid propriedade_id FK
-        string nome
-        string cargo
-        string email
+    %% Tabela de RBAC: Diz em qual Fazenda o Usuário pode entrar e o que ele é lá dentro.
+    VINCULO_USUARIO_FAZENDA {
+        uuid usuario_id FK
+        uuid fazenda_id FK
+        string papel_acesso "DONO_FAZENDA, GERENTE, OPERADOR, VISUALIZADOR"
     }
 
+    %% ==========================================
+    %% MÓDULO: ASSINATURAS E FATURAMENTO (BILLING)
+    %% ==========================================
+
+    PLANO_SAAS {
+        uuid id PK
+        string nome "Gratuito, Basico, Profissional, Empresarial"
+        float preco_mensal
+        int limite_tanques
+    }
+
+    ASSINATURA {
+        uuid id PK
+        uuid fazenda_id FK
+        uuid plano_id FK
+        string status "Ativa, Cancelada, Inadimplente"
+        date data_vencimento
+    }
+
+    FATURA_PAGAMENTO {
+        uuid id PK
+        uuid assinatura_id FK
+        float valor
+        date data_pagamento
+        string status "Pago, Pendente"
+    }
+
+    %% ==========================================
+    %% MÓDULO: OPERACIONAL E FINANCEIRO DA FAZENDA
+    %% ==========================================
     TANQUE {
         uuid id PK
-        uuid propriedade_id FK
+        uuid fazenda_id FK
         string nome
         string especie
         int capacidade_peixes
         float volume_m3
-        string tipo_tanque
-        date data_povoamento
-        string status "Ativo, Inativo"
-        string observacoes
     }
 
     ALIMENTACAO {
@@ -46,66 +81,63 @@ erDiagram
         uuid tanque_id FK
         datetime data_hora
         float quantidade_kg
-        string tipo_racao
-        string observacoes
     }
 
     MEDICAO_AGUA {
         uuid id PK
         uuid tanque_id FK
         datetime data_hora
-        float temperatura
         float ph
-        float oxigenio_dissolvido
-        float amonia
-        float nitrito
-    }
-
-    TRANSACAO_FINANCEIRA {
-        uuid id PK
-        uuid propriedade_id FK
-        string tipo "Receita, Despesa"
-        string categoria "Ração, Alevinos, Energia, etc"
-        float valor
-        date data
-        string descricao
-    }
-
-    ESTOQUE {
-        uuid id PK
-        uuid propriedade_id FK
-        string item
-        float quantidade
-        string unidade_medida
-        uuid fornecedor_id FK
-    }
-
-    FORNECEDOR {
-        uuid id PK
-        uuid propriedade_id FK
-        string nome
-        string contato
+        float temperatura
     }
 
     MANUTENCAO {
         uuid id PK
-        uuid propriedade_id FK
+        uuid fazenda_id FK
         string equipamento
-        string tipo "Preventiva, Corretiva"
-        date data_agendada
-        string status "Pendente, Concluída"
-        string observacoes
     }
 
-    USUARIO ||--o{ PROPRIEDADE : "gerencia"
-    PROPRIEDADE ||--o{ FUNCIONARIO : "emprega"
-    PROPRIEDADE ||--o{ TANQUE : "possui"
-    PROPRIEDADE ||--o{ TRANSACAO_FINANCEIRA : "registra"
-    PROPRIEDADE ||--o{ ESTOQUE : "mantem"
-    PROPRIEDADE ||--o{ FORNECEDOR : "possui"
-    PROPRIEDADE ||--o{ MANUTENCAO : "programa"
+    TRANSACAO_FINANCEIRA {
+        uuid id PK
+        uuid fazenda_id FK
+        string tipo "Receita, Despesa"
+        float valor
+    }
+
+    ESTOQUE {
+        uuid id PK
+        uuid fazenda_id FK
+        string item
+        float quantidade
+    }
+
+    FORNECEDOR {
+        uuid id PK
+        uuid fazenda_id FK
+        string nome
+    }
+
+    %% ==========================================
+    %% RELACIONAMENTOS (O MOTOR DO SAAS)
+    %% ==========================================
+
+    %% Acessos
+    USUARIO_GLOBAL ||--o{ TENANT_FAZENDA : "cria / é dono de"
+    USUARIO_GLOBAL ||--o{ VINCULO_USUARIO_FAZENDA : "logado possui"
+    TENANT_FAZENDA ||--o{ VINCULO_USUARIO_FAZENDA : "concede acesso via"
+    
+    %% Faturamento
+    PLANO_SAAS ||--o{ ASSINATURA : "define regras"
+    TENANT_FAZENDA ||--|| ASSINATURA : "paga"
+    ASSINATURA ||--o{ FATURA_PAGAMENTO : "gera"
+
+    %% Dados Isolados do Tenant
+    TENANT_FAZENDA ||--o{ TANQUE : "possui"
+    TENANT_FAZENDA ||--o{ TRANSACAO_FINANCEIRA : "registra"
+    TENANT_FAZENDA ||--o{ ESTOQUE : "mantem"
+    TENANT_FAZENDA ||--o{ FORNECEDOR : "possui"
+    TENANT_FAZENDA ||--o{ MANUTENCAO : "programa"
     
     TANQUE ||--o{ ALIMENTACAO : "recebe"
     TANQUE ||--o{ MEDICAO_AGUA : "monitora"
-    FORNECEDOR ||--o{ ESTOQUE : "fornece"
 ```

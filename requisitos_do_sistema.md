@@ -1,73 +1,63 @@
 # Requisitos do Sistema: AquaGestor
 
 ## Contexto
-O sistema **AquaGestor** é uma aplicação focada na gestão inteligente para piscicultura. O objetivo é auxiliar os produtores a terem controle total da produção, organizando os dados de forma que fiquem sempre à mão para decisões mais assertivas, resultando em mais produtividade e menos desperdício. O aplicativo terá foco em dispositivos móveis (disponível no Google Play e App Store).
+O sistema **AquaGestor** é uma aplicação focada na gestão inteligente para piscicultura. O objetivo é auxiliar as fazendas produtoras a terem controle total da produção, organizando os dados de forma que fiquem sempre à mão para decisões mais assertivas.
+**Modelo de Negócio (SaaS):** A aplicação será comercializada no modelo *Software as a Service* (SaaS) B2B/B2C, operando sob uma arquitetura Multi-Tenant. O cliente do SaaS (Dono da Fazenda) gerencia sua própria operação de forma isolada no seu Tenant, enquanto o dono da plataforma (Admin SaaS) gerencia o negócio SaaS de forma global.
 
 ---
 
-## Requisitos Funcionais
+## Requisitos Funcionais (Módulo do Inquilino / Fazenda)
 
-### 1. Gestão de Tanques
-- O sistema deve listar os tanques, permitindo filtrar por "Todos", "Ativos" e "Inativos".
-- O sistema deve exibir no card do tanque: Foto, Nome, Espécie (ex: Tilápia), Quantidade de peixes, Biomassa (kg) e Status.
-- O sistema deve permitir o cadastro de novos tanques informando: Foto, Nome, Espécie, Capacidade (peixes), Volume (m³), Tipo de tanque, Data de povoamento e Observações.
-- O sistema deve apresentar os detalhes do tanque, contendo uma "Visão Geral" com indicadores como: Biomassa atual (com gráfico indicando a meta), Quantidade de peixes, Peso médio, Taxa de sobrevivência (%) e Conversão alimentar.
+### 1. Gestão de Tanques e Produção
+- O sistema deve listar os tanques, permitindo filtrar por status.
+- O sistema deve exibir indicadores: Biomassa atual (vs meta), Quantidade de peixes, Peso médio, Taxa de sobrevivência e Conversão alimentar.
+- O sistema deve permitir o cadastro de novos tanques (Espécie, Capacidade, Volume m³, Tipo, Data de povoamento).
 
-### 2. Gestão de Alimentação
-- O sistema deve permitir registrar a alimentação fornecida aos tanques.
-- O formulário de "Nova alimentação" deve solicitar: Tanque, Data, Horário, Quantidade (kg), Tipo de ração (ex: Proteína 32%) e Observações.
-- O sistema deve manter e exibir o histórico de alimentação diária, bem como totalizar a ração fornecida no dia.
+### 2. Gestão de Alimentação e Qualidade da Água
+- O sistema deve registrar a alimentação (Data, Horário, Qtd kg, Tipo de ração).
+- O sistema deve registrar medições de água (Temperatura, pH, Oxigênio, Amônia, Nitrito) e alertar caso fujam dos limites ideais.
 
-### 3. Monitoramento da Qualidade da Água
-- O sistema deve permitir o registro de medições dos parâmetros da água por tanque.
-- O formulário de "Nova medição" deve capturar: Temperatura (ºC), pH, Oxigênio dissolvido (mg/L), Amônia - NH3 (mg/L) e Nitrito - NO2 (mg/L).
-- O sistema deve exibir os valores ideais de cada parâmetro na tela de acompanhamento e destacar (com ícones/cores) se as medições estão dentro ou fora do ideal.
+### 3. Dashboard e Relatórios (Cliente)
+- O sistema deve exibir um dashboard com o resumo da produção do Tenant atual.
+- O sistema deve gerar gráficos de crescimento de biomassa e relatórios de eficiência.
 
-### 4. Dashboard e Relatórios
-- O sistema deve exibir uma tela de Início (Dashboard) contendo o resumo da produção: quantidade de tanques ativos, total de peixes, biomassa total e taxa de sobrevivência geral.
-- O sistema deve possuir atalhos (Ações rápidas) no dashboard: Alimentar, Qualidade da água, Adicionar registro, Relatórios.
-- O sistema deve gerar relatórios de Crescimento de biomassa em formato de gráfico de linhas, com filtros de tempo (7 dias, 30 dias, 90 dias, Personalizado).
-- O sistema deve calcular o resumo do período selecionado, mostrando: Biomassa inicial, Biomassa final, Ganho de biomassa e Conversão alimentar.
+### 4. Gestão Financeira e Administrativa
+- O sistema deve calcular Receitas, Despesas categorizadas (Ração, Alevinos, Energia) e Lucro estimado da Fazenda.
+- O sistema deve permitir gerenciar os dados da Fazenda, Estoque, Fornecedores e Manutenção (equipamentos e tarefas).
 
-### 5. Gestão Financeira
-- O sistema deve possuir um módulo de Finanças que exibe o balanço do mês: Receitas, Despesas e Lucro estimado.
-- As despesas devem ser categorizadas e exibidas em percentual (ex: Ração, Alevinos, Mão de obra, Energia, Outros).
+### 5. Gestão de Vínculos e Permissões (RBAC do Inquilino)
+- O sistema (nos planos maiores) deve permitir ao Dono da Fazenda convidar contas de Usuários Globais para seu Tenant.
+- O Dono da Fazenda deve poder definir o papel de acesso do funcionário (ex: Visualizador, Operador de Campo, Gerente Financeiro).
 
-### 6. Configurações Adicionais e Cadastros (Menu Mais)
-- O sistema deve permitir o gerenciamento de: Perfil da conta, Informações da Propriedade, Funcionários (equipe), Fornecedores, Estoque (rações e insumos), Manutenção (equipamentos e tarefas).
-- O sistema deve prover Notificações e Alertas para o usuário.
+---
+
+## Requisitos Funcionais (Módulo Backoffice SaaS - Dono do Software)
+
+### 6. Gestão Global do SaaS (Admin SaaS)
+- **Dashboard SaaS:** O sistema deve prover um painel para o Admin SaaS ver métricas do negócio: MRR (Receita Mensal Recorrente), Churn (cancelamentos), novos usuários e total de Tenants (Fazendas) ativos.
+- **Gestão de Inquilinos:** O Admin SaaS deve poder visualizar, bloquear ou suspender contas de clientes que violem termos de uso ou por inadimplência.
+- **Gestão de Planos e Cobrança:** O Admin SaaS deve poder configurar os planos (valores e limites) e acompanhar faturas e status de integração com o gateway de pagamento.
+- **Suporte e Atendimento:** O backoffice deve permitir que a equipe do SaaS visualize dados básicos do cliente para prestar suporte (sem ferir a privacidade dos dados operacionais da Fazenda).
 
 ---
 
 ## Requisitos Não Funcionais
-- O sistema deve ser um aplicativo móvel com interface amigável (Dark Mode predominante).
-- O sistema deve fornecer armazenamento na nuvem e sincronização de dados (disponível nos planos premium).
-- O sistema deve ser seguro e garantir a privacidade dos dados do usuário.
+- **Arquitetura Multi-Tenant:** Os dados de cada `TENANT_FAZENDA` devem ser logicamente isolados para garantir privacidade absoluta.
+- **Integração de Pagamentos:** O sistema deve integrar-se a um Gateway de Pagamentos para gerenciar o faturamento recorrente (assinaturas automáticas, PIX/Boleto, inadimplência).
+- **Onboarding Self-Service:** O usuário final deve ser capaz de criar uma `USUARIO_GLOBAL`, criar seu `TENANT_FAZENDA`, escolher o plano e pagar de forma 100% autônoma.
+- **Logs de Auditoria (Audit Trail):** O sistema deve registrar ações críticas garantindo rastreabilidade.
 
 ---
 
 ## Regras de Negócio e Planos de Assinatura (Monetização)
 
-O modelo de negócio adota o formato *Freemium*, limitando os recursos com base em planos de assinatura:
+O modelo de negócio adota o formato *Freemium* e *Subscription*:
 
-1. **Plano Gratuito**
-   - Até 5 tanques, controle básico de produção, registro de alimentação, monitoramento de água, relatórios básicos, suporte básico.
-2. **Plano Básico (R$ 29,90/mês)**
-   - Até 20 tanques, relatórios avançados, histórico expandido, exportação de dados, suporte prioritário.
-3. **Plano Profissional (R$ 59,90/mês)**
-   - Tanques ilimitados, dashboard avançado, análises e recomendações, alertas inteligentes, backup e sincronização, suporte premium.
-4. **Plano Empresarial (R$ 99,90/mês)**
-   - Gestão para empresas, multiusuários e permissões, múltiplas unidades, integração via API, relatórios personalizados, consultoria, suporte dedicado.
+1. **Plano Gratuito:** Até 5 tanques, recursos básicos.
+2. **Plano Básico (R$ 29,90/mês):** Até 20 tanques, relatórios avançados.
+3. **Plano Profissional (R$ 59,90/mês):** Tanques ilimitados, alertas inteligentes.
+4. **Plano Empresarial (R$ 99,90/mês):** Multiusuários, controle de permissões avançado (RBAC).
 
 **Outras Fontes de Receita Previstas:**
-- **Marketplace e Parcerias:** Venda de insumos/equipamentos com comissão.
-- **Serviços Adicionais:** Contratação avulsa de consultoria técnica, análise laboratorial, projeto de expansão e treinamentos.
-- **Publicidade e Insights:** Publicidade segmentada e relatórios com dados agregados/anônimos para a indústria.
-
----
-
-## Glossário
-- **Biomassa:** Peso total dos peixes vivos dentro de um tanque.
-- **Conversão Alimentar:** Índice de eficiência que mede quantos quilos de ração foram necessários para o peixe ganhar 1kg de peso.
-- **Alevinos:** Filhotes de peixes recém-saídos do ovo ou da fase larval, usados para o povoamento do tanque.
-- **Povoamento:** Ato de introduzir os alevinos ou peixes jovens em um tanque para início do cultivo.
+- **Marketplace e Parcerias:** Comissão sobre venda de insumos.
+- **Publicidade e Insights:** Venda de dados agregados anônimos para a indústria do setor.
