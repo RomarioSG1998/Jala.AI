@@ -87,12 +87,23 @@ erDiagram
         string contato
     }
 
+    MANUTENCAO {
+        uuid id PK
+        uuid propriedade_id FK
+        string equipamento
+        string tipo "Preventiva, Corretiva"
+        date data_agendada
+        string status "Pendente, Concluída"
+        string observacoes
+    }
+
     USUARIO ||--o{ PROPRIEDADE : "gerencia"
     PROPRIEDADE ||--o{ FUNCIONARIO : "emprega"
     PROPRIEDADE ||--o{ TANQUE : "possui"
     PROPRIEDADE ||--o{ TRANSACAO_FINANCEIRA : "registra"
     PROPRIEDADE ||--o{ ESTOQUE : "mantem"
     PROPRIEDADE ||--o{ FORNECEDOR : "possui"
+    PROPRIEDADE ||--o{ MANUTENCAO : "programa"
     
     TANQUE ||--o{ ALIMENTACAO : "recebe"
     TANQUE ||--o{ MEDICAO_AGUA : "monitora"
