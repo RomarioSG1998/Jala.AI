@@ -10,6 +10,7 @@ import 'package:frontend_flutter/features/water_quality/presentation/water_quali
 import 'package:frontend_flutter/features/inventory/presentation/inventory_screen.dart';
 import 'package:frontend_flutter/features/harvests/presentation/harvests_screen.dart';
 import 'package:frontend_flutter/features/maintenance/presentation/maintenance_screen.dart';
+import 'package:frontend_flutter/features/saas_admin/presentation/saas_dashboard_screen.dart';
 
 void main() {
   runApp(
@@ -62,7 +63,7 @@ class AquaSertaoApp extends ConsumerWidget {
           builder: (context, state) => const WaterQualityScreen(),
         ),
         // Dummy Routes for RBAC Modules
-        GoRoute(path: '/saas-dashboard', builder: (context, state) => const DummyScreen(title: 'SaaS Dashboard')),
+        GoRoute(path: '/saas-dashboard', builder: (context, state) => const SaasDashboardScreen()),
         GoRoute(path: '/tenants', builder: (context, state) => const DummyScreen(title: 'Manage Tenants')),
         GoRoute(path: '/suppliers', builder: (context, state) => const DummyScreen(title: 'B2B Suppliers')),
         GoRoute(path: '/production-dashboard', builder: (context, state) => const DummyScreen(title: 'Production Dashboard')),
