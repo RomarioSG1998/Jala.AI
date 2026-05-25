@@ -3,7 +3,7 @@ import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_repository.dart';
 
 class TanksNotifier extends AsyncNotifier<List<Tank>> {
-  late final TankRepository _repository;
+  late TankRepository _repository;
 
   @override
   Future<List<Tank>> build() async {

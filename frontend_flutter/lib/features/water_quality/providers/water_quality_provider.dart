@@ -3,7 +3,7 @@ import 'package:frontend_flutter/features/water_quality/data/water_quality_model
 import 'package:frontend_flutter/features/water_quality/data/water_quality_repository.dart';
 
 class WaterQualityNotifier extends AsyncNotifier<List<WaterQuality>> {
-  late final WaterQualityRepository _repository;
+  late WaterQualityRepository _repository;
 
   @override
   Future<List<WaterQuality>> build() async {
