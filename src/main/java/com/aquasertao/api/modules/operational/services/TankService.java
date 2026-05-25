@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Service
@@ -18,11 +19,24 @@ public class TankService {
     private final TankRepository tankRepository;
 
     public TankResponseDTO createTank(TankRequestDTO requestDTO) {
+        LocalDate harvestDate = null;
+        if (requestDTO.getNextHarvestDate() != null && !requestDTO.getNextHarvestDate().isEmpty()) {
+            try {
+                harvestDate = LocalDate.parse(requestDTO.getNextHarvestDate());
+            } catch (Exception e) {
+                // Ignore or log
+            }
+        }
+
         Tank tank = Tank.builder()
                 .farmId(requestDTO.getFarmId())
                 .name(requestDTO.getName())
                 .fishSpecies(requestDTO.getFishSpecies())
                 .fishCapacity(requestDTO.getFishCapacity())
+                .averageWeightG(requestDTO.getAverageWeightG() != null ? requestDTO.getAverageWeightG() : 0)
+                .mortalityCount(requestDTO.getMortalityCount() != null ? requestDTO.getMortalityCount() : 0)
+                .nextHarvestDate(harvestDate)
+                .status(requestDTO.getStatus() != null ? requestDTO.getStatus() : "ACTIVE")
                 .build();
 
         Tank savedTank = tankRepository.save(tank);
@@ -30,7 +44,6 @@ public class TankService {
     }
 
     public Page<TankResponseDTO> getTanksByFarmId(UUID farmId, Pageable pageable) {
-        // Enforcing Tenant Isolation at the database query level
         Page<Tank> tankPage = tankRepository.findByFarmId(farmId, pageable);
         return tankPage.map(this::mapToDTO);
     }
@@ -48,6 +61,23 @@ public class TankService {
         existingTank.setName(requestDTO.getName());
         existingTank.setFishSpecies(requestDTO.getFishSpecies());
         existingTank.setFishCapacity(requestDTO.getFishCapacity());
+        existingTank.setAverageWeightG(requestDTO.getAverageWeightG() != null ? requestDTO.getAverageWeightG() : existingTank.getAverageWeightG());
+        existingTank.setMortalityCount(requestDTO.getMortalityCount() != null ? requestDTO.getMortalityCount() : existingTank.getMortalityCount());
+        
+        if (requestDTO.getNextHarvestDate() != null) {
+            if (requestDTO.getNextHarvestDate().isEmpty()) {
+                existingTank.setNextHarvestDate(null);
+            } else {
+                try {
+                    existingTank.setNextHarvestDate(LocalDate.parse(requestDTO.getNextHarvestDate()));
+                } catch (Exception e) {
+                    // Ignore or log
+                }
+            }
+        }
+        if (requestDTO.getStatus() != null) {
+            existingTank.setStatus(requestDTO.getStatus());
+        }
 
         Tank updatedTank = tankRepository.save(existingTank);
         return mapToDTO(updatedTank);
@@ -67,6 +97,10 @@ public class TankService {
                 .name(tank.getName())
                 .fishSpecies(tank.getFishSpecies())
                 .fishCapacity(tank.getFishCapacity())
+                .averageWeightG(tank.getAverageWeightG())
+                .mortalityCount(tank.getMortalityCount())
+                .nextHarvestDate(tank.getNextHarvestDate())
+                .status(tank.getStatus())
                 .build();
     }
 }

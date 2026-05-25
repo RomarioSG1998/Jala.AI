@@ -43,6 +43,12 @@ public class WaterQualityService {
         return mapToDTO(waterQuality);
     }
 
+    public WaterQualityResponseDTO getLatestByTankId(UUID tankId, UUID farmId) {
+        WaterQuality waterQuality = waterQualityRepository.findTopByTankIdAndFarmIdOrderByMeasurementTimeDesc(tankId, farmId)
+                .orElseThrow(() -> new IllegalArgumentException("No water quality records found for this tank"));
+        return mapToDTO(waterQuality);
+    }
+
     public WaterQualityResponseDTO updateWaterQuality(UUID id, WaterQualityRequestDTO requestDTO) {
         WaterQuality existingRecord = waterQualityRepository.findByIdAndFarmId(id, requestDTO.getFarmId())
                 .orElseThrow(() -> new IllegalArgumentException("Water quality record not found or access denied"));

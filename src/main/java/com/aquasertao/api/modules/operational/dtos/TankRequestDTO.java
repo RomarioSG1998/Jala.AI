@@ -13,10 +13,12 @@ import java.util.UUID;
 @NoArgsConstructor
 public class TankRequestDTO {
     
-    // The farmId is required to guarantee Tenant Isolation when creating a tank
     private UUID farmId;
-    
     private String name;
     private String fishSpecies;
     private Integer fishCapacity;
+    private Integer averageWeightG;
+    private Integer mortalityCount;
+    private String nextHarvestDate; // "yyyy-MM-dd" or null
+    private String status;          // "ACTIVE" or "INACTIVE"
 }

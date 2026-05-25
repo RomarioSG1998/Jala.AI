@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
@@ -20,7 +21,6 @@ public class Tank {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    // To maintain strict modular decoupling, we reference the farm_tenant by its UUID directly
     @Column(name = "farm_id", nullable = false)
     private UUID farmId;
 
@@ -32,4 +32,21 @@ public class Tank {
 
     @Column(name = "fish_capacity")
     private Integer fishCapacity;
+
+    /** Peso médio atual dos peixes em gramas */
+    @Column(name = "average_weight_g")
+    private Integer averageWeightG;
+
+    /** Contagem acumulada de mortalidade no mês atual */
+    @Column(name = "mortality_count")
+    private Integer mortalityCount;
+
+    /** Data prevista para a próxima despesca */
+    @Column(name = "next_harvest_date")
+    private LocalDate nextHarvestDate;
+
+    /** Status operacional: ACTIVE ou INACTIVE */
+    @Column(name = "status", length = 20)
+    @Builder.Default
+    private String status = "ACTIVE";
 }

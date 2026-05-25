@@ -25,6 +25,19 @@ class WaterQualityRepository {
     }
   }
 
+  Future<WaterQuality?> getLatestByTankId(String tankId) async {
+    try {
+      final response = await _dio.get('/api/water-quality/tank/$tankId/latest?farmId=$_farmId');
+      if (response.data != null) {
+        return WaterQuality.fromJson(response.data);
+      }
+      return null;
+    } catch (e) {
+      // Return null if not found (e.g., 400/404/500 on no reading)
+      return null;
+    }
+  }
+
   Future<WaterQuality> createRecord(Map<String, dynamic> logData) async {
     try {
       logData['farmId'] = _farmId;

@@ -7,12 +7,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
+import java.util.List;
 
 @Repository
 public interface TankRepository extends JpaRepository<Tank, UUID> {
     
     // Strict Tenant Isolation + Pagination in a single query
     Page<Tank> findByFarmId(UUID farmId, Pageable pageable);
+
+    List<Tank> findByFarmId(UUID farmId);
 
     java.util.Optional<Tank> findByIdAndFarmId(UUID id, UUID farmId);
 

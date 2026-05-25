@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
@@ -17,4 +18,8 @@ public class TankResponseDTO {
     private String name;
     private String fishSpecies;
     private Integer fishCapacity;
+    private Integer averageWeightG;
+    private Integer mortalityCount;
+    private LocalDate nextHarvestDate;
+    private String status;
 }

@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/tanks/presentation/widgets/tank_card.dart';
+import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
+import 'package:frontend_flutter/features/dashboard/providers/farm_summary_provider.dart';
+import 'package:frontend_flutter/features/dashboard/data/farm_summary_model.dart';
 
 class TanksScreen extends ConsumerStatefulWidget {
   const TanksScreen({super.key});
@@ -36,12 +39,17 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
     final authState = ref.watch(authNotifierProvider);
     final isOwner = authState.accountType == 'FARM_OWNER';
 
+    final summaryAsyncValue = ref.watch(farmSummaryProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA), // Fundo Gelo
       
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () => ref.read(tanksProvider.notifier).refreshTanks(),
+          onRefresh: () async {
+            await ref.read(tanksProvider.notifier).refreshTanks();
+            ref.invalidate(farmSummaryProvider);
+          },
           child: CustomScrollView(
             slivers: [
               // Cabeçalho e KPIs (SliverToBoxAdapter)
@@ -50,7 +58,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
                   children: [
                     _buildSectionTitle(context, ref, isOwner),
                     tanksAsyncValue.when(
-                      data: (tanks) => _buildMetricsPanel(tanks),
+                      data: (tanks) => _buildMetricsPanel(tanks, summaryAsyncValue),
                       loading: () => const Padding(
                         padding: EdgeInsets.all(20),
                         child: Center(child: CircularProgressIndicator()),
@@ -78,23 +86,22 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
                   // Para demonstração visual, se o nome contiver "inativo", é inativo.
                   var filtered = tanks.where((t) {
                     if (_activeFilter == 'Todos') return true;
-                    final isTankActive = !t.name.toLowerCase().contains('inativ');
+                    final isTankActive = t.status == 'ACTIVE';
                     if (_activeFilter == 'Ativos') return isTankActive;
                     if (_activeFilter == 'Inativos') return !isTankActive;
                     return true;
                   }).toList();
-
+ 
                   return SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final tank = filtered[index];
-                          final isTankActive = !tank.name.toLowerCase().contains('inativ');
                           
                           return TankCard(
                             tank: tank,
-                            isActive: isTankActive,
+                            isActive: tank.status == 'ACTIVE',
                             onTap: () {
                               // Navegar para detalhes
                             },
@@ -150,8 +157,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
     );
   }
 
-  Widget _buildMetricsPanel(List<dynamic> tanks) {
-    // Mocks visuais para o design
+  Widget _buildMetricsPanel(List<Tank> tanks, AsyncValue<FarmSummary> summaryAsync) {
     return Transform.translate(
       offset: const Offset(0, -10),
       child: SizedBox(
@@ -160,11 +166,20 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           children: [
-            _kpiCard(Icons.water, 'Tanques ativos', '${tanks.length} de 10', Colors.blue, 0.8),
-            _kpiCard(Icons.set_meal, 'Peixes totais', '12.540', Colors.green, null, subtitle: '+3,2% este mês'),
-            _kpiCard(Icons.shopping_bag, 'Ração hoje', '125 kg', Colors.orange, null, subtitle: 'Plan: 150 kg'),
-            _kpiCard(Icons.show_chart, 'Crescimento', '2,35%', Colors.purple, 0.6, subtitle: 'Este mês'),
-            _kpiCard(Icons.warning, 'Mortalidade', '1,25%', Colors.red, null, subtitle: 'Este mês'),
+            summaryAsync.maybeWhen(
+              data: (summary) => _kpiCard(Icons.water, 'Tanques ativos', '${summary.activeTanks} de ${summary.totalTanks}', Colors.blue, summary.totalTanks > 0 ? (summary.activeTanks / summary.totalTanks) : 0.0),
+              orElse: () => _kpiCard(Icons.water, 'Tanques ativos', '${tanks.length} de --', Colors.blue, 0.5),
+            ),
+            summaryAsync.maybeWhen(
+              data: (summary) => _kpiCard(Icons.set_meal, 'Peixes totais', '${summary.totalFishCapacity}', Colors.green, null, subtitle: 'Capacidade total'),
+              orElse: () => _kpiCard(Icons.set_meal, 'Peixes totais', '--', Colors.green, null, subtitle: 'Capacidade total'),
+            ),
+            summaryAsync.maybeWhen(
+              data: (summary) => _kpiCard(Icons.shopping_bag, 'Ração hoje', '${summary.feedingTodayKg.toStringAsFixed(1)} kg', Colors.orange, null, subtitle: 'Total alimentado'),
+              orElse: () => _kpiCard(Icons.shopping_bag, 'Ração hoje', '--', Colors.orange, null, subtitle: 'Total alimentado'),
+            ),
+            _kpiCard(Icons.show_chart, 'Crescimento', 'Cálculo real', Colors.purple, 0.6, subtitle: 'Peso médio'),
+            _kpiCard(Icons.warning, 'Mortalidade', '${tanks.fold<int>(0, (sum, t) => sum + t.mortalityCount)} peixes', Colors.red, null, subtitle: 'Mortalidade total'),
           ],
         ),
       ),

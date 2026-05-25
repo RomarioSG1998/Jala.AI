@@ -6,6 +6,7 @@ import 'package:frontend_flutter/features/saas_admin/providers/saas_providers.da
 import 'package:frontend_flutter/features/saas_admin/data/saas_models.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import 'package:frontend_flutter/features/water_quality/providers/water_quality_provider.dart';
+import 'package:frontend_flutter/features/dashboard/providers/farm_summary_provider.dart';
 import 'package:intl/intl.dart';
 
 // ─── AppShell – Casca Permanente com Header e Bottom Nav ────────────────────
@@ -23,6 +24,11 @@ class AppShell extends ConsumerWidget {
     final authState = ref.watch(authNotifierProvider);
     final role = authState.accountType ?? '';
     final currentIndex = navigationShell.currentIndex;
+    final summaryAsync = ref.watch(farmSummaryProvider);
+    final pendingTasks = summaryAsync.maybeWhen(
+      data: (s) => s.pendingMaintenanceTasks,
+      orElse: () => 0,
+    );
 
     // Título dinâmico por aba
     const tabTitles = ['Início', 'Tanques', 'Qualidade da Água', 'Menu'];
@@ -71,16 +77,17 @@ class AppShell extends ConsumerWidget {
             children: [
               IconButton(
                   icon: const Icon(Icons.notifications_none, color: Colors.white), onPressed: () {}),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                  child: const Text('3',
-                      style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-                ),
-              )
+              if (pendingTasks > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                    child: Text('$pendingTasks',
+                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                  ),
+                )
             ],
           ),
         ],

@@ -79,18 +79,38 @@ class AquaSertaoApp extends ConsumerWidget {
                   path: '/more',
                   builder: (context, state) => const MoreMenuBody(),
                 ),
+                GoRoute(
+                  path: '/saas-dashboard',
+                  builder: (context, state) => const SaasDashboardScreen(),
+                ),
+                GoRoute(
+                  path: '/inventory',
+                  builder: (context, state) => const InventoryScreen(),
+                ),
+                GoRoute(
+                  path: '/harvests',
+                  builder: (context, state) => const HarvestsScreen(),
+                ),
+                GoRoute(
+                  path: '/maintenance',
+                  builder: (context, state) => const MaintenanceScreen(),
+                ),
+                GoRoute(
+                  path: '/tenants',
+                  builder: (context, state) => const DummyScreen(title: 'Manage Tenants'),
+                ),
+                GoRoute(
+                  path: '/suppliers',
+                  builder: (context, state) => const DummyScreen(title: 'B2B Suppliers'),
+                ),
+                GoRoute(
+                  path: '/finances',
+                  builder: (context, state) => const DummyScreen(title: 'Finances'),
+                ),
               ],
             ),
           ],
         ),
-        // ── Rotas fora da shell (abrem tela cheia) ─────────────────────────
-        GoRoute(path: '/saas-dashboard', builder: (context, state) => const SaasDashboardScreen()),
-        GoRoute(path: '/inventory', builder: (context, state) => const InventoryScreen()),
-        GoRoute(path: '/harvests', builder: (context, state) => const HarvestsScreen()),
-        GoRoute(path: '/maintenance', builder: (context, state) => const MaintenanceScreen()),
-        GoRoute(path: '/tenants', builder: (context, state) => const DummyScreen(title: 'Manage Tenants')),
-        GoRoute(path: '/suppliers', builder: (context, state) => const DummyScreen(title: 'B2B Suppliers')),
-        GoRoute(path: '/finances', builder: (context, state) => const DummyScreen(title: 'Finances')),
       ],
     );
 

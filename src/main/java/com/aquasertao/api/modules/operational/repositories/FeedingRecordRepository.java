@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
+import java.util.List;
+import java.time.LocalDateTime;
 
 @Repository
 public interface FeedingRecordRepository extends JpaRepository<FeedingRecord, UUID> {
@@ -20,4 +22,6 @@ public interface FeedingRecordRepository extends JpaRepository<FeedingRecord, UU
     java.util.Optional<FeedingRecord> findByIdAndFarmId(UUID id, UUID farmId);
 
     boolean existsByIdAndFarmId(UUID id, UUID farmId);
+
+    List<FeedingRecord> findByFarmIdAndFeedingTimeBetween(UUID farmId, LocalDateTime start, LocalDateTime end);
 }

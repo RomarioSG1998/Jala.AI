@@ -17,4 +17,6 @@ public interface MaintenanceRepository extends JpaRepository<Maintenance, UUID> 
     java.util.Optional<Maintenance> findByIdAndFarmId(UUID id, UUID farmId);
 
     boolean existsByIdAndFarmId(UUID id, UUID farmId);
+
+    long countByFarmIdAndStatus(UUID farmId, String status);
 }

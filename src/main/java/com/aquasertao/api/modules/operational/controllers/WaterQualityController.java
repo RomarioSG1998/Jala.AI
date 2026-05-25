@@ -31,12 +31,21 @@ public class WaterQualityController {
         Page<WaterQualityResponseDTO> responsePage = waterQualityService.getWaterQualityByFarmId(farmId, pageable);
         return ResponseEntity.ok(responsePage);
     }
+
     @GetMapping("/{id}")
     public ResponseEntity<WaterQualityResponseDTO> getWaterQualityById(
             @PathVariable UUID id,
             @RequestParam UUID farmId
     ) {
         return ResponseEntity.ok(waterQualityService.getById(id, farmId));
+    }
+
+    @GetMapping("/tank/{tankId}/latest")
+    public ResponseEntity<WaterQualityResponseDTO> getLatestWaterQualityByTankId(
+            @PathVariable UUID tankId,
+            @RequestParam UUID farmId
+    ) {
+        return ResponseEntity.ok(waterQualityService.getLatestByTankId(tankId, farmId));
     }
 
     @PutMapping("/{id}")

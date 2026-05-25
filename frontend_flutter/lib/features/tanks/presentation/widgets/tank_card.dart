@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
+import 'package:frontend_flutter/features/water_quality/providers/water_quality_by_tank_provider.dart';
 
-class TankCard extends StatelessWidget {
-  final dynamic tank;
+class TankCard extends ConsumerWidget {
+  final Tank tank;
   final bool isActive;
   final VoidCallback onTap;
 
@@ -12,22 +15,53 @@ class TankCard extends StatelessWidget {
     required this.onTap,
   });
 
+  String _formatDate(String dateStr) {
+    try {
+      final parts = dateStr.split('-');
+      if (parts.length == 3) {
+        // e.g. 2026-05-25 -> 25/05/2026
+        return '${parts[2].split('T')[0]}/${parts[1]}/${parts[0]}';
+      }
+    } catch (_) {}
+    return dateStr;
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Cores baseadas no estado
     final textColor = isActive ? Colors.black87 : Colors.grey.shade500;
     final subTextColor = isActive ? Colors.grey.shade600 : Colors.grey.shade400;
     final iconColor = isActive ? Colors.grey.shade600 : Colors.grey.shade400;
     
-    // Mocks para dados faltantes
-    final stock = isActive ? '${tank.fishCapacity}' : '--';
-    final avgWeight = isActive ? '450 g' : '--';
-    final biomass = isActive ? '${(tank.fishCapacity * 0.45).toInt()} kg' : '--';
-    final growth = isActive ? 0.65 : 0.0;
-    final mortality = isActive ? 0.012 : 0.0;
-    final temp = isActive ? '26.4 °C' : '--';
-    final ph = isActive ? 'pH 7.2' : '--';
-    final deaths = isActive ? '30 peixes' : '--';
+    // Real values mapped from database
+    final currentStock = tank.fishCapacity - tank.mortalityCount;
+    final stock = isActive ? '$currentStock' : '--';
+    final avgWeight = isActive ? '${tank.averageWeightG} g' : '--';
+    
+    // Calculate biomass: (currentStock * avgWeightG) / 1000
+    final calculatedBiomass = (currentStock * tank.averageWeightG) / 1000;
+    final biomass = isActive ? '${calculatedBiomass.toInt()} kg' : '--';
+    
+    // Growth target: 1kg (1000g) = 100%
+    final growth = isActive ? (tank.averageWeightG / 1000.0).clamp(0.0, 1.0) : 0.0;
+    
+    // Mortality rate: deaths / capacity
+    final mortality = isActive && tank.fishCapacity > 0
+        ? (tank.mortalityCount / tank.fishCapacity).clamp(0.0, 1.0)
+        : 0.0;
+    
+    final deaths = isActive ? '${tank.mortalityCount} peixes' : '--';
+
+    // Watch latest water quality reading for this tank
+    final wqAsync = ref.watch(waterQualityByTankProvider(tank.id));
+    final temp = wqAsync.maybeWhen(
+      data: (wq) => wq != null ? '${wq.temperature.toStringAsFixed(1)} °C' : '--',
+      orElse: () => '--',
+    );
+    final ph = wqAsync.maybeWhen(
+      data: (wq) => wq != null ? 'pH ${wq.ph.toStringAsFixed(1)}' : '--',
+      orElse: () => '--',
+    );
 
     return GestureDetector(
       onTap: onTap,
@@ -56,7 +90,7 @@ class TankCard extends StatelessWidget {
                     bottomLeft: Radius.circular(16),
                   ),
                   child: Stack(
-                    children: [
+                     children: [
                       Container(
                         width: 100,
                         height: 140,
@@ -162,12 +196,12 @@ class TankCard extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Icon(Icons.warning_amber_rounded, size: 14, color: isActive ? Colors.red : iconColor),
+                          Icon(Icons.warning_amber_rounded, size: 14, color: isActive && tank.mortalityCount > 0 ? Colors.red : iconColor),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               deaths, 
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isActive ? Colors.red : textColor),
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isActive && tank.mortalityCount > 0 ? Colors.red : textColor),
                               textAlign: TextAlign.right,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -195,7 +229,9 @@ class TankCard extends StatelessWidget {
                 border: Border(top: BorderSide(color: Colors.grey.shade200)),
               ),
               child: Text(
-                isActive ? 'Próxima despesca: 20/06/2026' : 'Sem previsão de despesca',
+                isActive && tank.nextHarvestDate != null
+                    ? 'Próxima despesca: ${_formatDate(tank.nextHarvestDate!)}'
+                    : 'Sem previsão de despesca',
                 textAlign: TextAlign.right,
                 style: TextStyle(fontSize: 11, color: subTextColor, fontWeight: FontWeight.w500),
               ),

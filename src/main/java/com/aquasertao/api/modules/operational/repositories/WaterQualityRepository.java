@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
+import java.util.Optional;
 
 @Repository
 public interface WaterQualityRepository extends JpaRepository<WaterQuality, UUID> {
@@ -14,7 +15,10 @@ public interface WaterQualityRepository extends JpaRepository<WaterQuality, UUID
     // Strict Tenant Isolation + Pagination
     Page<WaterQuality> findByFarmId(UUID farmId, Pageable pageable);
 
-    java.util.Optional<WaterQuality> findByIdAndFarmId(UUID id, UUID farmId);
+    Optional<WaterQuality> findByIdAndFarmId(UUID id, UUID farmId);
 
     boolean existsByIdAndFarmId(UUID id, UUID farmId);
+
+    // Get the latest reading for a tank to show in real-time UI
+    Optional<WaterQuality> findTopByTankIdAndFarmIdOrderByMeasurementTimeDesc(UUID tankId, UUID farmId);
 }
