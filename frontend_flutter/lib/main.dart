@@ -194,7 +194,7 @@ class MoreMenuBody extends ConsumerWidget {
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
         subtitle: Text(subtitle, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
         trailing: route != null ? const Icon(Icons.chevron_right, color: Colors.black26) : null,
-        onTap: onTap ?? (route != null ? () => context.push(route) : null),
+        onTap: onTap ?? (route != null ? () => context.go(route) : null),
       ),
     );
   }

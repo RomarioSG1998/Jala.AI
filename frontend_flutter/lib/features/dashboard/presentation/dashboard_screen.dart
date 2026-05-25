@@ -629,10 +629,10 @@ class _AppDrawer extends ConsumerWidget {
                 if (role == 'SAAS_ADMIN') ...[
                   _section('Admin'),
                   _tile(context, Icons.business, 'Tenants', Colors.indigo, () {
-                    Navigator.pop(context); context.push('/tenants');
+                    Navigator.pop(context); context.go('/tenants');
                   }),
                   _tile(context, Icons.local_shipping, 'Fornecedores', Colors.brown, () {
-                    Navigator.pop(context); context.push('/suppliers');
+                    Navigator.pop(context); context.go('/suppliers');
                   }),
                 ],
 
@@ -645,20 +645,20 @@ class _AppDrawer extends ConsumerWidget {
                     Navigator.pop(context); context.go('/water-quality');
                   }),
                   _tile(context, Icons.inventory, 'Estoque', Colors.orange, () {
-                    Navigator.pop(context); context.push('/inventory');
+                    Navigator.pop(context); context.go('/inventory');
                   }),
                   _tile(context, Icons.agriculture, 'Colheitas', Colors.green, () {
-                    Navigator.pop(context); context.push('/harvests');
+                    Navigator.pop(context); context.go('/harvests');
                   }),
                 ],
 
                 if (role == 'FARM_OWNER') ...[
                   _section('Gestão'),
                   _tile(context, Icons.build, 'Manutenção', Colors.grey.shade700, () {
-                    Navigator.pop(context); context.push('/maintenance');
+                    Navigator.pop(context); context.go('/maintenance');
                   }),
                   _tile(context, Icons.attach_money, 'Finanças', Colors.green.shade700, () {
-                    Navigator.pop(context); context.push('/finances');
+                    Navigator.pop(context); context.go('/finances');
                   }),
                 ],
               ],
