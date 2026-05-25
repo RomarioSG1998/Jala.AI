@@ -7,6 +7,9 @@ import 'package:frontend_flutter/features/dashboard/presentation/dashboard_scree
 
 import 'package:frontend_flutter/features/tanks/presentation/tanks_screen.dart';
 import 'package:frontend_flutter/features/water_quality/presentation/water_quality_screen.dart';
+import 'package:frontend_flutter/features/inventory/presentation/inventory_screen.dart';
+import 'package:frontend_flutter/features/harvests/presentation/harvests_screen.dart';
+import 'package:frontend_flutter/features/maintenance/presentation/maintenance_screen.dart';
 
 void main() {
   runApp(
@@ -58,6 +61,15 @@ class AquaSertaoApp extends ConsumerWidget {
           path: '/water-quality',
           builder: (context, state) => const WaterQualityScreen(),
         ),
+        // Dummy Routes for RBAC Modules
+        GoRoute(path: '/saas-dashboard', builder: (context, state) => const DummyScreen(title: 'SaaS Dashboard')),
+        GoRoute(path: '/tenants', builder: (context, state) => const DummyScreen(title: 'Manage Tenants')),
+        GoRoute(path: '/suppliers', builder: (context, state) => const DummyScreen(title: 'B2B Suppliers')),
+        GoRoute(path: '/production-dashboard', builder: (context, state) => const DummyScreen(title: 'Production Dashboard')),
+        GoRoute(path: '/finances', builder: (context, state) => const DummyScreen(title: 'Finances')),
+        GoRoute(path: '/maintenance', builder: (context, state) => const MaintenanceScreen()),
+        GoRoute(path: '/inventory', builder: (context, state) => const InventoryScreen()),
+        GoRoute(path: '/harvests', builder: (context, state) => const HarvestsScreen()),
       ],
     );
 
@@ -68,6 +80,21 @@ class AquaSertaoApp extends ConsumerWidget {
         useMaterial3: true,
       ),
       routerConfig: router,
+    );
+  }
+}
+
+class DummyScreen extends StatelessWidget {
+  final String title;
+  const DummyScreen({super.key, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(
+        child: Text('$title is coming soon!', style: const TextStyle(fontSize: 24)),
+      ),
     );
   }
 }

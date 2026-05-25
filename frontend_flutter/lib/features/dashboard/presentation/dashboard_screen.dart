@@ -81,41 +81,84 @@ class DashboardScreen extends ConsumerWidget {
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
               children: [
-                _buildModuleCard(
-                  context: context,
-                  title: 'Tanks',
-                  icon: Icons.water,
-                  color: Colors.cyan,
-                  route: '/tanks',
-                ),
-                _buildModuleCard(
-                  context: context,
-                  title: 'Water Quality',
-                  icon: Icons.science,
-                  color: Colors.teal,
-                  route: '/water-quality', // Future
-                ),
-                _buildModuleCard(
-                  context: context,
-                  title: 'Inventory',
-                  icon: Icons.inventory,
-                  color: Colors.orange,
-                  route: '/inventory', // Future
-                ),
-                _buildModuleCard(
-                  context: context,
-                  title: 'Harvests',
-                  icon: Icons.agriculture,
-                  color: Colors.green,
-                  route: '/harvests', // Future
-                ),
-                _buildModuleCard(
-                  context: context,
-                  title: 'Maintenance',
-                  icon: Icons.build,
-                  color: Colors.grey.shade700,
-                  route: '/maintenance', // Future
-                ),
+                if (authState.accountType == 'SAAS_ADMIN') ...[
+                  _buildModuleCard(
+                    context: context,
+                    title: 'SaaS Dashboard',
+                    icon: Icons.analytics,
+                    color: Colors.deepPurple,
+                    route: '/saas-dashboard',
+                  ),
+                  _buildModuleCard(
+                    context: context,
+                    title: 'Tenants',
+                    icon: Icons.business,
+                    color: Colors.indigo,
+                    route: '/tenants',
+                  ),
+                  _buildModuleCard(
+                    context: context,
+                    title: 'Suppliers',
+                    icon: Icons.local_shipping,
+                    color: Colors.brown,
+                    route: '/suppliers',
+                  ),
+                ],
+
+                if (authState.accountType == 'FARM_OWNER') ...[
+                  _buildModuleCard(
+                    context: context,
+                    title: 'Production Dashboard',
+                    icon: Icons.dashboard,
+                    color: Colors.deepOrange,
+                    route: '/production-dashboard',
+                  ),
+                  _buildModuleCard(
+                    context: context,
+                    title: 'Finances',
+                    icon: Icons.attach_money,
+                    color: Colors.green.shade700,
+                    route: '/finances',
+                  ),
+                  _buildModuleCard(
+                    context: context,
+                    title: 'Maintenance',
+                    icon: Icons.build,
+                    color: Colors.grey.shade700,
+                    route: '/maintenance',
+                  ),
+                ],
+
+                if (authState.accountType == 'FARM_OWNER' || authState.accountType == 'CLIENT') ...[
+                  _buildModuleCard(
+                    context: context,
+                    title: 'Tanks',
+                    icon: Icons.water,
+                    color: Colors.cyan,
+                    route: '/tanks',
+                  ),
+                  _buildModuleCard(
+                    context: context,
+                    title: 'Water Quality',
+                    icon: Icons.science,
+                    color: Colors.teal,
+                    route: '/water-quality',
+                  ),
+                  _buildModuleCard(
+                    context: context,
+                    title: 'Inventory',
+                    icon: Icons.inventory,
+                    color: Colors.orange,
+                    route: '/inventory',
+                  ),
+                  _buildModuleCard(
+                    context: context,
+                    title: 'Harvests',
+                    icon: Icons.agriculture,
+                    color: Colors.green,
+                    route: '/harvests',
+                  ),
+                ],
               ],
             ),
           ),

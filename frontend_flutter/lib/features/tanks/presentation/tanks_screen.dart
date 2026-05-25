@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
+import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 
 class TanksScreen extends ConsumerWidget {
   const TanksScreen({super.key});
@@ -24,6 +25,8 @@ class TanksScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tanksAsyncValue = ref.watch(tanksProvider);
+    final authState = ref.watch(authNotifierProvider);
+    final isOwner = authState.accountType == 'FARM_OWNER';
 
     return Scaffold(
       appBar: AppBar(
@@ -31,11 +34,11 @@ class TanksScreen extends ConsumerWidget {
         backgroundColor: Colors.cyan.shade700,
         foregroundColor: Colors.white,
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: isOwner ? FloatingActionButton(
         onPressed: () => _showAddTankModal(context, ref),
         backgroundColor: Colors.cyan.shade700,
         child: const Icon(Icons.add, color: Colors.white),
-      ),
+      ) : null,
       body: tanksAsyncValue.when(
         data: (tanks) {
           if (tanks.isEmpty) {
@@ -50,7 +53,7 @@ class TanksScreen extends ConsumerWidget {
                 final tank = tanks[index];
                 return Dismissible(
                   key: Key(tank.id),
-                  direction: DismissDirection.endToStart,
+                  direction: isOwner ? DismissDirection.endToStart : DismissDirection.none,
                   background: Container(
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 20),

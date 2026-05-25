@@ -8,13 +8,38 @@ class WaterQualityRepository {
 
   WaterQualityRepository(this._dio);
 
+  // Hardcoded test farm ID for now.
+  final String _farmId = '55555555-5555-5555-5555-555555555555';
+
   Future<List<WaterQuality>> getRecords() async {
     try {
-      final response = await _dio.get('/api/water-quality');
-      final List<dynamic> data = response.data;
-      return data.map((json) => WaterQuality.fromJson(json)).toList();
+      final response = await _dio.get('/api/water-quality/farm/$_farmId');
+      final data = response.data;
+      if (data != null && data['content'] != null) {
+        final List<dynamic> content = data['content'];
+        return content.map((json) => WaterQuality.fromJson(json)).toList();
+      }
+      return [];
     } catch (e) {
       throw Exception('Failed to load water quality records: $e');
+    }
+  }
+
+  Future<WaterQuality> createRecord(Map<String, dynamic> logData) async {
+    try {
+      logData['farmId'] = _farmId;
+      final response = await _dio.post('/api/water-quality', data: logData);
+      return WaterQuality.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Failed to create water quality record: $e');
+    }
+  }
+
+  Future<void> deleteRecord(String logId) async {
+    try {
+      await _dio.delete('/api/water-quality/$logId?farmId=$_farmId');
+    } catch (e) {
+      throw Exception('Failed to delete water quality record: $e');
     }
   }
 }

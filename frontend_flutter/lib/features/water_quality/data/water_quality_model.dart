@@ -1,28 +1,28 @@
 class WaterQuality {
   final String id;
   final String tankId;
-  final double phLevel;
+  final double ph;
   final double temperature;
   final double dissolvedOxygen;
-  final String recordedAt;
+  final String measurementTime;
 
   WaterQuality({
     required this.id,
     required this.tankId,
-    required this.phLevel,
+    required this.ph,
     required this.temperature,
     required this.dissolvedOxygen,
-    required this.recordedAt,
+    required this.measurementTime,
   });
 
   factory WaterQuality.fromJson(Map<String, dynamic> json) {
     return WaterQuality(
       id: json['id'],
       tankId: json['tankId'] ?? json['tank']?['id'] ?? '',
-      phLevel: (json['phLevel'] as num).toDouble(),
+      ph: (json['ph'] as num).toDouble(),
       temperature: (json['temperature'] as num).toDouble(),
       dissolvedOxygen: (json['dissolvedOxygen'] as num).toDouble(),
-      recordedAt: json['recordedAt'],
+      measurementTime: json['measurementTime'],
     );
   }
 
@@ -30,10 +30,10 @@ class WaterQuality {
     return {
       'id': id,
       'tankId': tankId,
-      'phLevel': phLevel,
+      'ph': ph,
       'temperature': temperature,
       'dissolvedOxygen': dissolvedOxygen,
-      'recordedAt': recordedAt,
+      'measurementTime': measurementTime,
     };
   }
 }

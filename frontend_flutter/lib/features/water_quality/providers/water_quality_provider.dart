@@ -24,6 +24,35 @@ class WaterQualityNotifier extends AsyncNotifier<List<WaterQuality>> {
       state = AsyncValue.error(e, stack);
     }
   }
+
+  Future<bool> createRecord(String tankId, double ph, double temperature, double dissolvedOxygen) async {
+    try {
+      final newRecord = await _repository.createRecord({
+        'tankId': tankId,
+        'ph': ph,
+        'temperature': temperature,
+        'dissolvedOxygen': dissolvedOxygen,
+      });
+      if (state.hasValue) {
+        state = AsyncValue.data([...state.value!, newRecord]);
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteRecord(String id) async {
+    try {
+      await _repository.deleteRecord(id);
+      if (state.hasValue) {
+        state = AsyncValue.data(state.value!.where((r) => r.id != id).toList());
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }
 
 final waterQualityProvider = AsyncNotifierProvider<WaterQualityNotifier, List<WaterQuality>>(() {
