@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/auth/presentation/login_screen.dart';
 import 'package:frontend_flutter/features/dashboard/presentation/dashboard_screen.dart';
-
 import 'package:frontend_flutter/features/tanks/presentation/tanks_screen.dart';
 import 'package:frontend_flutter/features/water_quality/presentation/water_quality_screen.dart';
 import 'package:frontend_flutter/features/inventory/presentation/inventory_screen.dart';
@@ -52,7 +51,7 @@ class AquaSertaoApp extends ConsumerWidget {
         ),
         GoRoute(
           path: '/dashboard',
-          builder: (context, state) => const DashboardScreen(),
+          builder: (context, state) => const AppShell(),
         ),
         GoRoute(
           path: '/tanks',
@@ -62,11 +61,9 @@ class AquaSertaoApp extends ConsumerWidget {
           path: '/water-quality',
           builder: (context, state) => const WaterQualityScreen(),
         ),
-        // Dummy Routes for RBAC Modules
         GoRoute(path: '/saas-dashboard', builder: (context, state) => const SaasDashboardScreen()),
         GoRoute(path: '/tenants', builder: (context, state) => const DummyScreen(title: 'Manage Tenants')),
         GoRoute(path: '/suppliers', builder: (context, state) => const DummyScreen(title: 'B2B Suppliers')),
-        GoRoute(path: '/production-dashboard', builder: (context, state) => const DummyScreen(title: 'Production Dashboard')),
         GoRoute(path: '/finances', builder: (context, state) => const DummyScreen(title: 'Finances')),
         GoRoute(path: '/maintenance', builder: (context, state) => const MaintenanceScreen()),
         GoRoute(path: '/inventory', builder: (context, state) => const InventoryScreen()),

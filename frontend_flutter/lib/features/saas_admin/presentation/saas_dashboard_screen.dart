@@ -5,7 +5,8 @@ import 'package:frontend_flutter/features/saas_admin/providers/saas_providers.da
 import 'package:intl/intl.dart';
 
 class SaasDashboardScreen extends ConsumerWidget {
-  const SaasDashboardScreen({super.key});
+  final bool embedded;
+  const SaasDashboardScreen({super.key, this.embedded = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,13 +20,15 @@ class SaasDashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D1117),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF161B22),
-        title: const Text('SaaS Dashboard',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
-      ),
+      appBar: embedded
+          ? null
+          : AppBar(
+              backgroundColor: const Color(0xFF161B22),
+              title: const Text('SaaS Dashboard',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              iconTheme: const IconThemeData(color: Colors.white),
+              elevation: 0,
+            ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(plansProvider);
