@@ -17,49 +17,101 @@ class AppShell extends ConsumerWidget {
     final role = authState.accountType ?? '';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1628),
-      // ── AppBar (único – hambúrguer é adicionado automaticamente) ──
+      backgroundColor: const Color(0xFFF5F7FA), // Fundo Gelo
+      // ── AppBar ──
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A1628),
+        backgroundColor: const Color(0xFF003366), // Azul Escuro
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            const Text('AquaSertão',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18)),
-            Text(authState.email ?? '',
-                style: const TextStyle(color: Colors.white54, fontSize: 11)),
+            const CircleAvatar(
+              backgroundColor: Colors.white12,
+              radius: 14,
+              child: Icon(Icons.set_meal, color: Color(0xFF13A538), size: 16),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RichText(
+                  text: const TextSpan(
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    children: [
+                      TextSpan(text: 'Aqua', style: TextStyle(color: Colors.white)),
+                      TextSpan(text: 'Sertão', style: TextStyle(color: Color(0xFF13A538))),
+                    ],
+                  ),
+                ),
+                const Text('PISCICULTURA INTELIGENTE', style: TextStyle(color: Colors.white54, fontSize: 8, letterSpacing: 1.1)),
+              ],
+            ),
           ],
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue.withOpacity(0.4)),
-              ),
-              child: Text(role,
-                  style: const TextStyle(
-                      color: Colors.blue,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold)),
-            ),
+          IconButton(icon: const Icon(Icons.search, color: Colors.white), onPressed: () {}),
+          Stack(
+            children: [
+              IconButton(icon: const Icon(Icons.notifications_none, color: Colors.white), onPressed: () {}),
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                ),
+              )
+            ],
           ),
         ],
       ),
-      // ── Drawer ────────────────────────────────────────────────────
+      // ── Drawer ──
       drawer: _AppDrawer(role: role, ref: ref),
-      // ── Body: conteúdo sem Scaffold próprio ───────────────────────
+      // ── Barra de Navegação Inferior (Mobile) ──
+      bottomNavigationBar: _buildBottomNav(context),
+      // ── Body ──
       body: role == 'SAAS_ADMIN'
           ? const _SaasAdminBody()
           : _FarmBody(role: role),
+    );
+  }
+
+  Widget _buildBottomNav(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.topCenter,
+      children: [
+        BottomNavigationBar(
+          backgroundColor: Colors.white,
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: const Color(0xFF13A538),
+          unselectedItemColor: Colors.grey.shade400,
+          currentIndex: 0, // Início selecionado
+          selectedFontSize: 10,
+          unselectedFontSize: 10,
+          onTap: (index) {
+            if (index == 1) context.push('/tanks');
+            // outros menus...
+          },
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Início'),
+            BottomNavigationBarItem(icon: Icon(Icons.water), label: 'Tanques'),
+            BottomNavigationBarItem(icon: SizedBox(height: 24), label: ''), // Espaço para FAB
+            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Relatórios'),
+            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Menu'),
+          ],
+        ),
+        Positioned(
+          top: -20,
+          child: FloatingActionButton(
+            backgroundColor: const Color(0xFF003366),
+            onPressed: () {}, // Mostrar modal global?
+            elevation: 4,
+            child: const Icon(Icons.add, color: Colors.white, size: 28),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -251,11 +303,14 @@ class _FarmBody extends ConsumerWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF1565C0), Color(0xFF0288D1)],
+                colors: [Color(0xFF003366), Color(0xFF13A538)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+              ],
             ),
             child: Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -276,11 +331,11 @@ class _FarmBody extends ConsumerWidget {
 
           // KPIs
           const Text('VISÃO GERAL',
-              style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 1.2)),
+              style: TextStyle(color: Colors.black54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           tanksAsync.when(
             data: (tanks) => Row(children: [
-              Expanded(child: _kpi('Tanques', '${tanks.length}', Icons.water, Colors.cyan)),
+              Expanded(child: _kpi('Tanques', '${tanks.length}', Icons.water, Colors.blue)),
               const SizedBox(width: 12),
               wqAsync.when(
                 data: (recs) => Expanded(child: _kpi('Leituras pH', '${recs.length}', Icons.science, Colors.teal)),
@@ -296,10 +351,10 @@ class _FarmBody extends ConsumerWidget {
 
           // Tanks preview
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('Tanques', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text('Tanques', style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
             TextButton(
               onPressed: () => context.push('/tanks'),
-              child: const Text('Ver todos →', style: TextStyle(color: Colors.cyan)),
+              child: const Text('Ver todos →', style: TextStyle(color: Color(0xFF13A538))),
             ),
           ]),
           const SizedBox(height: 8),
@@ -313,22 +368,24 @@ class _FarmBody extends ConsumerWidget {
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF161B22),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.cyan.withOpacity(0.2)),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+                      ],
                     ),
                     child: Row(children: [
                       CircleAvatar(
-                        backgroundColor: Colors.cyan.withOpacity(0.15),
+                        backgroundColor: Colors.blue.shade50,
                         radius: 20,
-                        child: const Icon(Icons.water, color: Colors.cyan, size: 18),
+                        child: const Icon(Icons.water, color: Colors.blue, size: 18),
                       ),
                       const SizedBox(width: 14),
                       Expanded(child: Text(tank.name,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
+                          style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600))),
                       Text('${tank.fishCapacity} peixes',
-                          style: const TextStyle(color: Colors.white54, fontSize: 12)),
-                      const Icon(Icons.chevron_right, color: Colors.white38, size: 18),
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                      const Icon(Icons.chevron_right, color: Colors.black26, size: 18),
                     ]),
                   ),
                 )).toList(),
@@ -343,10 +400,10 @@ class _FarmBody extends ConsumerWidget {
           // Latest water quality
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Text('Última Leitura de Água',
-                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
             TextButton(
               onPressed: () => context.push('/water-quality'),
-              child: const Text('Ver todos →', style: TextStyle(color: Colors.teal)),
+              child: const Text('Ver todos →', style: TextStyle(color: Color(0xFF13A538))),
             ),
           ]),
           const SizedBox(height: 8),
@@ -359,9 +416,11 @@ class _FarmBody extends ConsumerWidget {
               return Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF161B22),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.teal.withOpacity(0.3)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+                  ],
                 ),
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
                   _metric('pH', latest.ph.toStringAsFixed(1), phColor),
@@ -382,15 +441,17 @@ class _FarmBody extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Icon(icon, color: color, size: 22),
         const SizedBox(height: 8),
         Text(value, style: TextStyle(color: color, fontSize: 26, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+        Text(label, style: const TextStyle(color: Colors.black54, fontSize: 12)),
       ]),
     );
   }
@@ -399,18 +460,22 @@ class _FarmBody extends ConsumerWidget {
     return Column(children: [
       Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
       const SizedBox(height: 2),
-      Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+      Text(label, style: const TextStyle(color: Colors.black54, fontSize: 11)),
     ]);
   }
 
   Widget _emptyHint(String text, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: const Color(0xFF161B22), borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
+      ),
       child: Row(children: [
-        Icon(icon, color: Colors.white24, size: 28),
+        Icon(icon, color: Colors.grey.shade300, size: 28),
         const SizedBox(width: 12),
-        Text(text, style: const TextStyle(color: Colors.white38, fontSize: 13)),
+        Text(text, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
       ]),
     );
   }
