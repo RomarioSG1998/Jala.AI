@@ -24,6 +24,10 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponseDTO register(RegisterRequestDTO request) {
+        if (repository.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email already registered.");
+        }
+
         var user = GlobalUser.builder()
                 .name(request.getName())
                 .email(request.getEmail())

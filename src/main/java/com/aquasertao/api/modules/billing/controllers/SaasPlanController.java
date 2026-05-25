@@ -1,6 +1,6 @@
 package com.aquasertao.api.modules.billing.controllers;
 
-import com.aquasertao.api.modules.billing.models.SaasPlan;
+import com.aquasertao.api.modules.billing.models.SaaSPlan;
 import com.aquasertao.api.modules.billing.services.SaasPlanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +22,8 @@ public class SaasPlanController {
     }
 
     @GetMapping
-    public ResponseEntity<List<SaasPlan>> getAllPlans() {
-        List<SaasPlan> plans = service.findAllPlans();
+    public ResponseEntity<List<SaaSPlan>> getAllPlans() {
+        List<SaaSPlan> plans = service.findAllPlans();
         return ResponseEntity.ok(plans);
     }
 }

@@ -1,6 +1,6 @@
 package com.aquasertao.api.modules.billing.services;
 
-import com.aquasertao.api.modules.billing.models.SaasPlan;
+import com.aquasertao.api.modules.billing.models.SaaSPlan;
 import com.aquasertao.api.modules.billing.repositories.SaasPlanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,7 +17,7 @@ public class SaasPlanService {
         this.repository = repository;
     }
 
-    public List<SaasPlan> findAllPlans() {
+    public List<SaaSPlan> findAllPlans() {
         return repository.findAll();
     }
 }
