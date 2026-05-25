@@ -2,7 +2,7 @@ spring:
   application:
     name: aquasertao-api
   datasource:
-    url: jdbc:postgresql://localhost:5432/aquasertao_db
+    url: jdbc:postgresql://localhost:5439/aquasertao_db
     username: aquasertao_user
     password: aquasertao_password
     driver-class-name: org.postgresql.Driver
@@ -19,4 +19,4 @@ spring:
     baseline-on-migrate: true
 
 server:
-  port: 8080
+  port: 8081
