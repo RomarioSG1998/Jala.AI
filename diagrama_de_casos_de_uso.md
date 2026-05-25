@@ -1,67 +1,75 @@
 # Diagrama de Casos de Uso
 
-Abaixo está a representação dos principais casos de uso do sistema AquaGestor, com nomenclaturas claras separando o dono do software e o inquilino.
+Abaixo está a representação dos principais casos de uso do sistema AquaGestor, refletindo as restrições de permissões entre o Dono da Fazenda e o Funcionário, além dos módulos globais.
 
 ```mermaid
 flowchart LR
     %% Atores
     AdminSaaS(("Admin do SaaS\n(Dono do Software)"))
     DonoFazenda(("Dono da Fazenda\n(Admin do Tenant)"))
-    Funcionario(("Funcionário\n(Membro da Fazenda)"))
-    Sistema(("Sistema AquaGestor\n(Automações)"))
+    Funcionario(("Funcionário\n(Operação de Campo)"))
+    Sistema(("Sistema AquaGestor\n(Notificações/IoT)"))
 
     %% Backoffice SaaS (Visão do dono do negócio)
     subgraph BackofficeSaaS ["Backoffice SaaS (Administração Global)"]
         direction TB
-        UC_DashSaaS([Dashboard de Métricas SaaS - MRR/Usuários])
+        UC_DashSaaS([Dashboard SaaS - MRR])
         UC_GerenciarClientes([Gerenciar Contas e Tenants])
-        UC_GerenciarPlanos([Configurar Planos e Preços])
-        UC_SuporteGlobal([Atender Chamados / Suporte Técnico])
+        UC_FornecedoresGlobais([Homologar Fornecedores Nacionais])
+    end
+
+    %% Módulo Nacional (Marketplace B2B)
+    subgraph MercadoNacional ["Mercado B2B Nacional"]
+        direction TB
+        UC_ConsultarFornecedor([Consultar Catálogo de Fornecedores])
     end
 
     %% App AquaGestor (Visão do Cliente/Produtor)
-    subgraph AppAquaGestor ["App AquaGestor (Tenant / Fazenda Isolada)"]
+    subgraph AppAquaGestor ["App AquaGestor Android (Tenant)"]
         direction TB
         
-        subgraph ModOperacional ["Módulo Operacional"]
+        subgraph ModOperacional ["Módulo Operacional (Campo)"]
             direction TB
             UC_GestaoTanques([Gerenciar Tanques])
             UC_RegistrarAlimentacao([Registrar Alimentação])
             UC_MedirAgua([Monitorar Qualidade da Água])
+            UC_Estoque([Lançamentos de Estoque])
+        end
+
+        subgraph ModAprovacao ["Workflows de Aprovação"]
+            direction TB
+            UC_AprovarSolicitacao([Aprovar Lançamentos Suspeitos])
+        end
+        
+        subgraph ModEstrategico ["Módulo Estratégico e Financeiro"]
+            direction TB
+            UC_Dashboard([Dashboard da Produção])
+            UC_Financas([Gestão Financeira e Pagamentos])
             UC_Manutencao([Gerenciar Manutenção e Tarefas])
         end
         
-        subgraph ModEstrategico ["Módulo Estratégico"]
+        subgraph ModGeral ["Módulo Geral"]
             direction TB
-            UC_Dashboard([Dashboard e Relatórios da Produção])
-            UC_Financas([Gestão Financeira da Fazenda])
-            UC_Exportar([Exportar Dados])
-        end
-        
-        subgraph ModAdministrativo ["Módulo Administrativo (Tenant)"]
-            direction TB
-            UC_Auth([Autenticação e Perfil Global])
-            UC_Fazenda([Gerenciar Dados da Fazenda])
-            UC_GerenciarEquipe([Gerenciar Vínculos e Permissões])
-            UC_GerenciarEstoque([Gerenciar Estoque])
-            UC_Assinatura([Gerenciar Pagamentos e Assinatura])
-            UC_ConfigAjuda([Configurações do Tenant])
+            UC_Notificacao([Receber Notificações Push])
         end
     end
 
     %% Conexões do Admin SaaS
     AdminSaaS --> BackofficeSaaS
+    BackofficeSaaS --> MercadoNacional
 
-    %% Conexões do Funcionário (Acesso Restrito)
-    Funcionario --> UC_Auth
+    %% Conexões do Funcionário (Restrito Operacional)
     Funcionario --> ModOperacional
+    Funcionario --> ModGeral
+    Funcionario -. "Cria Solicitações" .-> ModAprovacao
 
-    %% Conexões do Dono da Fazenda (Acesso Total ao seu Tenant)
+    %% Conexões do Dono da Fazenda (Acesso Total)
     DonoFazenda --> ModOperacional
     DonoFazenda --> ModEstrategico
-    DonoFazenda --> ModAdministrativo
+    DonoFazenda --> ModAprovacao
+    DonoFazenda --> MercadoNacional
+    DonoFazenda --> ModGeral
     
-    %% Alertas e Integrações do Sistema
-    Sistema -. "Cobrança automática / Suspensão" .-> UC_GerenciarClientes
-    Sistema -. "Gera alertas de qualidade da água" .-> DonoFazenda
+    %% Alertas e Integrações do Sistema (Sensores IoT)
+    Sistema -. "Push Alerts / Sensores IoT" .-> ModGeral
 ```
