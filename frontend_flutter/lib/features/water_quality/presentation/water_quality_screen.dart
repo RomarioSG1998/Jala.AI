@@ -31,14 +31,10 @@ class WaterQualityScreen extends ConsumerWidget {
     final isOwner = authState.accountType == 'FARM_OWNER';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Water Quality'),
-        backgroundColor: Colors.teal.shade700,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: const Color(0xFFF5F7FA),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddLogModal(context, ref),
-        backgroundColor: Colors.teal.shade700,
+        backgroundColor: const Color(0xFF13A538),
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: wqAsyncValue.when(
@@ -98,7 +94,8 @@ class WaterQualityScreen extends ConsumerWidget {
                   },
                   child: Card(
                     margin: const EdgeInsets.only(bottom: 16),
-                    elevation: 2,
+                    elevation: 0,
+                    color: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -310,7 +307,7 @@ class _AddWaterQualityFormState extends ConsumerState<AddWaterQualityForm> {
             ElevatedButton(
               onPressed: _isLoading ? null : _submit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.teal.shade700,
+                backgroundColor: const Color(0xFF13A538),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),

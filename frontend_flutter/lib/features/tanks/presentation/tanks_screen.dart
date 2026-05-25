@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/tanks/presentation/widgets/tank_card.dart';
@@ -39,8 +38,6 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA), // Fundo Gelo
-      // Barra de Navegação Inferior (Mobile)
-      bottomNavigationBar: _buildBottomNav(context),
       
       body: SafeArea(
         child: RefreshIndicator(
@@ -51,7 +48,6 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
               SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    _buildHeader(),
                     _buildSectionTitle(context, ref, isOwner),
                     tanksAsyncValue.when(
                       data: (tanks) => _buildMetricsPanel(tanks),
@@ -117,86 +113,6 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Color(0xFF003366), // Azul Escuro/Marinho
-      ),
-      child: Column(
-        children: [
-          // Linha do Logo
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.menu, color: Colors.white),
-                onPressed: () {
-                  // Ação do drawer se houver
-                  context.push('/dashboard'); // Volta ao home
-                },
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      backgroundColor: Colors.white12,
-                      radius: 16,
-                      child: Icon(Icons.set_meal, color: Color(0xFF13A538), size: 18),
-                    ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        RichText(
-                          text: const TextSpan(
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            children: [
-                              TextSpan(text: 'Aqua', style: TextStyle(color: Colors.white)),
-                              TextSpan(text: 'Sertão', style: TextStyle(color: Color(0xFF13A538))),
-                            ],
-                          ),
-                        ),
-                        const Text(
-                          'PISCICULTURA INTELIGENTE',
-                          style: TextStyle(color: Colors.white54, fontSize: 8, letterSpacing: 1.1),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.search, color: Colors.white),
-                onPressed: () {},
-              ),
-              Stack(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications_none, color: Colors.white),
-                    onPressed: () {},
-                  ),
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-                    ),
-                  )
-                ],
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -366,43 +282,6 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
     );
   }
 
-  Widget _buildBottomNav(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      alignment: Alignment.topCenter,
-      children: [
-        BottomNavigationBar(
-          backgroundColor: Colors.white,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: const Color(0xFF13A538),
-          unselectedItemColor: Colors.grey.shade400,
-          currentIndex: 1, // Tanques selecionado
-          selectedFontSize: 10,
-          unselectedFontSize: 10,
-          onTap: (index) {
-            if (index == 0) context.push('/dashboard');
-            // outros menus...
-          },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Início'),
-            BottomNavigationBarItem(icon: Icon(Icons.water), label: 'Tanques'),
-            BottomNavigationBarItem(icon: SizedBox(height: 24), label: ''), // Espaço para FAB
-            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Relatórios'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Menu'),
-          ],
-        ),
-        Positioned(
-          top: -20,
-          child: FloatingActionButton(
-            backgroundColor: const Color(0xFF003366),
-            onPressed: () => _showAddTankModal(context, ref),
-            elevation: 4,
-            child: const Icon(Icons.add, color: Colors.white, size: 28),
-          ),
-        ),
-      ],
-    );
-  }
 }
 
 // ─── Componente AddTankForm (MANTIDO INTACTO) ───

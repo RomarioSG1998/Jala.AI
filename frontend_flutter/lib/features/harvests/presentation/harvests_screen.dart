@@ -31,14 +31,10 @@ class HarvestsScreen extends ConsumerWidget {
     final isOwner = authState.accountType == 'FARM_OWNER';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Harvests'),
-        backgroundColor: Colors.green.shade700,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: const Color(0xFFF5F7FA),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showLogHarvestModal(context, ref),
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: const Color(0xFF13A538),
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: harvestsAsync.when(
@@ -107,7 +103,8 @@ class HarvestsScreen extends ConsumerWidget {
                   },
                   child: Card(
                     margin: const EdgeInsets.only(bottom: 12),
-                    elevation: 2,
+                    elevation: 0,
+                    color: Colors.white,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
                     child: ListTile(
@@ -358,7 +355,7 @@ class _LogHarvestFormState extends ConsumerState<LogHarvestForm> {
             ElevatedButton(
               onPressed: _isLoading ? null : _submit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade700,
+                backgroundColor: const Color(0xFF13A538),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
