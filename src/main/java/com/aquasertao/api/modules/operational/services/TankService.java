@@ -35,6 +35,31 @@ public class TankService {
         return tankPage.map(this::mapToDTO);
     }
 
+    public TankResponseDTO getById(UUID id, UUID farmId) {
+        Tank tank = tankRepository.findByIdAndFarmId(id, farmId)
+                .orElseThrow(() -> new IllegalArgumentException("Tank not found or access denied"));
+        return mapToDTO(tank);
+    }
+
+    public TankResponseDTO updateTank(UUID id, TankRequestDTO requestDTO) {
+        Tank existingTank = tankRepository.findByIdAndFarmId(id, requestDTO.getFarmId())
+                .orElseThrow(() -> new IllegalArgumentException("Tank not found or access denied"));
+
+        existingTank.setName(requestDTO.getName());
+        existingTank.setFishSpecies(requestDTO.getFishSpecies());
+        existingTank.setFishCapacity(requestDTO.getFishCapacity());
+
+        Tank updatedTank = tankRepository.save(existingTank);
+        return mapToDTO(updatedTank);
+    }
+
+    public void deleteTank(UUID id, UUID farmId) {
+        if (!tankRepository.existsByIdAndFarmId(id, farmId)) {
+            throw new IllegalArgumentException("Tank not found or access denied");
+        }
+        tankRepository.deleteById(id);
+    }
+
     private TankResponseDTO mapToDTO(Tank tank) {
         return TankResponseDTO.builder()
                 .id(tank.getId())

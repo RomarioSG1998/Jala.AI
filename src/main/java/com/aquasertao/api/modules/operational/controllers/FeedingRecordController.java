@@ -31,4 +31,28 @@ public class FeedingRecordController {
         Page<FeedingRecordResponseDTO> responsePage = feedingRecordService.getFeedingRecordsByFarmId(farmId, pageable);
         return ResponseEntity.ok(responsePage);
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<FeedingRecordResponseDTO> getFeedingRecordById(
+            @PathVariable UUID id,
+            @RequestParam UUID farmId
+    ) {
+        return ResponseEntity.ok(feedingRecordService.getById(id, farmId));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<FeedingRecordResponseDTO> updateFeedingRecord(
+            @PathVariable UUID id,
+            @RequestBody FeedingRecordRequestDTO requestDTO
+    ) {
+        return ResponseEntity.ok(feedingRecordService.updateFeedingRecord(id, requestDTO));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteFeedingRecord(
+            @PathVariable UUID id,
+            @RequestParam UUID farmId
+    ) {
+        feedingRecordService.deleteFeedingRecord(id, farmId);
+        return ResponseEntity.noContent().build();
+    }
 }

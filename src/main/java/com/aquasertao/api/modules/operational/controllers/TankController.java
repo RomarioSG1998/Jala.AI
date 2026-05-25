@@ -32,4 +32,28 @@ public class TankController {
         Page<TankResponseDTO> responsePage = tankService.getTanksByFarmId(farmId, pageable);
         return ResponseEntity.ok(responsePage);
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<TankResponseDTO> getTankById(
+            @PathVariable UUID id,
+            @RequestParam UUID farmId
+    ) {
+        return ResponseEntity.ok(tankService.getById(id, farmId));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<TankResponseDTO> updateTank(
+            @PathVariable UUID id,
+            @RequestBody TankRequestDTO requestDTO
+    ) {
+        return ResponseEntity.ok(tankService.updateTank(id, requestDTO));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTank(
+            @PathVariable UUID id,
+            @RequestParam UUID farmId
+    ) {
+        tankService.deleteTank(id, farmId);
+        return ResponseEntity.noContent().build();
+    }
 }

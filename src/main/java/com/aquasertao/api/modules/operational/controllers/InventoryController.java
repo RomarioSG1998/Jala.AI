@@ -32,4 +32,28 @@ public class InventoryController {
         Page<InventoryResponseDTO> responsePage = inventoryService.getInventoryByFarmId(farmId, pageable);
         return ResponseEntity.ok(responsePage);
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<InventoryResponseDTO> getInventoryItemById(
+            @PathVariable UUID id,
+            @RequestParam UUID farmId
+    ) {
+        return ResponseEntity.ok(inventoryService.getById(id, farmId));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<InventoryResponseDTO> updateInventoryItem(
+            @PathVariable UUID id,
+            @RequestBody InventoryRequestDTO requestDTO
+    ) {
+        return ResponseEntity.ok(inventoryService.updateInventoryItem(id, requestDTO));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteInventoryItem(
+            @PathVariable UUID id,
+            @RequestParam UUID farmId
+    ) {
+        inventoryService.deleteInventoryItem(id, farmId);
+        return ResponseEntity.noContent().build();
+    }
 }

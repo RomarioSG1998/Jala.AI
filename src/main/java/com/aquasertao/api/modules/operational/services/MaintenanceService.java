@@ -35,6 +35,32 @@ public class MaintenanceService {
         return maintenancePage.map(this::mapToDTO);
     }
 
+    public MaintenanceResponseDTO getById(UUID id, UUID farmId) {
+        Maintenance maintenance = maintenanceRepository.findByIdAndFarmId(id, farmId)
+                .orElseThrow(() -> new IllegalArgumentException("Maintenance record not found or access denied"));
+        return mapToDTO(maintenance);
+    }
+
+    public MaintenanceResponseDTO updateMaintenance(UUID id, MaintenanceRequestDTO requestDTO) {
+        Maintenance existingMaintenance = maintenanceRepository.findByIdAndFarmId(id, requestDTO.getFarmId())
+                .orElseThrow(() -> new IllegalArgumentException("Maintenance record not found or access denied"));
+
+        existingMaintenance.setTankId(requestDTO.getTankId());
+        existingMaintenance.setDescription(requestDTO.getDescription());
+        existingMaintenance.setStatus(requestDTO.getStatus());
+        existingMaintenance.setScheduledDate(requestDTO.getScheduledDate());
+
+        Maintenance updatedMaintenance = maintenanceRepository.save(existingMaintenance);
+        return mapToDTO(updatedMaintenance);
+    }
+
+    public void deleteMaintenance(UUID id, UUID farmId) {
+        if (!maintenanceRepository.existsByIdAndFarmId(id, farmId)) {
+            throw new IllegalArgumentException("Maintenance record not found or access denied");
+        }
+        maintenanceRepository.deleteById(id);
+    }
+
     private MaintenanceResponseDTO mapToDTO(Maintenance maintenance) {
         return MaintenanceResponseDTO.builder()
                 .id(maintenance.getId())

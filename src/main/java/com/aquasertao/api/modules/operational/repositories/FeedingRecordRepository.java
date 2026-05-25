@@ -16,4 +16,8 @@ public interface FeedingRecordRepository extends JpaRepository<FeedingRecord, UU
     
     // Optionally find by tank
     Page<FeedingRecord> findByTankId(UUID tankId, Pageable pageable);
+
+    java.util.Optional<FeedingRecord> findByIdAndFarmId(UUID id, UUID farmId);
+
+    boolean existsByIdAndFarmId(UUID id, UUID farmId);
 }

@@ -37,6 +37,32 @@ public class WaterQualityService {
         return waterQualityPage.map(this::mapToDTO);
     }
 
+    public WaterQualityResponseDTO getById(UUID id, UUID farmId) {
+        WaterQuality waterQuality = waterQualityRepository.findByIdAndFarmId(id, farmId)
+                .orElseThrow(() -> new IllegalArgumentException("Water quality record not found or access denied"));
+        return mapToDTO(waterQuality);
+    }
+
+    public WaterQualityResponseDTO updateWaterQuality(UUID id, WaterQualityRequestDTO requestDTO) {
+        WaterQuality existingRecord = waterQualityRepository.findByIdAndFarmId(id, requestDTO.getFarmId())
+                .orElseThrow(() -> new IllegalArgumentException("Water quality record not found or access denied"));
+
+        existingRecord.setTankId(requestDTO.getTankId());
+        existingRecord.setPh(requestDTO.getPh());
+        existingRecord.setTemperature(requestDTO.getTemperature());
+        existingRecord.setDissolvedOxygen(requestDTO.getDissolvedOxygen());
+
+        WaterQuality updatedRecord = waterQualityRepository.save(existingRecord);
+        return mapToDTO(updatedRecord);
+    }
+
+    public void deleteWaterQuality(UUID id, UUID farmId) {
+        if (!waterQualityRepository.existsByIdAndFarmId(id, farmId)) {
+            throw new IllegalArgumentException("Water quality record not found or access denied");
+        }
+        waterQualityRepository.deleteById(id);
+    }
+
     private WaterQualityResponseDTO mapToDTO(WaterQuality waterQuality) {
         return WaterQualityResponseDTO.builder()
                 .id(waterQuality.getId())

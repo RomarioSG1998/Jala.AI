@@ -31,4 +31,28 @@ public class MaintenanceController {
         Page<MaintenanceResponseDTO> responsePage = maintenanceService.getMaintenanceByFarmId(farmId, pageable);
         return ResponseEntity.ok(responsePage);
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<MaintenanceResponseDTO> getMaintenanceById(
+            @PathVariable UUID id,
+            @RequestParam UUID farmId
+    ) {
+        return ResponseEntity.ok(maintenanceService.getById(id, farmId));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<MaintenanceResponseDTO> updateMaintenance(
+            @PathVariable UUID id,
+            @RequestBody MaintenanceRequestDTO requestDTO
+    ) {
+        return ResponseEntity.ok(maintenanceService.updateMaintenance(id, requestDTO));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMaintenance(
+            @PathVariable UUID id,
+            @RequestParam UUID farmId
+    ) {
+        maintenanceService.deleteMaintenance(id, farmId);
+        return ResponseEntity.noContent().build();
+    }
 }

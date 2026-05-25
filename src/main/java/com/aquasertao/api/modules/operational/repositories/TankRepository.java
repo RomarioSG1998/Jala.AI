@@ -13,4 +13,8 @@ public interface TankRepository extends JpaRepository<Tank, UUID> {
     
     // Strict Tenant Isolation + Pagination in a single query
     Page<Tank> findByFarmId(UUID farmId, Pageable pageable);
+
+    java.util.Optional<Tank> findByIdAndFarmId(UUID id, UUID farmId);
+
+    boolean existsByIdAndFarmId(UUID id, UUID farmId);
 }

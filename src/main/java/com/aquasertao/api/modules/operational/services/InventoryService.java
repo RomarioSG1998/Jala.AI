@@ -36,6 +36,32 @@ public class InventoryService {
         return inventoryPage.map(this::mapToDTO);
     }
 
+    public InventoryResponseDTO getById(UUID id, UUID farmId) {
+        Inventory inventory = inventoryRepository.findByIdAndFarmId(id, farmId)
+                .orElseThrow(() -> new IllegalArgumentException("Inventory item not found or access denied"));
+        return mapToDTO(inventory);
+    }
+
+    public InventoryResponseDTO updateInventoryItem(UUID id, InventoryRequestDTO requestDTO) {
+        Inventory existingInventory = inventoryRepository.findByIdAndFarmId(id, requestDTO.getFarmId())
+                .orElseThrow(() -> new IllegalArgumentException("Inventory item not found or access denied"));
+
+        existingInventory.setItemName(requestDTO.getItemName());
+        existingInventory.setQuantity(requestDTO.getQuantity());
+        existingInventory.setUnit(requestDTO.getUnit());
+        existingInventory.setType(requestDTO.getType());
+
+        Inventory updatedInventory = inventoryRepository.save(existingInventory);
+        return mapToDTO(updatedInventory);
+    }
+
+    public void deleteInventoryItem(UUID id, UUID farmId) {
+        if (!inventoryRepository.existsByIdAndFarmId(id, farmId)) {
+            throw new IllegalArgumentException("Inventory item not found or access denied");
+        }
+        inventoryRepository.deleteById(id);
+    }
+
     private InventoryResponseDTO mapToDTO(Inventory inventory) {
         return InventoryResponseDTO.builder()
                 .id(inventory.getId())

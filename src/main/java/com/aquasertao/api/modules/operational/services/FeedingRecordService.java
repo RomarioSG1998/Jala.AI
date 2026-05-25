@@ -62,6 +62,62 @@ public class FeedingRecordService {
         return recordsPage.map(this::mapToDTO);
     }
 
+    public FeedingRecordResponseDTO getById(UUID id, UUID farmId) {
+        FeedingRecord record = feedingRecordRepository.findByIdAndFarmId(id, farmId)
+                .orElseThrow(() -> new IllegalArgumentException("Feeding Record not found or access denied"));
+        return mapToDTO(record);
+    }
+
+    @Transactional
+    public FeedingRecordResponseDTO updateFeedingRecord(UUID id, FeedingRecordRequestDTO requestDTO) {
+        FeedingRecord existingRecord = feedingRecordRepository.findByIdAndFarmId(id, requestDTO.getFarmId())
+                .orElseThrow(() -> new IllegalArgumentException("Feeding Record not found or access denied"));
+
+        // If feedId or quantity changed, we need to adjust inventory
+        if (!existingRecord.getFeedId().equals(requestDTO.getFeedId()) || existingRecord.getQuantity().compareTo(requestDTO.getQuantity()) != 0) {
+            
+            // 1. Restore old quantity to old inventory
+            Inventory oldInventory = inventoryRepository.findById(existingRecord.getFeedId()).orElse(null);
+            if (oldInventory != null) {
+                oldInventory.setQuantity(oldInventory.getQuantity().add(existingRecord.getQuantity()));
+                inventoryRepository.save(oldInventory);
+            }
+
+            // 2. Deduct new quantity from new inventory
+            Inventory newInventory = inventoryRepository.findById(requestDTO.getFeedId())
+                    .orElseThrow(() -> new IllegalArgumentException("New Feed Inventory Item not found."));
+            
+            if (newInventory.getQuantity().compareTo(requestDTO.getQuantity()) < 0) {
+                throw new IllegalArgumentException("Insufficient feed in inventory.");
+            }
+            
+            newInventory.setQuantity(newInventory.getQuantity().subtract(requestDTO.getQuantity()));
+            inventoryRepository.save(newInventory);
+        }
+
+        existingRecord.setTankId(requestDTO.getTankId());
+        existingRecord.setUserId(requestDTO.getUserId());
+        existingRecord.setFeedId(requestDTO.getFeedId());
+        existingRecord.setQuantity(requestDTO.getQuantity());
+
+        FeedingRecord updatedRecord = feedingRecordRepository.save(existingRecord);
+        return mapToDTO(updatedRecord);
+    }
+
+    @Transactional
+    public void deleteFeedingRecord(UUID id, UUID farmId) {
+        FeedingRecord record = feedingRecordRepository.findByIdAndFarmId(id, farmId)
+                .orElseThrow(() -> new IllegalArgumentException("Feeding Record not found or access denied"));
+                
+        // Restore inventory
+        inventoryRepository.findById(record.getFeedId()).ifPresent(inventory -> {
+            inventory.setQuantity(inventory.getQuantity().add(record.getQuantity()));
+            inventoryRepository.save(inventory);
+        });
+
+        feedingRecordRepository.deleteById(id);
+    }
+
     private FeedingRecordResponseDTO mapToDTO(FeedingRecord record) {
         return FeedingRecordResponseDTO.builder()
                 .id(record.getId())

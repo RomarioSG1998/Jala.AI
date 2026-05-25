@@ -36,6 +36,32 @@ public class HarvestService {
         return harvestPage.map(this::mapToDTO);
     }
 
+    public HarvestResponseDTO getById(UUID id, UUID farmId) {
+        Harvest harvest = harvestRepository.findByIdAndFarmId(id, farmId)
+                .orElseThrow(() -> new IllegalArgumentException("Harvest not found or access denied"));
+        return mapToDTO(harvest);
+    }
+
+    public HarvestResponseDTO updateHarvest(UUID id, HarvestRequestDTO requestDTO) {
+        Harvest existingHarvest = harvestRepository.findByIdAndFarmId(id, requestDTO.getFarmId())
+                .orElseThrow(() -> new IllegalArgumentException("Harvest not found or access denied"));
+
+        existingHarvest.setTankId(requestDTO.getTankId());
+        existingHarvest.setDate(requestDTO.getDate());
+        existingHarvest.setQuantityKg(requestDTO.getQuantityKg());
+        existingHarvest.setDestination(requestDTO.getDestination());
+
+        Harvest updatedHarvest = harvestRepository.save(existingHarvest);
+        return mapToDTO(updatedHarvest);
+    }
+
+    public void deleteHarvest(UUID id, UUID farmId) {
+        if (!harvestRepository.existsByIdAndFarmId(id, farmId)) {
+            throw new IllegalArgumentException("Harvest not found or access denied");
+        }
+        harvestRepository.deleteById(id);
+    }
+
     private HarvestResponseDTO mapToDTO(Harvest harvest) {
         return HarvestResponseDTO.builder()
                 .id(harvest.getId())

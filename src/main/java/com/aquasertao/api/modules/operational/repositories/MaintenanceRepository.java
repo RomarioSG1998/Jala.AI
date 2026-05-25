@@ -13,4 +13,8 @@ public interface MaintenanceRepository extends JpaRepository<Maintenance, UUID> 
     
     // Strict Tenant Isolation + Pagination
     Page<Maintenance> findByFarmId(UUID farmId, Pageable pageable);
+
+    java.util.Optional<Maintenance> findByIdAndFarmId(UUID id, UUID farmId);
+
+    boolean existsByIdAndFarmId(UUID id, UUID farmId);
 }

@@ -31,4 +31,28 @@ public class WaterQualityController {
         Page<WaterQualityResponseDTO> responsePage = waterQualityService.getWaterQualityByFarmId(farmId, pageable);
         return ResponseEntity.ok(responsePage);
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<WaterQualityResponseDTO> getWaterQualityById(
+            @PathVariable UUID id,
+            @RequestParam UUID farmId
+    ) {
+        return ResponseEntity.ok(waterQualityService.getById(id, farmId));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<WaterQualityResponseDTO> updateWaterQuality(
+            @PathVariable UUID id,
+            @RequestBody WaterQualityRequestDTO requestDTO
+    ) {
+        return ResponseEntity.ok(waterQualityService.updateWaterQuality(id, requestDTO));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteWaterQuality(
+            @PathVariable UUID id,
+            @RequestParam UUID farmId
+    ) {
+        waterQualityService.deleteWaterQuality(id, farmId);
+        return ResponseEntity.noContent().build();
+    }
 }

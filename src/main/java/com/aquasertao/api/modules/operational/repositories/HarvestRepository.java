@@ -13,4 +13,8 @@ public interface HarvestRepository extends JpaRepository<Harvest, UUID> {
     
     // Strict Tenant Isolation + Pagination
     Page<Harvest> findByFarmId(UUID farmId, Pageable pageable);
+
+    java.util.Optional<Harvest> findByIdAndFarmId(UUID id, UUID farmId);
+
+    boolean existsByIdAndFarmId(UUID id, UUID farmId);
 }

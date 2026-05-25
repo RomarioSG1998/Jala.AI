@@ -13,4 +13,8 @@ public interface WaterQualityRepository extends JpaRepository<WaterQuality, UUID
     
     // Strict Tenant Isolation + Pagination
     Page<WaterQuality> findByFarmId(UUID farmId, Pageable pageable);
+
+    java.util.Optional<WaterQuality> findByIdAndFarmId(UUID id, UUID farmId);
+
+    boolean existsByIdAndFarmId(UUID id, UUID farmId);
 }

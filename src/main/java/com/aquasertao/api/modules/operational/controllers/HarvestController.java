@@ -32,4 +32,28 @@ public class HarvestController {
         Page<HarvestResponseDTO> responsePage = harvestService.getHarvestsByFarmId(farmId, pageable);
         return ResponseEntity.ok(responsePage);
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<HarvestResponseDTO> getHarvestById(
+            @PathVariable UUID id,
+            @RequestParam UUID farmId
+    ) {
+        return ResponseEntity.ok(harvestService.getById(id, farmId));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<HarvestResponseDTO> updateHarvest(
+            @PathVariable UUID id,
+            @RequestBody HarvestRequestDTO requestDTO
+    ) {
+        return ResponseEntity.ok(harvestService.updateHarvest(id, requestDTO));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteHarvest(
+            @PathVariable UUID id,
+            @RequestParam UUID farmId
+    ) {
+        harvestService.deleteHarvest(id, farmId);
+        return ResponseEntity.noContent().build();
+    }
 }
