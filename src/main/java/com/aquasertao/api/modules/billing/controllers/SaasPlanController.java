@@ -1,7 +1,7 @@
-package com.aquasertao.api.controllers;
+package com.aquasertao.api.modules.billing.controllers;
 
-import com.aquasertao.api.models.SaasPlan;
-import com.aquasertao.api.services.SaasPlanService;
+import com.aquasertao.api.modules.billing.models.SaasPlan;
+import com.aquasertao.api.modules.billing.services.SaasPlanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

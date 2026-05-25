@@ -1,4 +1,4 @@
-package com.aquasertao.api.models;
+package com.aquasertao.api.modules.billing.models;
 
 import jakarta.persistence.*;
 import lombok.Data;

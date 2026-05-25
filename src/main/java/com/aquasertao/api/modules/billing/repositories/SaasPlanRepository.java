@@ -1,6 +1,6 @@
-package com.aquasertao.api.repositories;
+package com.aquasertao.api.modules.billing.repositories;
 
-import com.aquasertao.api.models.SaasPlan;
+import com.aquasertao.api.modules.billing.models.SaasPlan;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

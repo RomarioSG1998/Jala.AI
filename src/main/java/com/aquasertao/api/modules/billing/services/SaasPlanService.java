@@ -1,7 +1,7 @@
-package com.aquasertao.api.services;
+package com.aquasertao.api.modules.billing.services;
 
-import com.aquasertao.api.models.SaasPlan;
-import com.aquasertao.api.repositories.SaasPlanRepository;
+import com.aquasertao.api.modules.billing.models.SaasPlan;
+import com.aquasertao.api.modules.billing.repositories.SaasPlanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
