@@ -1,7 +1,7 @@
-# Requisitos do Sistema: AquaGestor
+# Requisitos do Sistema: AquaSertão - Piscicultura Inteligente
 
 ## Contexto
-O sistema **AquaGestor** é uma aplicação focada na gestão inteligente para piscicultura. O objetivo é auxiliar as fazendas produtoras a terem controle total da produção, organizando os dados de forma que fiquem sempre à mão para decisões mais assertivas.
+O sistema **AquaSertão: Piscicultura Inteligente** é uma aplicação focada na gestão inteligente para piscicultura. O objetivo é auxiliar as fazendas produtoras a terem controle total da produção, organizando os dados de forma que fiquem sempre à mão para decisões mais assertivas.
 **Modelo de Negócio (SaaS):** A aplicação será comercializada no modelo *Software as a Service* (SaaS) B2B/B2C, operando sob uma arquitetura Multi-Tenant. O cliente do SaaS (Dono da Fazenda) gerencia sua própria operação de forma isolada no seu Tenant, enquanto o dono da plataforma (Admin SaaS) gerencia o negócio SaaS de forma global.
 
 ---
@@ -49,7 +49,7 @@ O sistema **AquaGestor** é uma aplicação focada na gestão inteligente para p
 
 ### 9. Módulo Nacional de Fornecedores (Marketplace B2B)
 - A base de Fornecedores não pertencerá isoladamente a uma fazenda.
-- Haverá um catálogo de fornecedores a nível **Nacional**, onde fazendeiros de todo o país podem consultar fornecedores de ração e alevinos homologados na plataforma, expandindo o AquaGestor para um ecossistema B2B.
+- Haverá um catálogo de fornecedores a nível **Nacional**, onde fazendeiros de todo o país podem consultar fornecedores de ração e alevinos homologados na plataforma, expandindo o AquaSertão para um ecossistema B2B.
 
 ### 10. Gestão Global do SaaS (Admin SaaS)
 - **Dashboard SaaS:** Painel para o Admin SaaS ver métricas do negócio (MRR, Churn).

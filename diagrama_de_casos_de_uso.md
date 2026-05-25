@@ -1,6 +1,6 @@
 # Diagrama de Casos de Uso
 
-Abaixo está a representação dos principais casos de uso do sistema AquaGestor, refletindo as restrições de permissões entre o Dono da Fazenda e o Funcionário, além dos módulos globais.
+Abaixo está a representação dos principais casos de uso do sistema AquaSertão (Piscicultura Inteligente), refletindo as restrições de permissões entre o Dono da Fazenda e o Funcionário, além dos módulos globais.
 
 ```mermaid
 flowchart LR
@@ -8,7 +8,7 @@ flowchart LR
     AdminSaaS(("Admin do SaaS\n(Dono do Software)"))
     DonoFazenda(("Dono da Fazenda\n(Admin do Tenant)"))
     Funcionario(("Funcionário\n(Operação de Campo)"))
-    Sistema(("Sistema AquaGestor\n(Notificações/IoT)"))
+    Sistema(("Sistema AquaSertão\n(Notificações/IoT)"))
 
     %% Backoffice SaaS (Visão do dono do negócio)
     subgraph BackofficeSaaS ["Backoffice SaaS (Administração Global)"]
@@ -24,8 +24,8 @@ flowchart LR
         UC_ConsultarFornecedor([Consultar Catálogo de Fornecedores])
     end
 
-    %% App AquaGestor (Visão do Cliente/Produtor)
-    subgraph AppAquaGestor ["App AquaGestor Android (Tenant)"]
+    %% App AquaSertão (Visão do Cliente/Produtor)
+    subgraph AppAquaSertao ["App AquaSertão Android (Tenant)"]
         direction TB
         
         subgraph ModOperacional ["Módulo Operacional (Campo)"]
