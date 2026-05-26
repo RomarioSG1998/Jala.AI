@@ -101,10 +101,40 @@ class AppShell extends ConsumerWidget {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        title: Image.network(
-          '/logo_aquasertao.png',
-          height: 36,
-          fit: BoxFit.contain,
+        title: Row(
+          children: [
+            Container(
+              height: 32,
+              width: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: _kGreen.withOpacity(0.5), width: 1.5),
+              ),
+              child: ClipOval(
+                child: Image.network(
+                  '/logo_emblem.png',
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RichText(
+                  text: const TextSpan(
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                    children: [
+                      TextSpan(text: 'Aqua', style: TextStyle(color: Colors.white)),
+                      TextSpan(text: 'Sertão', style: TextStyle(color: _kGreen)),
+                    ],
+                  ),
+                ),
+                const Text('PISCICULTURA INTELIGENTE',
+                    style: TextStyle(color: Colors.white70, fontSize: 8, fontWeight: FontWeight.w600, letterSpacing: 1.2)),
+              ],
+            ),
+          ],
         ),
         actions: [
           IconButton(icon: const Icon(Icons.search, color: Colors.white), onPressed: () {}),
