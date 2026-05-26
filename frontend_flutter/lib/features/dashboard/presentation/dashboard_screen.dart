@@ -103,18 +103,12 @@ class AppShell extends ConsumerWidget {
         ),
         title: Row(
           children: [
-            Container(
-              height: 32,
-              width: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: _kGreen.withOpacity(0.5), width: 1.5),
-              ),
-              child: ClipOval(
-                child: Image.network(
-                  '/logo_emblem.png',
-                  fit: BoxFit.cover,
-                ),
+            SizedBox(
+              height: 44,
+              width: 44,
+              child: Image.network(
+                '/logo_emblem.png',
+                fit: BoxFit.contain,
               ),
             ),
             const SizedBox(width: 10),

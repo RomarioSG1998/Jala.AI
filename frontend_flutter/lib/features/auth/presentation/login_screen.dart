@@ -52,25 +52,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Center(
-                      child: Container(
-                        height: 130,
-                        width: 130,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFF00FF66).withOpacity(0.3), width: 3),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black45,
-                              blurRadius: 16,
-                              offset: Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child: Image.network(
-                            '/logo_emblem.png',
-                            fit: BoxFit.cover,
-                          ),
+                      child: SizedBox(
+                        height: 180,
+                        width: 180,
+                        child: Image.network(
+                          '/logo_emblem.png',
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),
