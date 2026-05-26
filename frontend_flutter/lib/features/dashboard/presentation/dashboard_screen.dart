@@ -101,34 +101,38 @@ class AppShell extends ConsumerWidget {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        title: Row(
-          children: [
-            SizedBox(
-              height: 44,
-              width: 44,
-              child: Image.network(
-                '/logo_emblem.png',
-                fit: BoxFit.contain,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RichText(
-                  text: const TextSpan(
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                    children: [
-                      TextSpan(text: 'Aqua', style: TextStyle(color: Colors.white)),
-                      TextSpan(text: 'Sertão', style: TextStyle(color: _kGreen)),
-                    ],
-                  ),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            children: [
+              SizedBox(
+                height: 54,
+                width: 54,
+                child: Image.network(
+                  '/logo_emblem.png',
+                  fit: BoxFit.contain,
                 ),
-                const Text('PISCICULTURA INTELIGENTE',
-                    style: TextStyle(color: Colors.white70, fontSize: 8, fontWeight: FontWeight.w600, letterSpacing: 1.2)),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RichText(
+                    text: const TextSpan(
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                      children: [
+                        TextSpan(text: 'Aqua', style: TextStyle(color: Colors.white)),
+                        TextSpan(text: 'Sertão', style: TextStyle(color: _kGreen)),
+                      ],
+                    ),
+                  ),
+                  const Text('PISCICULTURA INTELIGENTE',
+                      style: TextStyle(color: Colors.white70, fontSize: 8, fontWeight: FontWeight.w600, letterSpacing: 1.2)),
+                ],
+              ),
+            ],
+          ),
         ),
         actions: [
           IconButton(icon: const Icon(Icons.search, color: Colors.white), onPressed: () {}),
