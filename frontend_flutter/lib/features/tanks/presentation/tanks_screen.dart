@@ -610,6 +610,9 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authNotifierProvider);
+    final isOwner = authState.accountType == 'FARM_OWNER' || authState.accountType == 'CLIENT';
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -623,10 +626,11 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Editar Tanque', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    onPressed: _isLoading ? null : _delete,
-                  ),
+                  if (isOwner)
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: _isLoading ? null : _delete,
+                    ),
                 ],
               ),
               const SizedBox(height: 24),
