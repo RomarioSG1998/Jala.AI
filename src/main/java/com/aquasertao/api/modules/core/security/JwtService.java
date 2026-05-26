@@ -34,7 +34,12 @@ public class JwtService {
     }
 
     public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+        Map<String, Object> extraClaims = new HashMap<>();
+        // Embed accountType in JWT so frontend can read role without extra storage
+        if (userDetails instanceof com.aquasertao.api.modules.core.models.GlobalUser globalUser) {
+            extraClaims.put("accountType", globalUser.getAccountType());
+        }
+        return generateToken(extraClaims, userDetails);
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {

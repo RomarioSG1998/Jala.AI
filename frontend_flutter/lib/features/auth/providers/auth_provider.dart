@@ -54,9 +54,15 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> _checkInitialAuth() async {
     final token = await _tokenStorage.getToken();
     final email = await _tokenStorage.getEmail();
-    final accountType = await _tokenStorage.getAccountType();
+    // Prefer accountType from JWT payload (authoritative), fall back to stored value
+    String? accountType = _extractAccountTypeFromToken(token);
+    accountType ??= await _tokenStorage.getAccountType();
 
     if (token != null && !_isTokenExpired(token)) {
+      // Sync storage with JWT value if needed
+      if (accountType != null) {
+        await _tokenStorage.saveUserDetails(email ?? '', accountType);
+      }
       state = state.copyWith(
         isAuthenticated: true,
         email: email,
@@ -68,6 +74,20 @@ class AuthNotifier extends Notifier<AuthState> {
     // Clear stale/invalid session data to avoid "logged-in but unauthorized" requests.
     if (token != null) {
       await _tokenStorage.clearAll();
+    }
+  }
+
+  String? _extractAccountTypeFromToken(String? token) {
+    if (token == null) return null;
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+      final normalized = base64Url.normalize(parts[1]);
+      final payload =
+          json.decode(utf8.decode(base64Url.decode(normalized))) as Map<String, dynamic>;
+      return payload['accountType'] as String?;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -100,6 +120,8 @@ class AuthNotifier extends Notifier<AuthState> {
       final resAccountType = response['accountType'];
 
       if (token != null) {
+        // Always clear any stale session before writing new credentials
+        await _tokenStorage.clearAll();
         await _tokenStorage.saveToken(token);
         await _tokenStorage.saveUserDetails(resEmail ?? email, resAccountType ?? 'UNKNOWN');
 
