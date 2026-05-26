@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/secure_storage.dart';
 import 'package:frontend_flutter/features/auth/data/auth_repository.dart';
+import 'dart:convert';
 
 // Represents the authentication state of the app
 class AuthState {
@@ -55,12 +56,36 @@ class AuthNotifier extends Notifier<AuthState> {
     final email = await _tokenStorage.getEmail();
     final accountType = await _tokenStorage.getAccountType();
 
-    if (token != null) {
+    if (token != null && !_isTokenExpired(token)) {
       state = state.copyWith(
         isAuthenticated: true,
         email: email,
         accountType: accountType,
       );
+      return;
+    }
+
+    // Clear stale/invalid session data to avoid "logged-in but unauthorized" requests.
+    if (token != null) {
+      await _tokenStorage.clearAll();
+    }
+  }
+
+  bool _isTokenExpired(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return true;
+
+      final normalized = base64Url.normalize(parts[1]);
+      final payload =
+          json.decode(utf8.decode(base64Url.decode(normalized))) as Map<String, dynamic>;
+      final exp = payload['exp'];
+      if (exp is! num) return true;
+
+      final expiry = DateTime.fromMillisecondsSinceEpoch(exp.toInt() * 1000);
+      return DateTime.now().isAfter(expiry);
+    } catch (_) {
+      return true;
     }
   }
 

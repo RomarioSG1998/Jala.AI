@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 class MaintenanceScreen extends ConsumerWidget {
   const MaintenanceScreen({super.key});
 
-  void _showAddTaskModal(BuildContext context, WidgetRef ref) {
+  static void showAddTaskModal(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -45,13 +45,7 @@ class MaintenanceScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      floatingActionButton: isOwner
-          ? FloatingActionButton(
-              onPressed: () => _showAddTaskModal(context, ref),
-              backgroundColor: const Color(0xFF13A538),
-              child: const Icon(Icons.add, color: Colors.white),
-            )
-          : null,
+      floatingActionButton: null,
       body: tasksAsync.when(
         data: (tasks) {
           if (tasks.isEmpty) return _buildEmptyState();

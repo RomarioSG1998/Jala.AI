@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 class HarvestsScreen extends ConsumerWidget {
   const HarvestsScreen({super.key});
 
-  void _showLogHarvestModal(BuildContext context, WidgetRef ref) {
+  static void showLogHarvestModal(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -32,11 +32,7 @@ class HarvestsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showLogHarvestModal(context, ref),
-        backgroundColor: const Color(0xFF13A538),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+
       body: harvestsAsync.when(
         data: (harvests) {
           if (harvests.isEmpty) return _buildEmptyState();

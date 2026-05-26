@@ -10,6 +10,9 @@ import 'package:frontend_flutter/features/inventory/presentation/inventory_scree
 import 'package:frontend_flutter/features/harvests/presentation/harvests_screen.dart';
 import 'package:frontend_flutter/features/maintenance/presentation/maintenance_screen.dart';
 import 'package:frontend_flutter/features/saas_admin/presentation/saas_dashboard_screen.dart';
+import 'package:frontend_flutter/features/finances/presentation/finances_screen.dart';
+import 'package:frontend_flutter/features/suppliers/presentation/suppliers_screen.dart';
+import 'package:frontend_flutter/features/saas_admin/presentation/tenants_screen.dart';
 
 void main() {
   runApp(
@@ -97,15 +100,15 @@ class AquaSertaoApp extends ConsumerWidget {
                 ),
                 GoRoute(
                   path: '/tenants',
-                  builder: (context, state) => const DummyScreen(title: 'Manage Tenants'),
+                  builder: (context, state) => const TenantsScreen(),
                 ),
                 GoRoute(
                   path: '/suppliers',
-                  builder: (context, state) => const DummyScreen(title: 'B2B Suppliers'),
+                  builder: (context, state) => const SuppliersScreen(),
                 ),
                 GoRoute(
                   path: '/finances',
-                  builder: (context, state) => const DummyScreen(title: 'Finances'),
+                  builder: (context, state) => const FinancesScreen(),
                 ),
               ],
             ),

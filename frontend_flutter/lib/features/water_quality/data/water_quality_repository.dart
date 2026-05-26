@@ -11,15 +11,26 @@ class WaterQualityRepository {
   // Hardcoded test farm ID for now.
   final String _farmId = '55555555-5555-5555-5555-555555555555';
 
+  List<dynamic> _extractCollection(dynamic data) {
+    if (data is Map<String, dynamic> && data['content'] is List) {
+      return data['content'] as List<dynamic>;
+    }
+    if (data is List) {
+      return data;
+    }
+    return const [];
+  }
+
   Future<List<WaterQuality>> getRecords() async {
     try {
       final response = await _dio.get('/api/water-quality/farm/$_farmId');
-      final data = response.data;
-      if (data != null && data['content'] != null) {
-        final List<dynamic> content = data['content'];
-        return content.map((json) => WaterQuality.fromJson(json)).toList();
-      }
-      return [];
+      final rawItems = _extractCollection(response.data);
+      return rawItems
+          .whereType<Map<String, dynamic>>()
+          .map(WaterQuality.fromJson)
+          .toList();
+    } on DioException catch (e) {
+      throw Exception('Failed to load water quality records (HTTP ${e.response?.statusCode ?? 'unknown'}).');
     } catch (e) {
       throw Exception('Failed to load water quality records: $e');
     }

@@ -6,7 +6,7 @@ import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 class InventoryScreen extends ConsumerWidget {
   const InventoryScreen({super.key});
 
-  void _showAddItemModal(BuildContext context, WidgetRef ref) {
+  static void showAddItemModal(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -44,11 +44,7 @@ class InventoryScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddItemModal(context, ref),
-        backgroundColor: const Color(0xFF13A538),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+
       body: inventoryAsync.when(
         data: (items) {
           if (items.isEmpty) return _buildEmptyState();

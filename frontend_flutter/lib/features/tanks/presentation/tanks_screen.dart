@@ -10,14 +10,7 @@ import 'package:frontend_flutter/features/dashboard/data/farm_summary_model.dart
 class TanksScreen extends ConsumerStatefulWidget {
   const TanksScreen({super.key});
 
-  @override
-  ConsumerState<TanksScreen> createState() => _TanksScreenState();
-}
-
-class _TanksScreenState extends ConsumerState<TanksScreen> {
-  String _activeFilter = 'Todos';
-
-  void _showAddTankModal(BuildContext context, WidgetRef ref) {
+  static void showAddTankModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -34,6 +27,26 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
   }
 
   @override
+  ConsumerState<TanksScreen> createState() => _TanksScreenState();
+}
+
+class _TanksScreenState extends ConsumerState<TanksScreen> {
+  String _activeFilter = 'Todos';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshData());
+  }
+
+  Future<void> _refreshData() async {
+    await ref.read(tanksProvider.notifier).refreshTanks();
+    ref.invalidate(farmSummaryProvider);
+  }
+
+
+
+  @override
   Widget build(BuildContext context) {
     final tanksAsyncValue = ref.watch(tanksProvider);
     final authState = ref.watch(authNotifierProvider);
@@ -46,10 +59,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
       
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () async {
-            await ref.read(tanksProvider.notifier).refreshTanks();
-            ref.invalidate(farmSummaryProvider);
-          },
+          onRefresh: _refreshData,
           child: CustomScrollView(
             slivers: [
               // Cabeçalho e KPIs (SliverToBoxAdapter)
@@ -91,6 +101,14 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
                     if (_activeFilter == 'Inativos') return !isTankActive;
                     return true;
                   }).toList();
+
+                  if (filtered.isEmpty) {
+                    return SliverToBoxAdapter(
+                      child: _buildEmptyState(
+                        message: 'Nenhum tanque encontrado para o filtro selecionado',
+                      ),
+                    );
+                  }
  
                   return SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -113,7 +131,9 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
                   );
                 },
                 loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                error: (e, _) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                error: (e, _) => SliverToBoxAdapter(
+                  child: _buildErrorState(e.toString()),
+                ),
               ),
               
               const SliverToBoxAdapter(child: SizedBox(height: 80)), // Espaço para FAB central
@@ -141,7 +161,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
           ),
           if (isOwner)
             ElevatedButton.icon(
-              onPressed: () => _showAddTankModal(context, ref),
+              onPressed: () => TanksScreen.showAddTankModal(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF13A538), // Verde Principal
                 foregroundColor: Colors.white,
@@ -178,8 +198,45 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
               data: (summary) => _kpiCard(Icons.shopping_bag, 'Ração hoje', '${summary.feedingTodayKg.toStringAsFixed(1)} kg', Colors.orange, null, subtitle: 'Total alimentado'),
               orElse: () => _kpiCard(Icons.shopping_bag, 'Ração hoje', '--', Colors.orange, null, subtitle: 'Total alimentado'),
             ),
-            _kpiCard(Icons.show_chart, 'Crescimento', 'Cálculo real', Colors.purple, 0.6, subtitle: 'Peso médio'),
-            _kpiCard(Icons.warning, 'Mortalidade', '${tanks.fold<int>(0, (sum, t) => sum + t.mortalityCount)} peixes', Colors.red, null, subtitle: 'Mortalidade total'),
+            () {
+              double totalWeight = 0;
+              int count = 0;
+              for (final t in tanks) {
+                if (t.status == 'ACTIVE' && t.averageWeightG > 0) {
+                  totalWeight += t.averageWeightG;
+                  count++;
+                }
+              }
+              final avgWeight = count > 0 ? totalWeight / count : 0.0;
+              final progress = (avgWeight / 1000.0).clamp(0.0, 1.0);
+              return _kpiCard(
+                Icons.show_chart,
+                'Crescimento',
+                count > 0 ? '${avgWeight.toInt()} g' : '--',
+                Colors.purple,
+                progress,
+                subtitle: 'Peso médio',
+              );
+            }(),
+            () {
+              int totalCapacity = 0;
+              int totalMortality = 0;
+              for (final t in tanks) {
+                if (t.status == 'ACTIVE') {
+                  totalCapacity += t.fishCapacity;
+                  totalMortality += t.mortalityCount;
+                }
+              }
+              final progress = totalCapacity > 0 ? (totalMortality / totalCapacity).clamp(0.0, 1.0) : 0.0;
+              return _kpiCard(
+                Icons.warning,
+                'Mortalidade',
+                '$totalMortality peixes',
+                Colors.red,
+                progress,
+                subtitle: 'Mortalidade total',
+              );
+            }(),
           ],
         ),
       ),
@@ -282,7 +339,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState({String message = 'Nenhum tanque encontrado'}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 60),
       child: Center(
@@ -290,7 +347,40 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
           children: [
             Icon(Icons.water, size: 60, color: Colors.grey.shade300),
             const SizedBox(height: 16),
-            Text('Nenhum tanque encontrado', style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+            Text(message, style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String message) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 60),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(Icons.error_outline, size: 56, color: Colors.red.shade300),
+            const SizedBox(height: 16),
+            const Text(
+              'Nao foi possivel carregar os tanques',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _refreshData,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF13A538),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Tentar novamente'),
+            ),
           ],
         ),
       ),

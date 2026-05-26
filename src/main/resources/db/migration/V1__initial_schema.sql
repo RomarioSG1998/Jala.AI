@@ -1,4 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ==========================================
 -- MODULE: SAAS CORE (GLOBAL & MARKETPLACE)
@@ -27,10 +28,11 @@ CREATE TABLE national_supplier (
 
 CREATE TABLE farm_tenant (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    owner_user_id UUID NOT NULL,
-    farm_name VARCHAR(255) NOT NULL,
-    location TEXT,
-    CONSTRAINT fk_farm_owner FOREIGN KEY (owner_user_id) REFERENCES global_user (id) ON DELETE CASCADE
+    name VARCHAR(100) NOT NULL,
+    cnpj VARCHAR(20) UNIQUE NOT NULL,
+    owner_id UUID NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_farm_owner FOREIGN KEY (owner_id) REFERENCES global_user (id) ON DELETE CASCADE
 );
 
 CREATE TABLE user_farm_link (
@@ -48,18 +50,31 @@ CREATE TABLE user_farm_link (
 
 CREATE TABLE saas_plan (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(100) NOT NULL,
-    monthly_price NUMERIC(10, 2) NOT NULL
+    name VARCHAR(50) UNIQUE NOT NULL,
+    max_tanks INTEGER NOT NULL DEFAULT 10,
+    max_users INTEGER NOT NULL DEFAULT 5,
+    price_monthly NUMERIC(10, 2) NOT NULL
 );
 
 CREATE TABLE subscription (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     farm_id UUID NOT NULL UNIQUE,
     plan_id UUID NOT NULL,
-    status VARCHAR(50) NOT NULL, -- Active, Canceled, Overdue
-    due_date DATE,
+    start_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    end_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    status VARCHAR(20) NOT NULL, -- ACTIVE, EXPIRED, CANCELLED
     CONSTRAINT fk_subscription_farm FOREIGN KEY (farm_id) REFERENCES farm_tenant (id) ON DELETE CASCADE,
     CONSTRAINT fk_subscription_plan FOREIGN KEY (plan_id) REFERENCES saas_plan (id)
+);
+
+CREATE TABLE invoice (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    subscription_id UUID NOT NULL,
+    amount NUMERIC(10, 2) NOT NULL,
+    due_date DATE NOT NULL,
+    paid_date DATE,
+    status VARCHAR(20) NOT NULL, -- PENDING, PAID, OVERDUE
+    CONSTRAINT fk_invoice_subscription FOREIGN KEY (subscription_id) REFERENCES subscription (id) ON DELETE CASCADE
 );
 
 -- ==========================================
@@ -72,34 +87,67 @@ CREATE TABLE tank (
     name VARCHAR(100) NOT NULL,
     fish_species VARCHAR(100),
     fish_capacity INTEGER,
+    average_weight_g INTEGER DEFAULT 0,
+    mortality_count INTEGER DEFAULT 0,
+    next_harvest_date DATE,
+    status VARCHAR(20) DEFAULT 'ACTIVE',
     CONSTRAINT fk_tank_farm FOREIGN KEY (farm_id) REFERENCES farm_tenant (id) ON DELETE CASCADE
-);
-
-CREATE TABLE feeding (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tank_id UUID NOT NULL,
-    date_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    quantity_kg NUMERIC(10, 2) NOT NULL,
-    CONSTRAINT fk_feeding_tank FOREIGN KEY (tank_id) REFERENCES tank (id) ON DELETE CASCADE
-);
-
-CREATE TABLE water_measurement (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tank_id UUID NOT NULL,
-    date_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    ph NUMERIC(4, 2),
-    temperature NUMERIC(5, 2),
-    CONSTRAINT fk_measurement_tank FOREIGN KEY (tank_id) REFERENCES tank (id) ON DELETE CASCADE
 );
 
 CREATE TABLE inventory (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     farm_id UUID NOT NULL,
-    national_supplier_id UUID,
-    item VARCHAR(255) NOT NULL,
+    item_name VARCHAR(150) NOT NULL,
     quantity NUMERIC(10, 2) NOT NULL,
-    CONSTRAINT fk_inventory_farm FOREIGN KEY (farm_id) REFERENCES farm_tenant (id) ON DELETE CASCADE,
-    CONSTRAINT fk_inventory_supplier FOREIGN KEY (national_supplier_id) REFERENCES national_supplier (id) ON DELETE SET NULL
+    unit VARCHAR(50),
+    type VARCHAR(100),
+    CONSTRAINT fk_inventory_farm FOREIGN KEY (farm_id) REFERENCES farm_tenant (id) ON DELETE CASCADE
+);
+
+CREATE TABLE feeding_record (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    farm_id UUID NOT NULL,
+    tank_id UUID NOT NULL,
+    user_id UUID NOT NULL,
+    feed_id UUID NOT NULL,
+    quantity NUMERIC(10, 2) NOT NULL,
+    feeding_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_feeding_farm FOREIGN KEY (farm_id) REFERENCES farm_tenant (id) ON DELETE CASCADE,
+    CONSTRAINT fk_feeding_tank FOREIGN KEY (tank_id) REFERENCES tank (id) ON DELETE CASCADE
+);
+
+CREATE TABLE water_quality (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    farm_id UUID NOT NULL,
+    tank_id UUID NOT NULL,
+    ph NUMERIC(4, 2),
+    temperature NUMERIC(5, 2),
+    dissolved_oxygen NUMERIC(5, 2),
+    measurement_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_water_quality_farm FOREIGN KEY (farm_id) REFERENCES farm_tenant (id) ON DELETE CASCADE,
+    CONSTRAINT fk_water_quality_tank FOREIGN KEY (tank_id) REFERENCES tank (id) ON DELETE CASCADE
+);
+
+CREATE TABLE harvest (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    farm_id UUID NOT NULL,
+    tank_id UUID NOT NULL,
+    date DATE NOT NULL,
+    quantity_kg NUMERIC(10, 2) NOT NULL,
+    destination VARCHAR(255),
+    CONSTRAINT fk_harvest_farm FOREIGN KEY (farm_id) REFERENCES farm_tenant (id) ON DELETE CASCADE,
+    CONSTRAINT fk_harvest_tank FOREIGN KEY (tank_id) REFERENCES tank (id) ON DELETE CASCADE
+);
+
+CREATE TABLE maintenance (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    farm_id UUID NOT NULL,
+    tank_id UUID NOT NULL,
+    description TEXT NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    scheduled_date DATE,
+    CONSTRAINT fk_maintenance_farm FOREIGN KEY (farm_id) REFERENCES farm_tenant (id) ON DELETE CASCADE,
+    CONSTRAINT fk_maintenance_tank FOREIGN KEY (tank_id) REFERENCES tank (id) ON DELETE CASCADE
 );
 
 -- ==========================================
@@ -113,15 +161,6 @@ CREATE TABLE financial_transaction (
     amount NUMERIC(10, 2) NOT NULL,
     transaction_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_transaction_farm FOREIGN KEY (farm_id) REFERENCES farm_tenant (id) ON DELETE CASCADE
-);
-
-CREATE TABLE maintenance (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    farm_id UUID NOT NULL,
-    equipment VARCHAR(255) NOT NULL,
-    status VARCHAR(50) NOT NULL,
-    scheduled_date DATE,
-    CONSTRAINT fk_maintenance_farm FOREIGN KEY (farm_id) REFERENCES farm_tenant (id) ON DELETE CASCADE
 );
 
 CREATE TABLE approval_request (

@@ -8,6 +8,14 @@ import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import 'package:frontend_flutter/features/water_quality/providers/water_quality_provider.dart';
 import 'package:frontend_flutter/features/dashboard/providers/farm_summary_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:frontend_flutter/features/tanks/presentation/tanks_screen.dart';
+import 'package:frontend_flutter/features/water_quality/presentation/water_quality_screen.dart';
+import 'package:frontend_flutter/features/inventory/presentation/inventory_screen.dart';
+import 'package:frontend_flutter/features/harvests/presentation/harvests_screen.dart';
+import 'package:frontend_flutter/features/maintenance/presentation/maintenance_screen.dart';
+import 'package:frontend_flutter/features/finances/presentation/finances_screen.dart';
+import 'package:frontend_flutter/features/suppliers/presentation/suppliers_screen.dart';
+import 'package:frontend_flutter/features/saas_admin/presentation/tenants_screen.dart';
 
 // ─── AppShell – Casca Permanente com Header e Bottom Nav ────────────────────
 
@@ -18,6 +26,49 @@ class AppShell extends ConsumerWidget {
 
   static const _kNavyBlue = Color(0xFF003366);
   static const _kGreen = Color(0xFF13A538);
+
+  void _handleCentralFabPressed(BuildContext context, WidgetRef ref) {
+    final state = GoRouterState.of(context);
+    final currentRoute = state.matchedLocation;
+
+    switch (currentRoute) {
+      case '/tanks':
+        TanksScreen.showAddTankModal(context);
+        break;
+      case '/water-quality':
+        WaterQualityScreen.showAddLogModal(context, ref);
+        break;
+      case '/inventory':
+        InventoryScreen.showAddItemModal(context, ref);
+        break;
+      case '/harvests':
+        HarvestsScreen.showLogHarvestModal(context, ref);
+        break;
+      case '/maintenance':
+        MaintenanceScreen.showAddTaskModal(context, ref);
+        break;
+      case '/finances':
+        FinancesScreen.showAddTransactionModal(context, ref);
+        break;
+      case '/suppliers':
+        SuppliersScreen.showAddSupplierModal(context, ref);
+        break;
+      case '/tenants':
+        TenantsScreen.showAddTenantModal(context, ref);
+        break;
+      case '/saas-dashboard':
+        TenantsScreen.showAddTenantModal(context, ref);
+        break;
+      default:
+        final authState = ref.read(authNotifierProvider);
+        if (authState.accountType == 'SAAS_ADMIN') {
+          TenantsScreen.showAddTenantModal(context, ref);
+        } else {
+          TanksScreen.showAddTankModal(context);
+        }
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -95,7 +146,7 @@ class AppShell extends ConsumerWidget {
       // ── Drawer lateral ───────────────────────────────────────────────────
       drawer: _AppDrawer(role: role, ref: ref),
       // ── Bottom Navigation permanente ─────────────────────────────────────
-      bottomNavigationBar: _buildBottomNav(context, currentIndex, role),
+      bottomNavigationBar: _buildBottomNav(context, ref, currentIndex, role),
       // ── Corpo dinâmico ───────────────────────────────────────────────────
       body: role == 'SAAS_ADMIN' && currentIndex == 0
           ? const _SaasAdminBody()
@@ -103,7 +154,7 @@ class AppShell extends ConsumerWidget {
     );
   }
 
-  Widget _buildBottomNav(BuildContext context, int currentIndex, String role) {
+  Widget _buildBottomNav(BuildContext context, WidgetRef ref, int currentIndex, String role) {
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.topCenter,
@@ -119,8 +170,7 @@ class AppShell extends ConsumerWidget {
           elevation: 8,
           onTap: (index) {
             if (index == 2) {
-              // Botão "+" central – navega para a aba de ação relevante
-              navigationShell.goBranch(1); // Vai para Tanques
+              _handleCentralFabPressed(context, ref);
               return;
             }
             final dest = index > 2 ? index - 1 : index;
@@ -144,7 +194,7 @@ class AppShell extends ConsumerWidget {
         Positioned(
           top: -22,
           child: GestureDetector(
-            onTap: () => navigationShell.goBranch(1),
+            onTap: () => _handleCentralFabPressed(context, ref),
             child: Container(
               width: 56,
               height: 56,

@@ -29,6 +29,18 @@ class TenantsNotifier extends AsyncNotifier<List<FarmTenant>> {
       state = AsyncValue.error(e, stack);
     }
   }
+
+  Future<bool> createTenant(String name, String cnpj) async {
+    try {
+      final success = await ref.read(saasAdminRepositoryProvider).createTenant(name, cnpj);
+      if (success) {
+        await refresh();
+      }
+      return success;
+    } catch (_) {
+      return false;
+    }
+  }
 }
 
 final tenantsProvider =

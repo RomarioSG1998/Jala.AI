@@ -36,6 +36,23 @@ class SaasAdminRepository {
       throw Exception('Failed to load tenants: $e');
     }
   }
+
+  Future<bool> createTenant(String name, String cnpj) async {
+    try {
+      const johnUserId = '44444444-4444-4444-4444-444444444444';
+      await _dio.post(
+        '/api/tenants',
+        data: {
+          'name': name,
+          'cnpj': cnpj,
+          'ownerId': johnUserId,
+        },
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }
 
 final saasAdminRepositoryProvider = Provider<SaasAdminRepository>((ref) {

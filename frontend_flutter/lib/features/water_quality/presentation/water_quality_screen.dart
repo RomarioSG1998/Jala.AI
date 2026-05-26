@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 class WaterQualityScreen extends ConsumerWidget {
   const WaterQualityScreen({super.key});
 
-  void _showAddLogModal(BuildContext context, WidgetRef ref) {
+  static void showAddLogModal(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -32,11 +32,7 @@ class WaterQualityScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddLogModal(context, ref),
-        backgroundColor: const Color(0xFF13A538),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+
       body: wqAsyncValue.when(
         data: (records) {
           if (records.isEmpty) {

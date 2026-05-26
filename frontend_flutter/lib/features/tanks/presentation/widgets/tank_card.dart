@@ -80,140 +80,137 @@ class TankCard extends ConsumerWidget {
         ),
         child: Column(
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Esquerda: Imagem com Tag
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                  ),
-                  child: Stack(
-                     children: [
-                      Container(
-                        width: 100,
-                        height: 140,
-                        color: Colors.blue.shade50,
-                        child: isActive 
-                            ? Image.network(
-                                'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=200&h=280',
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const Icon(Icons.water, color: Colors.blue, size: 40),
-                              )
-                            : Container(
-                                color: Colors.grey.shade200,
-                                child: const Icon(Icons.water, color: Colors.grey, size: 40),
-                              ),
-                      ),
-                      Positioned(
-                        top: 8,
-                        left: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isActive ? const Color(0xFF13A538) : Colors.grey.shade600,
-                            borderRadius: BorderRadius.circular(6),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Esquerda: Imagem com Tag
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      bottomLeft: Radius.circular(16),
+                    ),
+                    child: Stack(
+                       children: [                         Container(
+                          width: 90,
+                          height: 140,
+                          color: Colors.blue.shade50,
+                          child: isActive 
+                              ? Image.network(
+                                  '/tank_piscicultura.png',
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Icon(Icons.water, color: Colors.blue, size: 40),
+                                )
+                              : Container(
+                                  color: Colors.grey.shade200,
+                                  child: const Icon(Icons.water, color: Colors.grey, size: 40),
+                                ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isActive ? const Color(0xFF13A538) : Colors.grey.shade600,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              isActive ? 'Ativo' : 'Inativo',
+                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
                           ),
-                          child: Text(
-                            isActive ? 'Ativo' : 'Inativo',
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Centro: Dados do Lote
-                Expanded(
-                  flex: 3,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tank.name,
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${tank.fishSpecies}  •  $stock peixes',
-                          style: TextStyle(fontSize: 12, color: subTextColor),
-                        ),
-                        const SizedBox(height: 12),
-                        
-                        // 3 mini colunas
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _miniMetric(Icons.inventory_2_outlined, 'Estoque', stock, iconColor, textColor),
-                            _miniMetric(Icons.monitor_weight_outlined, 'Peso méd.', avgWeight, iconColor, textColor),
-                            _miniMetric(Icons.scale_outlined, 'Biomassa', biomass, iconColor, textColor),
-                          ],
-                        ),
-                        
-                        const SizedBox(height: 12),
-                        // Barras de Status
-                        _progressBar('Crescimento', growth, const Color(0xFF13A538), isActive),
-                        const SizedBox(height: 6),
-                        _progressBar('Mortalidade', mortality, Colors.red, isActive),
                       ],
                     ),
                   ),
-                ),
-                
-                // Direita: Água e Alertas
-                Container(
-                  width: 110,
-                  padding: const EdgeInsets.only(top: 12, right: 12, bottom: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                  
+                  // Centro: Dados do Lote
+                  Expanded(
+                    flex: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.device_thermostat, size: 14, color: isActive ? Colors.blue : iconColor),
-                          const SizedBox(width: 4),
-                          Text(temp, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textColor)),
+                          Text(
+                            tank.name,
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${tank.fishSpecies}  •  $stock peixes',
+                            style: TextStyle(fontSize: 12, color: subTextColor),
+                          ),
+                          const SizedBox(height: 12),
+                          
+                          // 3 mini colunas
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              _miniMetric(Icons.inventory_2_outlined, 'Estoque', stock, iconColor, textColor),
+                              _miniMetric(Icons.monitor_weight_outlined, 'Peso méd.', avgWeight, iconColor, textColor),
+                              _miniMetric(Icons.scale_outlined, 'Biomassa', biomass, iconColor, textColor),
+                            ],
+                          ),
+                          
+                          const SizedBox(height: 12),
+                          // Barras de Status
+                          _progressBar('Crescimento', growth, const Color(0xFF13A538), isActive),
+                          const SizedBox(height: 6),
+                          _progressBar('Mortalidade', mortality, Colors.red, isActive),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Icon(Icons.water_drop, size: 14, color: isActive ? Colors.blue : iconColor),
-                          const SizedBox(width: 4),
-                          Text(ph, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textColor)),
-                          const SizedBox(width: 4),
-                          Icon(Icons.chevron_right, size: 14, color: subTextColor),
-                        ],
-                      ),
-                      const Spacer(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Icon(Icons.warning_amber_rounded, size: 14, color: isActive && tank.mortalityCount > 0 ? Colors.red : iconColor),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
+                    ),
+                  ),
+                  
+                  // Direita: Água e Alertas
+                  Container(
+                    width: 95,
+                    padding: const EdgeInsets.only(top: 12, right: 8, bottom: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Icon(Icons.device_thermostat, size: 14, color: isActive ? Colors.blue : iconColor),
+                            const SizedBox(width: 4),
+                            Text(temp, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textColor)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Icon(Icons.water_drop, size: 14, color: isActive ? Colors.blue : iconColor),
+                            const SizedBox(width: 4),
+                            Text(ph, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textColor)),
+                            const SizedBox(width: 4),
+                            Icon(Icons.chevron_right, size: 14, color: subTextColor),
+                          ],
+                        ),
+                        const Spacer(),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Icon(Icons.warning_amber_rounded, size: 14, color: isActive && tank.mortalityCount > 0 ? Colors.red : iconColor),
+                            const SizedBox(width: 4),
+                            Text(
                               deaths, 
                               style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isActive && tank.mortalityCount > 0 ? Colors.red : textColor),
-                              textAlign: TextAlign.right,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
-                      ),
-                      Text('Este mês', style: TextStyle(fontSize: 9, color: subTextColor)),
-                    ],
+                          ],
+                        ),
+                        Text('Este mês', style: TextStyle(fontSize: 9, color: subTextColor)),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             
             // Rodapé
@@ -263,10 +260,12 @@ class TankCard extends ConsumerWidget {
     return Row(
       children: [
         SizedBox(
-          width: 65,
+          width: 58,
           child: Text(
             label,
             style: TextStyle(fontSize: 10, color: isActive ? Colors.grey.shade600 : Colors.grey.shade400),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         Expanded(

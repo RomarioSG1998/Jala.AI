@@ -12,16 +12,26 @@ class TankRepository {
   // In a real application, this would be fetched from AuthProvider state.
   final String _farmId = '55555555-5555-5555-5555-555555555555';
 
+  List<dynamic> _extractCollection(dynamic data) {
+    if (data is Map<String, dynamic> && data['content'] is List) {
+      return data['content'] as List<dynamic>;
+    }
+    if (data is List) {
+      return data;
+    }
+    return const [];
+  }
+
   Future<List<Tank>> getTanks() async {
     try {
       final response = await _dio.get('/api/tanks/farm/$_farmId');
-      final data = response.data;
-      if (data != null && data['content'] != null) {
-        // Spring Boot Pageable response
-        final List<dynamic> content = data['content'];
-        return content.map((json) => Tank.fromJson(json)).toList();
-      }
-      return [];
+      final rawItems = _extractCollection(response.data);
+      return rawItems
+          .whereType<Map<String, dynamic>>()
+          .map(Tank.fromJson)
+          .toList();
+    } on DioException catch (e) {
+      throw Exception('Failed to load tanks (HTTP ${e.response?.statusCode ?? 'unknown'}).');
     } catch (e) {
       throw Exception('Failed to load tanks: $e');
     }
