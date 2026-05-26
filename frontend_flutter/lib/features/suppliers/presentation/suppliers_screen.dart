@@ -28,7 +28,7 @@ class SuppliersScreen extends ConsumerWidget {
         child: suppliersAsync.when(
           data: (suppliers) {
             return ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
               children: [
                 const Text(
                   'Catálogo de Fornecedores Nacionais',

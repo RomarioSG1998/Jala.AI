@@ -40,7 +40,7 @@ class HarvestsScreen extends ConsumerWidget {
             onRefresh: () =>
                 ref.read(harvestProvider.notifier).refreshHarvests(),
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
               itemCount: harvests.length,
               itemBuilder: (context, index) {
                 final harvest = harvests[index];

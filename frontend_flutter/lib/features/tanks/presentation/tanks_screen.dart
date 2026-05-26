@@ -136,7 +136,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
                 ),
               ),
               
-              const SliverToBoxAdapter(child: SizedBox(height: 80)), // Espaço para FAB central
+              const SliverToBoxAdapter(child: SizedBox(height: 120)), // Espaço para FAB central
             ],
           ),
         ),

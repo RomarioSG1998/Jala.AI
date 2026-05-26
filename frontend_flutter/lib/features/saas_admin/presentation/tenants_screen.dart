@@ -26,7 +26,7 @@ class TenantsScreen extends ConsumerWidget {
         child: tenantsAsync.when(
           data: (tenants) {
             return ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
               children: [
                 const Text(
                   'Farms & Clientes SaaS',

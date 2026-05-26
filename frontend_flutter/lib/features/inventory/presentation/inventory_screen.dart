@@ -51,7 +51,7 @@ class InventoryScreen extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () => ref.read(inventoryProvider.notifier).refreshItems(),
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];

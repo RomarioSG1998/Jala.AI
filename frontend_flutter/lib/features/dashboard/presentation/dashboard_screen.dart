@@ -86,6 +86,7 @@ class AppShell extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
+      extendBody: true,
       // ── AppBar permanente ────────────────────────────────────────────────
       appBar: AppBar(
         backgroundColor: _kNavyBlue,
@@ -159,57 +160,119 @@ class AppShell extends ConsumerWidget {
       clipBehavior: Clip.none,
       alignment: Alignment.topCenter,
       children: [
-        BottomNavigationBar(
-          backgroundColor: Colors.white,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: _kGreen,
-          unselectedItemColor: Colors.grey.shade400,
-          currentIndex: currentIndex,
-          selectedFontSize: 10,
-          unselectedFontSize: 10,
-          elevation: 8,
-          onTap: (index) {
-            if (index == 2) {
-              _handleCentralFabPressed(context, ref);
-              return;
-            }
-            final dest = index > 2 ? index - 1 : index;
-            navigationShell.goBranch(dest);
-          },
-          items: const [
-            BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Início'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.water_outlined), activeIcon: Icon(Icons.water), label: 'Tanques'),
-            BottomNavigationBarItem(
-                icon: SizedBox(height: 24), label: ''), // Espaço para FAB
-            BottomNavigationBarItem(
-                icon: Icon(Icons.bar_chart_outlined),
-                activeIcon: Icon(Icons.bar_chart),
-                label: 'Relatórios'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.apps_outlined), activeIcon: Icon(Icons.apps), label: 'Menu'),
-          ],
+        Container(
+          margin: const EdgeInsets.only(left: 16, right: 16, bottom: 20, top: 10),
+          height: 64,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+            border: Border.all(color: Colors.grey.shade100, width: 1),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Início', currentIndex == 0),
+              _buildNavItem(1, Icons.water_drop_rounded, Icons.water_drop_outlined, 'Tanques', currentIndex == 1),
+              const SizedBox(width: 48), // Espaço reservado para o FAB central
+              _buildNavItem(2, Icons.bar_chart_rounded, Icons.bar_chart_outlined, 'Qualidade', currentIndex == 2),
+              _buildNavItem(3, Icons.apps_rounded, Icons.apps_outlined, 'Menu', currentIndex == 3),
+            ],
+          ),
         ),
         Positioned(
-          top: -22,
-          child: GestureDetector(
-            onTap: () => _handleCentralFabPressed(context, ref),
-            child: Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: _kNavyBlue,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4)),
-                ],
+          top: -12,
+          child: _buildCentralFab(context, ref),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon, String label, bool isActive) {
+    final color = isActive ? _kGreen : Colors.grey.shade400;
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          navigationShell.goBranch(index);
+        },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedScale(
+              scale: isActive ? 1.15 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                isActive ? activeIcon : inactiveIcon,
+                color: color,
+                size: 22,
               ),
-              child: const Icon(Icons.add, color: Colors.white, size: 28),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+            const SizedBox(height: 2),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              height: 3,
+              width: isActive ? 12 : 0,
+              decoration: BoxDecoration(
+                color: _kGreen,
+                borderRadius: BorderRadius.circular(1.5),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCentralFab(BuildContext context, WidgetRef ref) {
+    return Container(
+      width: 58,
+      height: 58,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          colors: [_kNavyBlue, Color(0xFF0055A5)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _kNavyBlue.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+        border: Border.all(color: Colors.white, width: 3),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: () => _handleCentralFabPressed(context, ref),
+          child: const Center(
+            child: Icon(
+              Icons.add_rounded,
+              color: Colors.white,
+              size: 28,
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 }
