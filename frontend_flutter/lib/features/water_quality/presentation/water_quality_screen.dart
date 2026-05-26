@@ -27,6 +27,11 @@ class WaterQualityScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final wqAsyncValue = ref.watch(waterQualityProvider);
+    final tanksAsync = ref.watch(tanksProvider);
+    final tankMap = tanksAsync.maybeWhen(
+      data: (list) => {for (var t in list) t.id: t.name},
+      orElse: () => <String, String>{},
+    );
     final authState = ref.watch(authNotifierProvider);
     final isOwner = authState.accountType == 'FARM_OWNER';
 
@@ -102,8 +107,8 @@ class WaterQualityScreen extends ConsumerWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Tank ID: ${record.tankId.substring(0, 8)}...',
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+                                tankMap[record.tankId] ?? 'Tanque Desconhecido',
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF003366), fontSize: 16),
                               ),
                               Text(
                                 formattedDate,
