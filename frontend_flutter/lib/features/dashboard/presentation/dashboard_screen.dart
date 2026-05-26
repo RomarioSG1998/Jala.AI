@@ -779,13 +779,16 @@ class _AppDrawer extends ConsumerWidget {
                   }),
                 ],
 
-                if (role == 'FARM_OWNER') ...[
+                if (role == 'FARM_OWNER' || role == 'CLIENT') ...[
                   _section('Gestão'),
                   _tile(context, Icons.build, 'Manutenção', Colors.grey.shade700, () {
                     Navigator.pop(context); context.go('/maintenance');
                   }),
                   _tile(context, Icons.attach_money, 'Finanças', Colors.green.shade700, () {
                     Navigator.pop(context); context.go('/finances');
+                  }),
+                  _tile(context, Icons.people, 'Funcionários', Colors.indigo, () {
+                    Navigator.pop(context); context.go('/employees');
                   }),
                 ],
               ],

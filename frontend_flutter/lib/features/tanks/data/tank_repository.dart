@@ -47,6 +47,16 @@ class TankRepository {
     }
   }
 
+  Future<Tank> updateTank(String tankId, Map<String, dynamic> tankData) async {
+    try {
+      tankData['farmId'] = _farmId; // Inject required farmId
+      final response = await _dio.put('/api/tanks/$tankId', data: tankData);
+      return Tank.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Failed to update tank: $e');
+    }
+  }
+
   Future<void> deleteTank(String tankId) async {
     try {
       await _dio.delete('/api/tanks/$tankId?farmId=$_farmId');

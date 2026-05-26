@@ -42,6 +42,37 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
     }
   }
 
+  Future<bool> updateTank(
+    String id,
+    String name,
+    String species,
+    int capacity,
+    int averageWeight,
+    int mortalityCount,
+    String? nextHarvestDate,
+    String status,
+  ) async {
+    try {
+      final updatedTank = await _repository.updateTank(id, {
+        'name': name,
+        'fishSpecies': species,
+        'fishCapacity': capacity,
+        'averageWeightG': averageWeight,
+        'mortalityCount': mortalityCount,
+        'nextHarvestDate': nextHarvestDate,
+        'status': status,
+      });
+      if (state.hasValue) {
+        state = AsyncValue.data(
+          state.value!.map((t) => t.id == id ? updatedTank : t).toList(),
+        );
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<bool> deleteTank(String id) async {
     try {
       await _repository.deleteTank(id);

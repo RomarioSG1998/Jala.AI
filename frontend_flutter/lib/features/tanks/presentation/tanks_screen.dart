@@ -50,7 +50,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
   Widget build(BuildContext context) {
     final tanksAsyncValue = ref.watch(tanksProvider);
     final authState = ref.watch(authNotifierProvider);
-    final isOwner = authState.accountType == 'FARM_OWNER';
+    final isOwner = authState.accountType == 'FARM_OWNER' || authState.accountType == 'CLIENT';
 
     final summaryAsyncValue = ref.watch(farmSummaryProvider);
 
@@ -121,7 +121,19 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
                             tank: tank,
                             isActive: tank.status == 'ACTIVE',
                             onTap: () {
-                              // Navegar para detalhes
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                ),
+                                builder: (context) => Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: MediaQuery.of(context).viewInsets.bottom,
+                                  ),
+                                  child: EditTankForm(tank: tank),
+                                ),
+                              );
                             },
                           );
                         },
@@ -455,6 +467,247 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
               child: _isLoading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Create Tank'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Componente EditTankForm ───
+
+class EditTankForm extends ConsumerStatefulWidget {
+  final Tank tank;
+  const EditTankForm({super.key, required this.tank});
+
+  @override
+  ConsumerState<EditTankForm> createState() => _EditTankFormState();
+}
+
+class _EditTankFormState extends ConsumerState<EditTankForm> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _speciesController;
+  late TextEditingController _capacityController;
+  late TextEditingController _weightController;
+  late TextEditingController _mortalityController;
+  late TextEditingController _harvestDateController;
+  late String _status;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.tank.name);
+    _speciesController = TextEditingController(text: widget.tank.fishSpecies);
+    _capacityController = TextEditingController(text: widget.tank.fishCapacity.toString());
+    _weightController = TextEditingController(text: widget.tank.averageWeightG.toString());
+    _mortalityController = TextEditingController(text: widget.tank.mortalityCount.toString());
+    _harvestDateController = TextEditingController(text: widget.tank.nextHarvestDate ?? '');
+    _status = widget.tank.status;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _speciesController.dispose();
+    _capacityController.dispose();
+    _weightController.dispose();
+    _mortalityController.dispose();
+    _harvestDateController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate() async {
+    DateTime initial = DateTime.now();
+    if (_harvestDateController.text.isNotEmpty) {
+      try {
+        initial = DateTime.parse(_harvestDateController.text);
+      } catch (_) {}
+    }
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        _harvestDateController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    
+    final success = await ref.read(tanksProvider.notifier).updateTank(
+          widget.tank.id,
+          _nameController.text.trim(),
+          _speciesController.text.trim(),
+          int.parse(_capacityController.text.trim()),
+          int.parse(_weightController.text.trim()),
+          int.parse(_mortalityController.text.trim()),
+          _harvestDateController.text.isEmpty ? null : _harvestDateController.text,
+          _status,
+        );
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (success) {
+        ref.invalidate(farmSummaryProvider);
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tanque atualizado com sucesso!')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro ao atualizar tanque')),
+        );
+      }
+    }
+  }
+
+  Future<void> _delete() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir Tanque'),
+        content: Text('Deseja realmente excluir o tanque "${widget.tank.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      setState(() => _isLoading = true);
+      final success = await ref.read(tanksProvider.notifier).deleteTank(widget.tank.id);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (success) {
+          ref.invalidate(farmSummaryProvider);
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Tanque excluído com sucesso!')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erro ao excluir tanque')),
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Editar Tanque', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    onPressed: _isLoading ? null : _delete,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Nome do Tanque', border: OutlineInputBorder()),
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _speciesController,
+                decoration: const InputDecoration(labelText: 'Espécie de Peixe', border: OutlineInputBorder()),
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _capacityController,
+                decoration: const InputDecoration(labelText: 'Capacidade', border: OutlineInputBorder()),
+                keyboardType: TextInputType.number,
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _weightController,
+                decoration: const InputDecoration(labelText: 'Peso Médio (g)', border: OutlineInputBorder()),
+                keyboardType: TextInputType.number,
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _mortalityController,
+                decoration: const InputDecoration(labelText: 'Mortalidade', border: OutlineInputBorder()),
+                keyboardType: TextInputType.number,
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _harvestDateController,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Data de Despesca',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.calendar_today),
+                      ),
+                      onTap: _selectDate,
+                    ),
+                  ),
+                  if (_harvestDateController.text.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => setState(() => _harvestDateController.clear()),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _status,
+                decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
+                items: const [
+                  DropdownMenuItem(value: 'ACTIVE', child: Text('Ativo')),
+                  DropdownMenuItem(value: 'INACTIVE', child: Text('Inativo')),
+                ],
+                onChanged: (val) => setState(() => _status = val!),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF13A538),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isLoading
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Salvar Alterações'),
+              ),
+            ],
+          ),
         ),
       ),
     );

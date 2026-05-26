@@ -40,7 +40,7 @@ class InventoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final inventoryAsync = ref.watch(inventoryProvider);
     final authState = ref.watch(authNotifierProvider);
-    final isOwner = authState.accountType == 'FARM_OWNER';
+    final isOwner = authState.accountType == 'FARM_OWNER' || authState.accountType == 'CLIENT';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),

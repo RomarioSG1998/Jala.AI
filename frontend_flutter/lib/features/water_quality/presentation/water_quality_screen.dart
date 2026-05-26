@@ -33,7 +33,7 @@ class WaterQualityScreen extends ConsumerWidget {
       orElse: () => <String, String>{},
     );
     final authState = ref.watch(authNotifierProvider);
-    final isOwner = authState.accountType == 'FARM_OWNER';
+    final isOwner = authState.accountType == 'FARM_OWNER' || authState.accountType == 'CLIENT';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),

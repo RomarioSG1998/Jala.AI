@@ -14,6 +14,7 @@ import 'package:frontend_flutter/features/finances/presentation/finances_screen.
 import 'package:frontend_flutter/features/suppliers/presentation/suppliers_screen.dart';
 import 'package:frontend_flutter/features/saas_admin/presentation/tenants_screen.dart';
 import 'package:frontend_flutter/features/feeding_records/presentation/feeding_records_screen.dart';
+import 'package:frontend_flutter/features/employees/presentation/employees_screen.dart';
 
 void main() {
   runApp(
@@ -115,6 +116,10 @@ class AquaSertaoApp extends ConsumerWidget {
                   path: '/feeding-records',
                   builder: (context, state) => const FeedingRecordsScreen(),
                 ),
+                GoRoute(
+                  path: '/employees',
+                  builder: (context, state) => const EmployeesScreen(),
+                ),
               ],
             ),
           ],
@@ -165,8 +170,9 @@ class MoreMenuBody extends ConsumerWidget {
           _menuTile(context, Icons.restaurant, 'Alimentação', 'Registro de tratos diários', Colors.purple, '/feeding-records'),
           _menuTile(context, Icons.inventory, 'Estoque', 'Controle de ração e insumos', Colors.orange, '/inventory'),
           _menuTile(context, Icons.agriculture, 'Colheitas', 'Registre e acompanhe despescas', Colors.green, '/harvests'),
+          _menuTile(context, Icons.people, 'Funcionários', 'Gerenciar equipe', Colors.indigo, '/employees'),
         ],
-        if (role == 'FARM_OWNER') ...[
+        if (role == 'FARM_OWNER' || role == 'CLIENT') ...[
           _menuTile(context, Icons.build, 'Manutenção', 'Tarefas e agendamentos', Colors.grey, '/maintenance'),
           _menuTile(context, Icons.attach_money, 'Finanças', 'Controle financeiro', Colors.green.shade700, '/finances'),
         ],
