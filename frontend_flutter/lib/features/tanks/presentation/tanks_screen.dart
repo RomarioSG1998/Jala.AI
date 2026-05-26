@@ -163,27 +163,34 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text('Tanques', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-              SizedBox(height: 4),
-              Text('Gerencie todos os tanques da sua criação', style: TextStyle(color: Colors.white70, fontSize: 13)),
-            ],
-          ),
-          if (isOwner)
-            ElevatedButton.icon(
-              onPressed: () => TanksScreen.showAddTankModal(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF13A538), // Verde Principal
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                elevation: 0,
-              ),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Novo tanque', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text('Tanques', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                SizedBox(height: 4),
+                Text('Gerencie todos os tanques da sua criação',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                    overflow: TextOverflow.ellipsis),
+              ],
             ),
+          ),
+          if (isOwner) ...[
+            const SizedBox(width: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF13A538),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                onPressed: () => TanksScreen.showAddTankModal(context),
+                icon: const Icon(Icons.add, color: Colors.white, size: 22),
+                tooltip: 'Novo tanque',
+                padding: const EdgeInsets.all(10),
+                constraints: const BoxConstraints(),
+              ),
+            ),
+          ],
         ],
       ),
     );
