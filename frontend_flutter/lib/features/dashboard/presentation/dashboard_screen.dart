@@ -16,6 +16,7 @@ import 'package:frontend_flutter/features/maintenance/presentation/maintenance_s
 import 'package:frontend_flutter/features/finances/presentation/finances_screen.dart';
 import 'package:frontend_flutter/features/suppliers/presentation/suppliers_screen.dart';
 import 'package:frontend_flutter/features/saas_admin/presentation/tenants_screen.dart';
+import 'package:frontend_flutter/features/feeding_records/presentation/feeding_records_screen.dart';
 
 // ─── AppShell – Casca Permanente com Header e Bottom Nav ────────────────────
 
@@ -55,6 +56,9 @@ class AppShell extends ConsumerWidget {
         break;
       case '/tenants':
         TenantsScreen.showAddTenantModal(context, ref);
+        break;
+      case '/feeding-records':
+        FeedingRecordsScreen.showAddFeedingRecordModal(context, ref);
         break;
       case '/saas-dashboard':
         TenantsScreen.showAddTenantModal(context, ref);
@@ -756,6 +760,9 @@ class _AppDrawer extends ConsumerWidget {
                   }),
                   _tile(context, Icons.science, 'Qualidade da Água', Colors.teal, () {
                     Navigator.pop(context); context.go('/water-quality');
+                  }),
+                  _tile(context, Icons.restaurant, 'Alimentação', Colors.purple, () {
+                    Navigator.pop(context); context.go('/feeding-records');
                   }),
                   _tile(context, Icons.inventory, 'Estoque', Colors.orange, () {
                     Navigator.pop(context); context.go('/inventory');

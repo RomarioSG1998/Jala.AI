@@ -13,6 +13,7 @@ import 'package:frontend_flutter/features/saas_admin/presentation/saas_dashboard
 import 'package:frontend_flutter/features/finances/presentation/finances_screen.dart';
 import 'package:frontend_flutter/features/suppliers/presentation/suppliers_screen.dart';
 import 'package:frontend_flutter/features/saas_admin/presentation/tenants_screen.dart';
+import 'package:frontend_flutter/features/feeding_records/presentation/feeding_records_screen.dart';
 
 void main() {
   runApp(
@@ -110,6 +111,10 @@ class AquaSertaoApp extends ConsumerWidget {
                   path: '/finances',
                   builder: (context, state) => const FinancesScreen(),
                 ),
+                GoRoute(
+                  path: '/feeding-records',
+                  builder: (context, state) => const FeedingRecordsScreen(),
+                ),
               ],
             ),
           ],
@@ -157,6 +162,7 @@ class MoreMenuBody extends ConsumerWidget {
           child: Text('MAIS MÓDULOS', style: TextStyle(color: Colors.black54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
         ),
         if (role == 'FARM_OWNER' || role == 'CLIENT') ...[
+          _menuTile(context, Icons.restaurant, 'Alimentação', 'Registro de tratos diários', Colors.purple, '/feeding-records'),
           _menuTile(context, Icons.inventory, 'Estoque', 'Controle de ração e insumos', Colors.orange, '/inventory'),
           _menuTile(context, Icons.agriculture, 'Colheitas', 'Registre e acompanhe despescas', Colors.green, '/harvests'),
         ],
