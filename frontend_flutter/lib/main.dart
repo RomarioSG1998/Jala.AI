@@ -166,13 +166,13 @@ class MoreMenuBody extends ConsumerWidget {
           padding: EdgeInsets.only(bottom: 12),
           child: Text('MAIS MÓDULOS', style: TextStyle(color: Colors.black54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
         ),
-        if (role == 'FARM_OWNER' || role == 'CLIENT') ...[
+        if (role == 'FARM_OWNER' || role == 'CLIENT' || role == 'FIELD_OPERATOR') ...[
           _menuTile(context, Icons.restaurant, 'Alimentação', 'Registro de tratos diários', Colors.purple, '/feeding-records'),
           _menuTile(context, Icons.inventory, 'Estoque', 'Controle de ração e insumos', Colors.orange, '/inventory'),
           _menuTile(context, Icons.agriculture, 'Colheitas', 'Registre e acompanhe despescas', Colors.green, '/harvests'),
-          _menuTile(context, Icons.people, 'Funcionários', 'Gerenciar equipe', Colors.indigo, '/employees'),
         ],
         if (role == 'FARM_OWNER' || role == 'CLIENT') ...[
+          _menuTile(context, Icons.people, 'Funcionários', 'Gerenciar equipe', Colors.indigo, '/employees'),
           _menuTile(context, Icons.build, 'Manutenção', 'Tarefas e agendamentos', Colors.grey, '/maintenance'),
           _menuTile(context, Icons.attach_money, 'Finanças', 'Controle financeiro', Colors.green.shade700, '/finances'),
         ],

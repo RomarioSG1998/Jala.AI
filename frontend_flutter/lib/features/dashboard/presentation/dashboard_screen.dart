@@ -31,6 +31,7 @@ class AppShell extends ConsumerWidget {
   void _handleCentralFabPressed(BuildContext context, WidgetRef ref) {
     final state = GoRouterState.of(context);
     final currentRoute = state.matchedLocation;
+    final authState = ref.read(authNotifierProvider);
 
     switch (currentRoute) {
       case '/tanks':
@@ -64,11 +65,15 @@ class AppShell extends ConsumerWidget {
         TenantsScreen.showAddTenantModal(context, ref);
         break;
       default:
-        final authState = ref.read(authNotifierProvider);
         if (authState.accountType == 'SAAS_ADMIN') {
           TenantsScreen.showAddTenantModal(context, ref);
         } else {
-          TanksScreen.showAddTankModal(context);
+          final isOwner = authState.accountType == 'FARM_OWNER' || authState.accountType == 'CLIENT';
+          if (isOwner) {
+            TanksScreen.showAddTankModal(context);
+          } else {
+            FeedingRecordsScreen.showAddFeedingRecordModal(context, ref);
+          }
         }
         break;
     }
@@ -760,7 +765,7 @@ class _AppDrawer extends ConsumerWidget {
                   }),
                 ],
 
-                if (role == 'FARM_OWNER' || role == 'CLIENT') ...[
+                if (role == 'FARM_OWNER' || role == 'CLIENT' || role == 'FIELD_OPERATOR') ...[
                   _section('Operacional'),
                   _tile(context, Icons.water, 'Tanques', Colors.blue, () {
                     Navigator.pop(context); context.go('/tanks');
