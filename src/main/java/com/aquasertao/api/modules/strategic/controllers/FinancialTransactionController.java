@@ -32,6 +32,14 @@ public class FinancialTransactionController {
         return ResponseEntity.ok(responsePage);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<FinancialTransactionResponseDTO> updateTransaction(
+            @PathVariable UUID id,
+            @RequestBody FinancialTransactionRequestDTO requestDTO
+    ) {
+        return ResponseEntity.ok(financialTransactionService.updateTransaction(id, requestDTO));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTransaction(
             @PathVariable UUID id,

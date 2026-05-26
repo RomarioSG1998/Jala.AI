@@ -45,6 +45,16 @@ class HarvestRepository {
     }
   }
 
+  Future<Harvest> updateHarvest(String id, Map<String, dynamic> data) async {
+    try {
+      data['farmId'] = _farmId;
+      final response = await _dio.put('/api/harvests/$id', data: data);
+      return Harvest.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Failed to update harvest: $e');
+    }
+  }
+
   Future<void> deleteHarvest(String harvestId) async {
     try {
       await _dio.delete('/api/harvests/$harvestId?farmId=$_farmId');

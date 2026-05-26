@@ -104,18 +104,37 @@ class WaterQualityScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                tankMap[record.tankId] ?? 'Tanque Desconhecido',
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF003366), fontSize: 16),
-                              ),
-                              Text(
-                                formattedDate,
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
-                              ),
-                            ],
-                          ),
+                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                             children: [
+                               Text(
+                                 tankMap[record.tankId] ?? 'Tanque Desconhecido',
+                                 style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF003366), fontSize: 16),
+                               ),
+                               Row(
+                                 children: [
+                                   Text(
+                                     formattedDate,
+                                     style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                   ),
+                                   const SizedBox(width: 8),
+                                   InkWell(
+                                     onTap: () => showModalBottomSheet(
+                                       context: context,
+                                       isScrollControlled: true,
+                                       shape: const RoundedRectangleBorder(
+                                         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                       ),
+                                       builder: (ctx) => Padding(
+                                         padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+                                         child: EditWaterQualityForm(record: record),
+                                       ),
+                                     ),
+                                     child: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF003366)),
+                                   ),
+                                 ],
+                               ),
+                             ],
+                           ),
                           const Divider(height: 24),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -191,7 +210,116 @@ class WaterQualityScreen extends ConsumerWidget {
   }
 }
 
-class AddWaterQualityForm extends ConsumerStatefulWidget {
+class EditWaterQualityForm extends ConsumerStatefulWidget {
+  final dynamic record;
+  const EditWaterQualityForm({super.key, required this.record});
+
+  @override
+  ConsumerState<EditWaterQualityForm> createState() => _EditWaterQualityFormState();
+}
+
+class _EditWaterQualityFormState extends ConsumerState<EditWaterQualityForm> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _phController;
+  late TextEditingController _tempController;
+  late TextEditingController _oxygenController;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _phController = TextEditingController(text: widget.record.ph.toString());
+    _tempController = TextEditingController(text: widget.record.temperature.toString());
+    _oxygenController = TextEditingController(text: widget.record.dissolvedOxygen.toString());
+  }
+
+  @override
+  void dispose() {
+    _phController.dispose();
+    _tempController.dispose();
+    _oxygenController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    final success = await ref.read(waterQualityProvider.notifier).updateRecord(
+          widget.record.id,
+          widget.record.tankId,
+          double.parse(_phController.text.trim()),
+          double.parse(_tempController.text.trim()),
+          double.parse(_oxygenController.text.trim()),
+        );
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (success) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Registro atualizado com sucesso!')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro ao atualizar registro.')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('Editar Qualidade da Água',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 24),
+              TextFormField(
+                controller: _phController,
+                decoration: const InputDecoration(labelText: 'Nível de pH', border: OutlineInputBorder()),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : (double.tryParse(v) == null ? 'Número inválido' : null),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _tempController,
+                decoration: const InputDecoration(labelText: 'Temperatura (°C)', border: OutlineInputBorder()),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : (double.tryParse(v) == null ? 'Número inválido' : null),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _oxygenController,
+                decoration: const InputDecoration(labelText: 'Oxigênio Dissolvido (mg/L)', border: OutlineInputBorder()),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : (double.tryParse(v) == null ? 'Número inválido' : null),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF003366),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: _isLoading
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Salvar Alterações'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
   const AddWaterQualityForm({super.key});
 
   @override

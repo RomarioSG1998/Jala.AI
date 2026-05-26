@@ -33,6 +33,17 @@ public class FinancialTransactionService {
         return transactionPage.map(this::mapToDTO);
     }
 
+    public FinancialTransactionResponseDTO updateTransaction(UUID id, FinancialTransactionRequestDTO requestDTO) {
+        FinancialTransaction transaction = financialTransactionRepository.findByIdAndFarmId(id, requestDTO.getFarmId())
+                .orElseThrow(() -> new IllegalArgumentException("Financial transaction not found or access denied"));
+
+        transaction.setType(requestDTO.getType());
+        transaction.setAmount(requestDTO.getAmount());
+
+        FinancialTransaction saved = financialTransactionRepository.save(transaction);
+        return mapToDTO(saved);
+    }
+
     public void deleteTransaction(UUID id, UUID farmId) {
         if (!financialTransactionRepository.existsByIdAndFarmId(id, farmId)) {
             throw new IllegalArgumentException("Financial transaction not found or access denied");

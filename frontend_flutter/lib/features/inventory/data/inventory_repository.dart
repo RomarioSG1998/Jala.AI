@@ -45,6 +45,16 @@ class InventoryRepository {
     }
   }
 
+  Future<InventoryItem> updateItem(String id, Map<String, dynamic> data) async {
+    try {
+      data['farmId'] = _farmId;
+      final response = await _dio.put('/api/inventory/$id', data: data);
+      return InventoryItem.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Failed to update inventory item: $e');
+    }
+  }
+
   Future<void> deleteItem(String itemId) async {
     try {
       await _dio.delete('/api/inventory/$itemId?farmId=$_farmId');

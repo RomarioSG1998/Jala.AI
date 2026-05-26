@@ -138,7 +138,22 @@ class InventoryScreen extends ConsumerWidget {
                           )
                         ],
                       ),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: const Icon(Icons.edit_outlined),
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                          ),
+                          builder: (context) => Padding(
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
+                            child: EditInventoryItemForm(item: item),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 );
@@ -317,6 +332,153 @@ class _AddInventoryItemFormState
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2))
                   : const Text('Add Item'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class EditInventoryItemForm extends ConsumerStatefulWidget {
+  final InventoryItem item;
+  const EditInventoryItemForm({super.key, required this.item});
+
+  @override
+  ConsumerState<EditInventoryItemForm> createState() =>
+      _EditInventoryItemFormState();
+}
+
+class _EditInventoryItemFormState
+    extends ConsumerState<EditInventoryItemForm> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameController;
+  late final TextEditingController _qtyController;
+  late final TextEditingController _unitController;
+  late String _selectedType;
+  bool _isLoading = false;
+
+  static const _types = ['Feed', 'Medicine', 'Equipment', 'Other'];
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.item.itemName);
+    _qtyController = TextEditingController(text: widget.item.quantity.toString());
+    _unitController = TextEditingController(text: widget.item.unit);
+    _selectedType = _types.contains(widget.item.type) ? widget.item.type : 'Feed';
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _qtyController.dispose();
+    _unitController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+
+    final success = await ref.read(inventoryProvider.notifier).updateItem(
+          widget.item.id,
+          _nameController.text.trim(),
+          double.parse(_qtyController.text.trim()),
+          _unitController.text.trim(),
+          _selectedType,
+        );
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (success) {
+        Navigator.of(context).pop();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update item')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Edit Inventory Item',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                  labelText: 'Item Name', border: OutlineInputBorder()),
+              validator: (v) => v!.isEmpty ? 'Required' : null,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: _qtyController,
+                    decoration: const InputDecoration(
+                        labelText: 'Quantity',
+                        border: OutlineInputBorder()),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    validator: (v) => v!.isEmpty
+                        ? 'Required'
+                        : (double.tryParse(v) == null ? 'Invalid' : null),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _unitController,
+                    decoration: const InputDecoration(
+                        labelText: 'Unit (kg, L…)',
+                        border: OutlineInputBorder()),
+                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedType,
+              decoration: const InputDecoration(
+                  labelText: 'Type', border: OutlineInputBorder()),
+              items: _types
+                  .map((t) =>
+                      DropdownMenuItem(value: t, child: Text(t)))
+                  .toList(),
+              onChanged: (val) =>
+                  setState(() => _selectedType = val ?? 'Feed'),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF13A538),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
+                  : const Text('Save Changes'),
             ),
           ],
         ),

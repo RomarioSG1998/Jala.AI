@@ -126,6 +126,22 @@ class MaintenanceScreen extends ConsumerWidget {
                         child: Icon(style.icon,
                             color: style.color, size: 26),
                       ),
+                      trailing: const Icon(Icons.edit_outlined),
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                          ),
+                          builder: (context) => Padding(
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
+                            child: EditMaintenanceTaskForm(task: task),
+                          ),
+                        );
+                      },
                       title: Text(
                         task.description,
                         style: const TextStyle(
@@ -394,6 +410,153 @@ class _AddMaintenanceTaskFormState
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2))
                   : const Text('Create Task'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class EditMaintenanceTaskForm extends ConsumerStatefulWidget {
+  final MaintenanceTask task;
+  const EditMaintenanceTaskForm({super.key, required this.task});
+
+  @override
+  ConsumerState<EditMaintenanceTaskForm> createState() =>
+      _EditMaintenanceTaskFormState();
+}
+
+class _EditMaintenanceTaskFormState
+    extends ConsumerState<EditMaintenanceTaskForm> {
+  final _formKey = GlobalKey<FormState>();
+  late DateTime _scheduledDate;
+  late final TextEditingController _descriptionController;
+  late String _selectedStatus;
+  bool _isLoading = false;
+
+  static const _statuses = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduledDate = DateTime.tryParse(widget.task.scheduledDate) ?? DateTime.now();
+    _descriptionController = TextEditingController(text: widget.task.description);
+    _selectedStatus = _statuses.contains(widget.task.status) ? widget.task.status : 'PENDING';
+  }
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _scheduledDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+    );
+    if (picked != null) setState(() => _scheduledDate = picked);
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    final dateStr = DateFormat('yyyy-MM-dd').format(_scheduledDate);
+
+    final success =
+        await ref.read(maintenanceProvider.notifier).updateTask(
+              widget.task.id,
+              _descriptionController.text.trim(),
+              _selectedStatus,
+              dateStr,
+            );
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (success) {
+        Navigator.of(context).pop();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update task')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final formattedDate = DateFormat('MMM dd, yyyy').format(_scheduledDate);
+
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Edit Maintenance Task',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            TextFormField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(
+                  labelText: 'Description',
+                  hintText: 'e.g. Clean tank filters',
+                  border: OutlineInputBorder()),
+              maxLines: 2,
+              validator: (v) => v!.isEmpty ? 'Required' : null,
+            ),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: _pickDate,
+              child: AbsorbPointer(
+                child: TextFormField(
+                  decoration: const InputDecoration(
+                    labelText: 'Scheduled Date',
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                  controller:
+                      TextEditingController(text: formattedDate),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedStatus,
+              decoration: const InputDecoration(
+                  labelText: 'Status', border: OutlineInputBorder()),
+              items: _statuses
+                  .map((s) =>
+                      DropdownMenuItem(value: s, child: Text(s)))
+                  .toList(),
+              onChanged: (val) =>
+                  setState(() => _selectedStatus = val ?? 'PENDING'),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF13A538),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
+                  : const Text('Save Changes'),
             ),
           ],
         ),

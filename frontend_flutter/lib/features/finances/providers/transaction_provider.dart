@@ -32,6 +32,18 @@ class TransactionNotifier extends AsyncNotifier<List<FinancialTransaction>> {
     }
   }
 
+  Future<bool> updateTransaction(String id, String type, double amount) async {
+    try {
+      final updated = await _repository.updateTransaction(id, type, amount);
+      if (state.hasValue) {
+        state = AsyncValue.data(state.value!.map((t) => t.id == id ? updated : t).toList());
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<bool> deleteTransaction(String id) async {
     try {
       await _repository.deleteTransaction(id);

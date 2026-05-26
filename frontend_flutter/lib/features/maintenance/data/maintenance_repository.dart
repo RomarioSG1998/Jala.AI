@@ -45,6 +45,16 @@ class MaintenanceRepository {
     }
   }
 
+  Future<MaintenanceTask> updateTask(String id, Map<String, dynamic> data) async {
+    try {
+      data['farmId'] = _farmId;
+      final response = await _dio.put('/api/maintenance/$id', data: data);
+      return MaintenanceTask.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Failed to update task: $e');
+    }
+  }
+
   Future<void> deleteTask(String taskId) async {
     try {
       await _dio.delete('/api/maintenance/$taskId?farmId=$_farmId');

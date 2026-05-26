@@ -145,7 +145,22 @@ class HarvestsScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: const Icon(Icons.edit_outlined),
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                          ),
+                          builder: (context) => Padding(
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
+                            child: EditHarvestForm(harvest: harvest),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 );
@@ -362,6 +377,112 @@ class _LogHarvestFormState extends ConsumerState<LogHarvestForm> {
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2))
                   : const Text('Log Harvest'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class EditHarvestForm extends ConsumerStatefulWidget {
+  final Harvest harvest;
+  const EditHarvestForm({super.key, required this.harvest});
+
+  @override
+  ConsumerState<EditHarvestForm> createState() => _EditHarvestFormState();
+}
+
+class _EditHarvestFormState extends ConsumerState<EditHarvestForm> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _qtyController;
+  late final TextEditingController _destinationController;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _qtyController = TextEditingController(text: widget.harvest.quantityKg.toString());
+    _destinationController = TextEditingController(text: widget.harvest.destination);
+  }
+
+  @override
+  void dispose() {
+    _qtyController.dispose();
+    _destinationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+
+    final success = await ref.read(harvestProvider.notifier).updateHarvest(
+          widget.harvest.id,
+          double.parse(_qtyController.text.trim()),
+          _destinationController.text.trim(),
+        );
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (success) {
+        Navigator.of(context).pop();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update harvest')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Edit Harvest Record',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            TextFormField(
+              controller: _qtyController,
+              decoration: const InputDecoration(
+                  labelText: 'Quantity (kg)', border: OutlineInputBorder()),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              validator: (v) => v!.isEmpty
+                  ? 'Required'
+                  : (double.tryParse(v) == null ? 'Invalid number' : null),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _destinationController,
+              decoration: const InputDecoration(
+                  labelText: 'Destination (e.g. Local Market)',
+                  border: OutlineInputBorder()),
+              validator: (v) => v!.isEmpty ? 'Required' : null,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF13A538),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
+                  : const Text('Save Changes'),
             ),
           ],
         ),

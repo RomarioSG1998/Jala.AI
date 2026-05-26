@@ -37,6 +37,23 @@ class InventoryNotifier extends AsyncNotifier<List<InventoryItem>> {
     }
   }
 
+  Future<bool> updateItem(String id, String name, double qty, String unit, String type) async {
+    try {
+      final updated = await _repository.updateItem(id, {
+        'itemName': name,
+        'quantity': qty,
+        'unit': unit,
+        'type': type,
+      });
+      if (state.hasValue) {
+        state = AsyncValue.data(state.value!.map((i) => i.id == id ? updated : i).toList());
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<bool> deleteItem(String id) async {
     try {
       await _repository.deleteItem(id);

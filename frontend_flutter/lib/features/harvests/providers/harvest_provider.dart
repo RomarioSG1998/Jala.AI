@@ -38,6 +38,21 @@ class HarvestNotifier extends AsyncNotifier<List<Harvest>> {
     }
   }
 
+  Future<bool> updateHarvest(String id, double quantityKg, String destination) async {
+    try {
+      final updated = await _repository.updateHarvest(id, {
+        'quantityKg': quantityKg,
+        'destination': destination,
+      });
+      if (state.hasValue) {
+        state = AsyncValue.data(state.value!.map((h) => h.id == id ? updated : h).toList());
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<bool> deleteHarvest(String id) async {
     try {
       await _repository.deleteHarvest(id);

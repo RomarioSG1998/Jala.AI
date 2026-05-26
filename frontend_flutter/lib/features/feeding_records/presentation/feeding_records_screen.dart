@@ -186,7 +186,15 @@ class FeedingRecordsScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      trailing: const Icon(Icons.chevron_right, color: Colors.black12),
+                      trailing: const Icon(Icons.edit_outlined),
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => _EditFeedingRecordForm(record: record),
+                        );
+                      },
                     ),
                   ),
                 );
@@ -420,6 +428,152 @@ class _AddFeedingRecordFormState extends ConsumerState<_AddFeedingRecordForm> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Trato registrado com sucesso!'), backgroundColor: _kGreen),
+        );
+        Navigator.pop(context);
+      }
+    }
+  }
+}
+
+class _EditFeedingRecordForm extends ConsumerStatefulWidget {
+  final FeedingRecord record;
+  const _EditFeedingRecordForm({required this.record});
+
+  @override
+  ConsumerState<_EditFeedingRecordForm> createState() => _EditFeedingRecordFormState();
+}
+
+class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _quantityController;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantityController = TextEditingController(text: widget.record.quantity.toString());
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final inventoryAsync = ref.watch(inventoryProvider);
+
+    final feeds = inventoryAsync.maybeWhen(
+      data: (list) => list.where((item) => item.type.toLowerCase() == 'feed').toList(),
+      orElse: () => const [],
+    );
+
+    // Find the feed item if possible to see available qty/unit
+    final selectedFeed = feeds.isNotEmpty
+        ? feeds.firstWhere((f) => f.id == widget.record.feedId, orElse: () => feeds.first)
+        : null;
+
+    final unit = selectedFeed?.unit ?? 'kg';
+    // Available includes current quantity of this record since we're editing/adjusting it
+    final availableQuantity = (selectedFeed?.quantity ?? 0.0) + widget.record.quantity;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Editar Trato / Alimentação',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _kNavyBlue),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Quantidade
+            TextFormField(
+              controller: _quantityController,
+              decoration: InputDecoration(
+                labelText: 'Quantidade',
+                suffixText: unit,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.scale),
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              validator: (val) {
+                if (val == null || val.isEmpty) return 'Digite a quantidade';
+                final numVal = double.tryParse(val);
+                if (numVal == null || numVal <= 0) return 'Digite um número maior que zero';
+                if (numVal > availableQuantity) {
+                  return 'Quantidade maior que o disponível em estoque ($availableQuantity $unit)';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 24),
+
+            // Botão Salvar
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kNavyBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: _isSaving ? null : _saveForm,
+              child: _isSaving
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : const Text('Salvar Alterações', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _saveForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+
+    final err = await ref.read(feedingRecordProvider.notifier).updateRecord(
+          widget.record.id,
+          double.parse(_quantityController.text),
+        );
+
+    if (mounted) {
+      setState(() => _isSaving = false);
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar: $err'), backgroundColor: Colors.red),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Trato atualizado com sucesso!'), backgroundColor: _kGreen),
         );
         Navigator.pop(context);
       }

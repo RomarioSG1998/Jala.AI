@@ -51,6 +51,22 @@ class TransactionRepository {
     }
   }
 
+  Future<FinancialTransaction> updateTransaction(String id, String type, double amount) async {
+    try {
+      final response = await _dio.put(
+        '/api/finances/$id',
+        data: {
+          'farmId': _farmId,
+          'type': type,
+          'amount': amount,
+        },
+      );
+      return FinancialTransaction.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Failed to update transaction: $e');
+    }
+  }
+
   Future<void> deleteTransaction(String id) async {
     try {
       await _dio.delete('/api/finances/$id?farmId=$_farmId');

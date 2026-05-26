@@ -38,6 +38,22 @@ class MaintenanceNotifier extends AsyncNotifier<List<MaintenanceTask>> {
     }
   }
 
+  Future<bool> updateTask(String id, String description, String status, String scheduledDate) async {
+    try {
+      final updated = await _repository.updateTask(id, {
+        'description': description,
+        'status': status,
+        'scheduledDate': scheduledDate,
+      });
+      if (state.hasValue) {
+        state = AsyncValue.data(state.value!.map((t) => t.id == id ? updated : t).toList());
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<bool> deleteTask(String id) async {
     try {
       await _repository.deleteTask(id);

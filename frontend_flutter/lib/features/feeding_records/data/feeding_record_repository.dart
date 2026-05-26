@@ -50,6 +50,18 @@ class FeedingRecordRepository {
     }
   }
 
+  Future<FeedingRecord> updateRecord(String id, Map<String, dynamic> data) async {
+    try {
+      data['farmId'] = _farmId;
+      final response = await _dio.put('/api/feeding-records/$id', data: data);
+      return FeedingRecord.fromJson(response.data);
+    } on DioException catch (e) {
+      throw Exception(e.response?.data?['message'] ?? 'Failed to update feeding record');
+    } catch (e) {
+      throw Exception('Failed to update feeding record: $e');
+    }
+  }
+
   Future<void> deleteRecord(String id) async {
     try {
       await _dio.delete('/api/feeding-records/$id?farmId=$_farmId');

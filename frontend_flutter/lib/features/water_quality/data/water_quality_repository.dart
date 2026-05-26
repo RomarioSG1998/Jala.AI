@@ -59,6 +59,16 @@ class WaterQualityRepository {
     }
   }
 
+  Future<WaterQuality> updateRecord(String id, Map<String, dynamic> data) async {
+    try {
+      data['farmId'] = _farmId;
+      final response = await _dio.put('/api/water-quality/$id', data: data);
+      return WaterQuality.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Failed to update water quality record: $e');
+    }
+  }
+
   Future<void> deleteRecord(String logId) async {
     try {
       await _dio.delete('/api/water-quality/$logId?farmId=$_farmId');
