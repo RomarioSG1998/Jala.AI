@@ -191,6 +191,7 @@ class FeedingRecordsScreen extends ConsumerWidget {
                       onTap: () {
                         showModalBottomSheet(
                           context: context,
+                          useRootNavigator: true,
                           isScrollControlled: true,
                           shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -249,6 +250,7 @@ class FeedingRecordsScreen extends ConsumerWidget {
   static void showAddFeedingRecordModal(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const _AddFeedingRecordForm(),

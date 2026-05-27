@@ -117,6 +117,7 @@ class EmployeesScreen extends ConsumerWidget {
   void _showAddEmployeeModal(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

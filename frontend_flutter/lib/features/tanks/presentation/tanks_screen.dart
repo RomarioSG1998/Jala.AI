@@ -13,6 +13,7 @@ class TanksScreen extends ConsumerStatefulWidget {
   static void showAddTankModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -123,6 +124,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
                             onTap: () {
                               showModalBottomSheet(
                                 context: context,
+                                useRootNavigator: true,
                                 isScrollControlled: true,
                                 shape: const RoundedRectangleBorder(
                                   borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
