@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend_flutter/features/feeding_records/data/feeding_record_model.dart';
 import 'package:frontend_flutter/features/feeding_records/providers/feeding_record_provider.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import 'package:frontend_flutter/features/inventory/providers/inventory_provider.dart';
@@ -191,8 +192,15 @@ class FeedingRecordsScreen extends ConsumerWidget {
                         showModalBottomSheet(
                           context: context,
                           isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (context) => _EditFeedingRecordForm(record: record),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                          ),
+                          builder: (context) => Padding(
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
+                            child: _EditFeedingRecordForm(record: record),
+                          ),
                         );
                       },
                     ),
@@ -446,12 +454,16 @@ class _EditFeedingRecordForm extends ConsumerStatefulWidget {
 class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _quantityController;
+  String? _selectedTankId;
+  String? _selectedFeedId;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     _quantityController = TextEditingController(text: widget.record.quantity.toString());
+    _selectedTankId = widget.record.tankId;
+    _selectedFeedId = widget.record.feedId;
   }
 
   @override
@@ -462,21 +474,18 @@ class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> 
 
   @override
   Widget build(BuildContext context) {
+    final tanksAsync = ref.watch(tanksProvider);
     final inventoryAsync = ref.watch(inventoryProvider);
 
-    final feeds = inventoryAsync.maybeWhen(
-      data: (list) => list.where((item) => item.type.toLowerCase() == 'feed').toList(),
-      orElse: () => const [],
-    );
+    final tanks = tanksAsync.value ?? [];
+    final feeds = (inventoryAsync.value ?? []).where((i) => i.type.toLowerCase() == 'feed').toList();
 
-    // Find the feed item if possible to see available qty/unit
-    final selectedFeed = feeds.isNotEmpty
-        ? feeds.firstWhere((f) => f.id == widget.record.feedId, orElse: () => feeds.first)
-        : null;
-
+    // Determine unit
+    final selectedFeed = feeds.where((f) => f.id == _selectedFeedId).firstOrNull;
     final unit = selectedFeed?.unit ?? 'kg';
-    // Available includes current quantity of this record since we're editing/adjusting it
-    final availableQuantity = (selectedFeed?.quantity ?? 0.0) + widget.record.quantity;
+    final currentQuantity = selectedFeed?.quantity ?? 0.0;
+    // Limit available quantity to current quantity + what was already registered in this record (so we don't block them if they decrease or slightly increase)
+    final availableQuantity = currentQuantity + (widget.record.feedId == _selectedFeedId ? widget.record.quantity : 0.0);
 
     return Container(
       decoration: const BoxDecoration(
@@ -500,7 +509,7 @@ class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> 
               children: [
                 const Text(
                   'Editar Trato / Alimentação',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _kNavyBlue),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF003366)),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -509,6 +518,47 @@ class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> 
               ],
             ),
             const SizedBox(height: 20),
+
+            // Dropdown Tanque
+            DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                labelText: 'Selecione o Tanque',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.water),
+              ),
+              value: _selectedTankId,
+              items: tanks.map((t) {
+                return DropdownMenuItem<String>(
+                  value: t.id,
+                  child: Text(t.name),
+                );
+              }).toList(),
+              onChanged: (val) => setState(() => _selectedTankId = val),
+              validator: (val) => val == null ? 'Selecione o tanque' : null,
+            ),
+            const SizedBox(height: 16),
+
+            // Dropdown Ração
+            DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                labelText: 'Selecione a Ração',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.rice_bowl),
+              ),
+              value: _selectedFeedId,
+              items: feeds.map((f) {
+                final dispQty = f.quantity + (widget.record.feedId == f.id ? widget.record.quantity : 0.0);
+                return DropdownMenuItem<String>(
+                  value: f.id,
+                  child: Text('${f.itemName} (Disp: $dispQty ${f.unit})'),
+                );
+              }).toList(),
+              onChanged: (val) => setState(() {
+                _selectedFeedId = val;
+              }),
+              validator: (val) => val == null ? 'Selecione a ração' : null,
+            ),
+            const SizedBox(height: 16),
 
             // Quantidade
             TextFormField(
@@ -535,7 +585,7 @@ class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> 
             // Botão Salvar
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: _kNavyBlue,
+                backgroundColor: const Color(0xFF003366),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -562,6 +612,8 @@ class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> 
 
     final err = await ref.read(feedingRecordProvider.notifier).updateRecord(
           widget.record.id,
+          _selectedTankId!,
+          _selectedFeedId!,
           double.parse(_quantityController.text),
         );
 
@@ -573,7 +625,7 @@ class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> 
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Trato atualizado com sucesso!'), backgroundColor: _kGreen),
+          const SnackBar(content: Text('Trato atualizado com sucesso!'), backgroundColor: Colors.green),
         );
         Navigator.pop(context);
       }

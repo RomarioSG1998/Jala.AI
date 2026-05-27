@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend_flutter/features/inventory/data/inventory_model.dart';
 import 'package:frontend_flutter/features/inventory/providers/inventory_provider.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 

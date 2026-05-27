@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend_flutter/features/harvests/data/harvest_model.dart';
 import 'package:frontend_flutter/features/harvests/providers/harvest_provider.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
@@ -113,6 +114,22 @@ class HarvestsScreen extends ConsumerWidget {
                         child: Icon(Icons.agriculture,
                             color: Colors.green.shade700, size: 26),
                       ),
+                      trailing: const Icon(Icons.edit_outlined),
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                          ),
+                          builder: (context) => Padding(
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
+                            child: EditHarvestForm(harvest: harvest),
+                          ),
+                        );
+                      },
                       title: Text(
                         '${harvest.quantityKg} kg',
                         style: TextStyle(
@@ -145,22 +162,6 @@ class HarvestsScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      trailing: const Icon(Icons.edit_outlined),
-                      onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                          ),
-                          builder: (context) => Padding(
-                            padding: EdgeInsets.only(
-                              bottom: MediaQuery.of(context).viewInsets.bottom,
-                            ),
-                            child: EditHarvestForm(harvest: harvest),
-                          ),
-                        );
-                      },
                     ),
                   ),
                 );
@@ -397,6 +398,7 @@ class _EditHarvestFormState extends ConsumerState<EditHarvestForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _qtyController;
   late final TextEditingController _destinationController;
+  late DateTime _harvestDate;
   bool _isLoading = false;
 
   @override
@@ -404,6 +406,7 @@ class _EditHarvestFormState extends ConsumerState<EditHarvestForm> {
     super.initState();
     _qtyController = TextEditingController(text: widget.harvest.quantityKg.toString());
     _destinationController = TextEditingController(text: widget.harvest.destination);
+    _harvestDate = DateTime.tryParse(widget.harvest.date) ?? DateTime.now();
   }
 
   @override
@@ -413,12 +416,26 @@ class _EditHarvestFormState extends ConsumerState<EditHarvestForm> {
     super.dispose();
   }
 
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _harvestDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+    );
+    if (picked != null) setState(() => _harvestDate = picked);
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
+    final dateStr = DateFormat('yyyy-MM-dd').format(_harvestDate);
+
     final success = await ref.read(harvestProvider.notifier).updateHarvest(
           widget.harvest.id,
+          widget.harvest.tankId,
+          dateStr,
           double.parse(_qtyController.text.trim()),
           _destinationController.text.trim(),
         );
@@ -437,6 +454,8 @@ class _EditHarvestFormState extends ConsumerState<EditHarvestForm> {
 
   @override
   Widget build(BuildContext context) {
+    final formattedDate = DateFormat('MMM dd, yyyy').format(_harvestDate);
+
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Form(
@@ -446,7 +465,7 @@ class _EditHarvestFormState extends ConsumerState<EditHarvestForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Edit Harvest Record',
+              'Edit Harvest',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
@@ -455,7 +474,8 @@ class _EditHarvestFormState extends ConsumerState<EditHarvestForm> {
               controller: _qtyController,
               decoration: const InputDecoration(
                   labelText: 'Quantity (kg)', border: OutlineInputBorder()),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               validator: (v) => v!.isEmpty
                   ? 'Required'
                   : (double.tryParse(v) == null ? 'Invalid number' : null),
@@ -464,9 +484,25 @@ class _EditHarvestFormState extends ConsumerState<EditHarvestForm> {
             TextFormField(
               controller: _destinationController,
               decoration: const InputDecoration(
-                  labelText: 'Destination (e.g. Local Market)',
+                  labelText: 'Destination',
+                  hintText: 'e.g. Local Market',
                   border: OutlineInputBorder()),
               validator: (v) => v!.isEmpty ? 'Required' : null,
+            ),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: _pickDate,
+              child: AbsorbPointer(
+                child: TextFormField(
+                  decoration: const InputDecoration(
+                    labelText: 'Harvest Date',
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                  controller:
+                      TextEditingController(text: formattedDate),
+                ),
+              ),
             ),
             const SizedBox(height: 24),
             ElevatedButton(

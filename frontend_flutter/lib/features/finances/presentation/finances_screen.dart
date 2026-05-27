@@ -192,52 +192,52 @@ class FinancesScreen extends ConsumerWidget {
         child: Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
-          ],
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
+            ],
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: isIncome ? Colors.green.shade50 : Colors.red.shade50,
+                radius: 20,
+                child: Icon(
+                  isIncome ? Icons.arrow_upward : Icons.arrow_downward,
+                  color: isIncome ? Colors.green : Colors.red,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isIncome ? 'Venda / Recebimento' : 'Compra / Despesa',
+                      style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      dateStr,
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                isIncome ? '+ ${fmt.format(tx.amount)}' : '- ${fmt.format(tx.amount)}',
+                style: TextStyle(
+                  color: isIncome ? Colors.green : Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: isIncome ? Colors.green.shade50 : Colors.red.shade50,
-              radius: 20,
-              child: Icon(
-                isIncome ? Icons.arrow_upward : Icons.arrow_downward,
-                color: isIncome ? Colors.green : Colors.red,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isIncome ? 'Venda / Recebimento' : 'Compra / Despesa',
-                    style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    dateStr,
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              isIncome ? '+ ${fmt.format(tx.amount)}' : '- ${fmt.format(tx.amount)}',
-              style: TextStyle(
-                color: isIncome ? Colors.green : Colors.red,
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-            ),
-          ],
-        ),
-      ),
       ),
     );
   }

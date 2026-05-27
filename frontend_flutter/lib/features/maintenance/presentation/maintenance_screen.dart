@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend_flutter/features/maintenance/data/maintenance_model.dart';
 import 'package:frontend_flutter/features/maintenance/providers/maintenance_provider.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';

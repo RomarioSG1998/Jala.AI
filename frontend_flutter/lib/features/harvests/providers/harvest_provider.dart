@@ -38,9 +38,12 @@ class HarvestNotifier extends AsyncNotifier<List<Harvest>> {
     }
   }
 
-  Future<bool> updateHarvest(String id, double quantityKg, String destination) async {
+  Future<bool> updateHarvest(
+      String id, String tankId, String date, double quantityKg, String destination) async {
     try {
       final updated = await _repository.updateHarvest(id, {
+        'tankId': tankId,
+        'date': date,
         'quantityKg': quantityKg,
         'destination': destination,
       });

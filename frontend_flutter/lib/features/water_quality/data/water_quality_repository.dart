@@ -59,11 +59,21 @@ class WaterQualityRepository {
     }
   }
 
-  Future<WaterQuality> updateRecord(String id, Map<String, dynamic> data) async {
+  Future<WaterQuality> updateRecord(String id, String tankId, double ph, double temperature, double dissolvedOxygen) async {
     try {
-      data['farmId'] = _farmId;
-      final response = await _dio.put('/api/water-quality/$id', data: data);
+      final response = await _dio.put(
+        '/api/water-quality/$id',
+        data: {
+          'farmId': _farmId,
+          'tankId': tankId,
+          'ph': ph,
+          'temperature': temperature,
+          'dissolvedOxygen': dissolvedOxygen,
+        },
+      );
       return WaterQuality.fromJson(response.data);
+    } on DioException catch (e) {
+      throw Exception(e.response?.data?['message'] ?? 'Failed to update water quality record');
     } catch (e) {
       throw Exception('Failed to update water quality record: $e');
     }

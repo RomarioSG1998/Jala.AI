@@ -44,14 +44,19 @@ class FeedingRecordNotifier extends AsyncNotifier<List<FeedingRecord>> {
     }
   }
 
-  Future<String?> updateRecord(String id, double quantity) async {
+  Future<String?> updateRecord(String id, String tankId, String feedId, double quantity) async {
     try {
-      final updated = await _repository.updateRecord(id, {'quantity': quantity});
+      final updated = await _repository.updateRecord(id, {
+        'tankId': tankId,
+        'feedId': feedId,
+        'quantity': quantity,
+      });
       if (state.hasValue) {
         state = AsyncValue.data(state.value!.map((r) => r.id == id ? updated : r).toList());
       }
+      // Refresh inventory items to update feed quantity
       ref.read(inventoryProvider.notifier).refreshItems();
-      return null;
+      return null; // success
     } catch (e) {
       return e.toString().replaceAll('Exception: ', '');
     }
