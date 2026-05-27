@@ -314,6 +314,7 @@ class _AddSupplierFormState extends ConsumerState<_AddSupplierForm> {
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : const Text('Solicitar Cadastro', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

@@ -575,6 +575,7 @@ class _EditMaintenanceTaskFormState
                             color: Colors.white, strokeWidth: 2))
                     : const Text('Salvar Alterações'),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

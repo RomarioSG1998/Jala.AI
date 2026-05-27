@@ -719,6 +719,7 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : const Text('Salvar Alterações'),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

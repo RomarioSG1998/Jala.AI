@@ -59,7 +59,7 @@ class WaterQualityScreen extends ConsumerWidget {
                 }
 
                 DateTime date = DateTime.parse(record.measurementTime);
-                String formattedDate = DateFormat('MMM dd, yyyy - HH:mm').format(date);
+                String formattedDate = DateFormat('dd/MM/yyyy - HH:mm').format(date);
 
                 return Dismissible(
                   key: Key(record.id),
@@ -161,14 +161,14 @@ class WaterQualityScreen extends ConsumerWidget {
               const Icon(Icons.error_outline, color: Colors.red, size: 48),
               const SizedBox(height: 16),
               Text(
-                'Failed to load records:\n${error.toString()}',
+                'Falha ao carregar registros:\n${error.toString()}',
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.red),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.read(waterQualityProvider.notifier).refreshRecords(),
-                child: const Text('Retry'),
+                child: const Text('Tentar Novamente'),
               ),
             ],
           ),
@@ -449,6 +449,7 @@ class _EditWaterQualityFormState extends ConsumerState<EditWaterQualityForm> {
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : const Text('Salvar Alterações'),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

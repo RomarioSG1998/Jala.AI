@@ -120,7 +120,7 @@ class SaasDashboardScreen extends ConsumerWidget {
             const SizedBox(height: 28),
 
             // ── Tenant List ──────────────────────────────────────────
-            const Text('Farm Tenants Registrados',
+            const Text('Clientes (Tenants) Registrados',
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,

@@ -602,6 +602,7 @@ class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> 
                       )
                     : const Text('Salvar Alterações', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

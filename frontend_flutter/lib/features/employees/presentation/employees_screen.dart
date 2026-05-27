@@ -243,6 +243,7 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
                       )
                     : const Text('Cadastrar'),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

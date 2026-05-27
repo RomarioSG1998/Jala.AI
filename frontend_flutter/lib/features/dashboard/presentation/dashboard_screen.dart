@@ -657,7 +657,7 @@ class _SaasAdminBody extends ConsumerWidget {
   Widget _tenantCard(dynamic tenant) {
     String formatted = '';
     try {
-      formatted = DateFormat('MMM dd, yyyy').format(DateTime.parse(tenant.createdAt));
+      formatted = DateFormat('dd/MM/yyyy').format(DateTime.parse(tenant.createdAt));
     } catch (_) {}
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

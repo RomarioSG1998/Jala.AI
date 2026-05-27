@@ -140,7 +140,7 @@ class TenantsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Adicione um novo farm tenant clicando no botão +',
+            'Adicione um novo cliente tenant clicando no botão +',
             style: TextStyle(color: Colors.grey, fontSize: 12),
             textAlign: TextAlign.center,
           ),
@@ -201,7 +201,7 @@ class _AddTenantFormState extends ConsumerState<_AddTenantForm> {
         Navigator.of(context).pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Falha ao adicionar farm tenant')),
+          const SnackBar(content: Text('Falha ao adicionar cliente tenant')),
         );
       }
     }
@@ -219,7 +219,7 @@ class _AddTenantFormState extends ConsumerState<_AddTenantForm> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Novo Farm Tenant',
+                'Novo Cliente Tenant',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -255,6 +255,7 @@ class _AddTenantFormState extends ConsumerState<_AddTenantForm> {
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : const Text('Registrar Tenant', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

@@ -54,7 +54,7 @@ class HarvestsScreen extends ConsumerWidget {
                   date = DateTime.now();
                 }
                 final formattedDate =
-                    DateFormat('MMM dd, yyyy').format(date);
+                    DateFormat('dd/MM/yyyy').format(date);
 
                 return Dismissible(
                   key: Key(harvest.id),
@@ -523,6 +523,7 @@ class _EditHarvestFormState extends ConsumerState<EditHarvestForm> {
                             color: Colors.white, strokeWidth: 2))
                     : const Text('Salvar Alterações'),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
