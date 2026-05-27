@@ -61,7 +61,7 @@ class EmployeesScreen extends ConsumerWidget {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.edit_outlined, color: Colors.blue),
-                        onPressed: () => _showAddEmployeeModal(context, ref, emp),
+                        onPressed: () => EmployeesScreen.showAddEmployeeModal(context, emp),
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete_outline, color: Colors.red),
@@ -80,7 +80,7 @@ class EmployeesScreen extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddEmployeeModal(context, ref),
+        onPressed: () => EmployeesScreen.showAddEmployeeModal(context),
         backgroundColor: const Color(0xFF003366),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
@@ -123,7 +123,7 @@ class EmployeesScreen extends ConsumerWidget {
     }
   }
 
-  void _showAddEmployeeModal(BuildContext context, WidgetRef ref, [Employee? employee]) {
+  static void showAddEmployeeModal(BuildContext context, [Employee? employee]) {
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
