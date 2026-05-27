@@ -165,9 +165,12 @@ class AppShell extends ConsumerWidget {
       // ── Bottom Navigation permanente ─────────────────────────────────────
       bottomNavigationBar: _buildBottomNav(context, ref, currentIndex, role),
       // ── Corpo dinâmico ───────────────────────────────────────────────────
-      body: role == 'SAAS_ADMIN' && currentIndex == 0
-          ? const _SaasAdminBody()
-          : navigationShell,
+      body: Padding(
+        padding: const EdgeInsets.only(bottom: 90),
+        child: role == 'SAAS_ADMIN' && currentIndex == 0
+            ? const _SaasAdminBody()
+            : navigationShell,
+      ),
     );
   }
 

@@ -38,6 +38,23 @@ class AquaSertaoApp extends ConsumerWidget {
         final isGoingToLogin = state.matchedLocation == '/login';
         if (!authState.isAuthenticated && !isGoingToLogin) return '/login';
         if (authState.isAuthenticated && isGoingToLogin) return '/dashboard';
+
+        if (authState.isAuthenticated) {
+          final role = authState.accountType;
+          final location = state.matchedLocation;
+
+          // SaaS Admin exclusive routes
+          final isSaasRoute = location == '/tenants' || location == '/suppliers' || location == '/saas-dashboard';
+          if (isSaasRoute && role != 'SAAS_ADMIN') {
+            return '/dashboard';
+          }
+
+          // Farm Owner / Client exclusive routes
+          final isOwnerRoute = location == '/employees' || location == '/finances' || location == '/maintenance';
+          if (isOwnerRoute && role != 'FARM_OWNER' && role != 'CLIENT') {
+            return '/dashboard';
+          }
+        }
         return null;
       },
       routes: [
