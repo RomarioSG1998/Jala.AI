@@ -79,13 +79,6 @@ class EmployeesScreen extends ConsumerWidget {
           child: Text('Erro ao carregar funcionários: $err'),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => EmployeesScreen.showAddEmployeeModal(context),
-        backgroundColor: const Color(0xFF003366),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Novo Funcionário'),
-      ),
     );
   }
 
