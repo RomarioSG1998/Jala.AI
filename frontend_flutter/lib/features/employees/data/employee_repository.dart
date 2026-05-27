@@ -36,6 +36,23 @@ class EmployeeRepository {
     }
   }
 
+  Future<Employee> updateEmployee(String id, String name, String email, String? password) async {
+    try {
+      final response = await _dio.put(
+        '/api/employees/$id',
+        data: {
+          'name': name,
+          'email': email,
+          if (password != null && password.isNotEmpty) 'password': password,
+          'farmId': _farmId,
+        },
+      );
+      return Employee.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      throw Exception('Failed to update employee: $e');
+    }
+  }
+
   Future<void> deleteEmployee(String id) async {
     try {
       await _dio.delete('/api/employees/$id/farm/$_farmId');

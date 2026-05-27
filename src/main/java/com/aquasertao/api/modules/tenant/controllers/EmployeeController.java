@@ -81,6 +81,40 @@ public class EmployeeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @PutMapping("/{id}")
+    @Transactional
+    public ResponseEntity<?> updateEmployee(@PathVariable UUID id, @RequestBody EmployeeRequestDTO requestDTO) {
+        GlobalUser employee = globalUserRepository.findById(id)
+                .orElse(null);
+        if (employee == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // If email is changing, check if the new email is already registered by another user
+        if (!employee.getEmail().equalsIgnoreCase(requestDTO.getEmail()) &&
+                globalUserRepository.findByEmail(requestDTO.getEmail()).isPresent()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Email already registered.");
+        }
+
+        employee.setName(requestDTO.getName());
+        employee.setEmail(requestDTO.getEmail());
+        if (requestDTO.getPassword() != null && !requestDTO.getPassword().trim().isEmpty()) {
+            employee.setPassword(passwordEncoder.encode(requestDTO.getPassword()));
+        }
+
+        GlobalUser savedEmployee = globalUserRepository.save(employee);
+
+        EmployeeResponseDTO response = EmployeeResponseDTO.builder()
+                .id(savedEmployee.getId())
+                .name(savedEmployee.getName())
+                .email(savedEmployee.getEmail())
+                .accountType(savedEmployee.getAccountType())
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping("/{id}/farm/{farmId}")
     @Transactional
     public ResponseEntity<Void> deleteEmployee(@PathVariable UUID id, @PathVariable UUID farmId) {

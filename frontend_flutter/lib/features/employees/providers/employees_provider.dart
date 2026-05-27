@@ -23,6 +23,20 @@ class EmployeesNotifier extends AsyncNotifier<List<Employee>> {
     }
   }
 
+  Future<bool> updateEmployee(String id, String name, String email, String? password) async {
+    try {
+      final updatedEmp = await _repository.updateEmployee(id, name, email, password);
+      if (state.hasValue) {
+        state = AsyncValue.data(
+          state.value!.map((emp) => emp.id == id ? updatedEmp : emp).toList(),
+        );
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<bool> deleteEmployee(String id) async {
     try {
       await _repository.deleteEmployee(id);

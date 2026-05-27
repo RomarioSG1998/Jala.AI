@@ -56,9 +56,18 @@ class EmployeesScreen extends ConsumerWidget {
                   ),
                   title: Text(emp.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   subtitle: Text(emp.email, style: TextStyle(color: Colors.grey.shade600)),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    onPressed: () => _confirmDelete(context, ref, emp),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, color: Colors.blue),
+                        onPressed: () => _showAddEmployeeModal(context, ref, emp),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        onPressed: () => _confirmDelete(context, ref, emp),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -114,7 +123,7 @@ class EmployeesScreen extends ConsumerWidget {
     }
   }
 
-  void _showAddEmployeeModal(BuildContext context, WidgetRef ref) {
+  void _showAddEmployeeModal(BuildContext context, WidgetRef ref, [Employee? employee]) {
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
@@ -126,14 +135,15 @@ class EmployeesScreen extends ConsumerWidget {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: const AddEmployeeForm(),
+        child: AddEmployeeForm(employee: employee),
       ),
     );
   }
 }
 
 class AddEmployeeForm extends ConsumerStatefulWidget {
-  const AddEmployeeForm({super.key});
+  final Employee? employee;
+  const AddEmployeeForm({super.key, this.employee});
 
   @override
   ConsumerState<AddEmployeeForm> createState() => _AddEmployeeFormState();
@@ -147,6 +157,15 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.employee != null) {
+      _nameController.text = widget.employee!.name;
+      _emailController.text = widget.employee!.email;
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
@@ -158,22 +177,41 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
-    final success = await ref.read(employeesProvider.notifier).registerEmployee(
-          _nameController.text.trim(),
-          _emailController.text.trim(),
-          _passwordController.text.trim(),
-        );
+    final success = widget.employee == null
+        ? await ref.read(employeesProvider.notifier).registerEmployee(
+              _nameController.text.trim(),
+              _emailController.text.trim(),
+              _passwordController.text.trim(),
+            )
+        : await ref.read(employeesProvider.notifier).updateEmployee(
+              widget.employee!.id,
+              _nameController.text.trim(),
+              _emailController.text.trim(),
+              _passwordController.text.trim().isEmpty ? null : _passwordController.text.trim(),
+            );
 
     if (mounted) {
       setState(() => _isLoading = false);
       if (success) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Funcionário cadastrado com sucesso!')),
+          SnackBar(
+            content: Text(
+              widget.employee == null
+                  ? 'Funcionário cadastrado com sucesso!'
+                  : 'Funcionário atualizado com sucesso!',
+            ),
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao cadastrar funcionário. Verifique se o e-mail já existe.')),
+          SnackBar(
+            content: Text(
+              widget.employee == null
+                  ? 'Erro ao cadastrar funcionário. Verifique se o e-mail já existe.'
+                  : 'Erro ao atualizar funcionário. Verifique se o e-mail já existe.',
+            ),
+          ),
         );
       }
     }
@@ -190,9 +228,9 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Cadastrar Funcionário',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              Text(
+                widget.employee == null ? 'Cadastrar Funcionário' : 'Editar Funcionário',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24),
               TextFormField(
@@ -220,12 +258,22 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Senha Inicial',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: widget.employee == null ? 'Senha Inicial' : 'Nova Senha (opcional)',
+                  border: const OutlineInputBorder(),
                 ),
                 obscureText: true,
-                validator: (v) => v!.length < 6 ? 'Mínimo de 6 caracteres' : null,
+                validator: (v) {
+                  if (widget.employee == null) {
+                    if (v == null || v.isEmpty) return 'Obrigatório';
+                    if (v.length < 6) return 'Mínimo de 6 caracteres';
+                  } else {
+                    if (v != null && v.isNotEmpty && v.length < 6) {
+                      return 'Mínimo de 6 caracteres';
+                    }
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 24),
               ElevatedButton(
@@ -242,7 +290,7 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
                         width: 20,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                       )
-                    : const Text('Cadastrar'),
+                    : Text(widget.employee == null ? 'Cadastrar' : 'Salvar Alterações'),
               ),
               const SizedBox(height: 24),
             ],
