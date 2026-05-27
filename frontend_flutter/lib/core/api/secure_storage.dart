@@ -1,8 +1,15 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // Provides a singleton instance of FlutterSecureStorage
+// On Web, uses localStorage via WebOptions (flutter_secure_storage >= 5.0)
 final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
+  if (kIsWeb) {
+    return const FlutterSecureStorage(
+      webOptions: WebOptions(dbName: 'aquasertao_secure', publicKey: 'aquasertao'),
+    );
+  }
   return const FlutterSecureStorage();
 });
 
