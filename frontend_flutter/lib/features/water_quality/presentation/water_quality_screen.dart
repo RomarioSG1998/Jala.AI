@@ -78,13 +78,13 @@ class WaterQualityScreen extends ConsumerWidget {
                     return await showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Delete Log'),
-                        content: const Text('Are you sure you want to delete this water quality record?'),
+                        title: const Text('Excluir Registro'),
+                        content: const Text('Tem certeza de que deseja excluir este registro de qualidade da água?'),
                         actions: [
-                          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+                          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancelar')),
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(true),
-                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
                           ),
                         ],
                       ),
@@ -139,9 +139,9 @@ class WaterQualityScreen extends ConsumerWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _buildMetric('pH Level', record.ph.toStringAsFixed(1), phColor),
+                              _buildMetric('pH', record.ph.toStringAsFixed(1), phColor),
                               _buildMetric('Temp', '${record.temperature.toStringAsFixed(1)}°C', Colors.blue),
-                              _buildMetric('Oxygen', '${record.dissolvedOxygen.toStringAsFixed(1)} mg/L', Colors.lightBlue),
+                              _buildMetric('Oxigênio', '${record.dissolvedOxygen.toStringAsFixed(1)} mg/L', Colors.lightBlue),
                             ],
                           ),
                         ],
@@ -201,7 +201,7 @@ class WaterQualityScreen extends ConsumerWidget {
           Icon(Icons.science, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
-            'No water quality records found.',
+            'Nenhum registro de qualidade da água encontrado.',
             style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
           ),
         ],
@@ -228,7 +228,6 @@ class _AddWaterQualityFormState extends ConsumerState<AddWaterQualityForm> {
   @override
   void initState() {
     super.initState();
-    // Ensure tanks are loaded so user can select one
     ref.read(tanksProvider.notifier).refreshTanks();
   }
 
@@ -244,7 +243,7 @@ class _AddWaterQualityFormState extends ConsumerState<AddWaterQualityForm> {
     if (!_formKey.currentState!.validate() || _selectedTankId == null) {
       if (_selectedTankId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a tank')),
+          const SnackBar(content: Text('Por favor, selecione um tanque')),
         );
       }
       return;
@@ -265,7 +264,7 @@ class _AddWaterQualityFormState extends ConsumerState<AddWaterQualityForm> {
         Navigator.of(context).pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to save record')),
+          const SnackBar(content: Text('Falha ao salvar registro')),
         );
       }
     }
@@ -275,67 +274,69 @@ class _AddWaterQualityFormState extends ConsumerState<AddWaterQualityForm> {
   Widget build(BuildContext context) {
     final tanksAsync = ref.watch(tanksProvider);
 
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Log Water Quality',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            tanksAsync.when(
-              data: (tanks) {
-                if (tanks.isEmpty) return const Text('No tanks available. Create a tank first.');
-                return DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'Select Tank', border: OutlineInputBorder()),
-                  value: _selectedTankId,
-                  items: tanks.map((t) => DropdownMenuItem(value: t.id, child: Text(t.name))).toList(),
-                  onChanged: (val) => setState(() => _selectedTankId = val),
-                );
-              },
-              loading: () => const LinearProgressIndicator(),
-              error: (err, stack) => Text('Error loading tanks: $err'),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _phController,
-              decoration: const InputDecoration(labelText: 'pH Level', border: OutlineInputBorder()),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              validator: (v) => v!.isEmpty ? 'Required' : (double.tryParse(v) == null ? 'Invalid number' : null),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _tempController,
-              decoration: const InputDecoration(labelText: 'Temperature (°C)', border: OutlineInputBorder()),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              validator: (v) => v!.isEmpty ? 'Required' : (double.tryParse(v) == null ? 'Invalid number' : null),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _oxygenController,
-              decoration: const InputDecoration(labelText: 'Dissolved Oxygen (mg/L)', border: OutlineInputBorder()),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              validator: (v) => v!.isEmpty ? 'Required' : (double.tryParse(v) == null ? 'Invalid number' : null),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF13A538),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Registrar Qualidade da Água',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
-              child: _isLoading
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Save Record'),
-            ),
-          ],
+              const SizedBox(height: 24),
+              tanksAsync.when(
+                data: (tanks) {
+                  if (tanks.isEmpty) return const Text('Nenhum tanque disponível. Crie um tanque primeiro.');
+                  return DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(labelText: 'Selecionar Tanque', border: OutlineInputBorder()),
+                    value: _selectedTankId,
+                    items: tanks.map((t) => DropdownMenuItem(value: t.id, child: Text(t.name))).toList(),
+                    onChanged: (val) => setState(() => _selectedTankId = val),
+                  );
+                },
+                loading: () => const LinearProgressIndicator(),
+                error: (err, stack) => Text('Erro ao carregar tanques: $err'),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _phController,
+                decoration: const InputDecoration(labelText: 'Nível de pH', border: OutlineInputBorder()),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : (double.tryParse(v) == null ? 'Número inválido' : null),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _tempController,
+                decoration: const InputDecoration(labelText: 'Temperatura (°C)', border: OutlineInputBorder()),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : (double.tryParse(v) == null ? 'Número inválido' : null),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _oxygenController,
+                decoration: const InputDecoration(labelText: 'Oxigênio Dissolvido (mg/L)', border: OutlineInputBorder()),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : (double.tryParse(v) == null ? 'Número inválido' : null),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF13A538),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isLoading
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Salvar Registro'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -352,9 +353,9 @@ class EditWaterQualityForm extends ConsumerStatefulWidget {
 
 class _EditWaterQualityFormState extends ConsumerState<EditWaterQualityForm> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _phController;
-  late TextEditingController _tempController;
-  late TextEditingController _oxygenController;
+  late final TextEditingController _phController;
+  late final TextEditingController _tempController;
+  late final TextEditingController _oxygenController;
   bool _isLoading = false;
 
   @override
@@ -388,11 +389,11 @@ class _EditWaterQualityFormState extends ConsumerState<EditWaterQualityForm> {
       if (success) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registro atualizado com sucesso!')),
+          const SnackBar(content: Text('Registro atualizado com sucesso!'), backgroundColor: Colors.green),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao atualizar registro.')),
+          const SnackBar(content: Text('Erro ao atualizar registro.'), backgroundColor: Colors.red),
         );
       }
     }
@@ -409,8 +410,11 @@ class _EditWaterQualityFormState extends ConsumerState<EditWaterQualityForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Editar Qualidade da Água',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text(
+                'Editar Qualidade da Água',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 24),
               TextFormField(
                 controller: _phController,

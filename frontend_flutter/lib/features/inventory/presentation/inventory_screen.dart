@@ -77,18 +77,18 @@ class InventoryScreen extends ConsumerWidget {
                     return await showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Delete Item'),
+                        title: const Text('Excluir Item'),
                         content: Text(
-                            'Are you sure you want to delete "${item.itemName}"?'),
+                            'Tem certeza de que deseja excluir "${item.itemName}"?'),
                         actions: [
                           TextButton(
                               onPressed: () =>
                                   Navigator.of(context).pop(false),
-                              child: const Text('Cancel')),
+                              child: const Text('Cancelar')),
                           TextButton(
                             onPressed: () =>
                                 Navigator.of(context).pop(true),
-                            child: const Text('Delete',
+                            child: const Text('Excluir',
                                 style: TextStyle(color: Colors.red)),
                           ),
                         ],
@@ -120,7 +120,7 @@ class InventoryScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 4),
-                          Text('Quantity: ${item.quantity} ${item.unit}'),
+                          Text('Quantidade: ${item.quantity} ${item.unit}'),
                           Container(
                             margin: const EdgeInsets.only(top: 4),
                             padding: const EdgeInsets.symmetric(
@@ -130,7 +130,7 @@ class InventoryScreen extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              item.type,
+                              item.type == 'Feed' ? 'Ração' : (item.type == 'Medicine' ? 'Medicamento' : (item.type == 'Equipment' ? 'Equipamento' : 'Outro')),
                               style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
@@ -169,14 +169,14 @@ class InventoryScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, color: Colors.red, size: 48),
               const SizedBox(height: 16),
-              Text('Failed to load inventory:\n$error',
+              Text('Falha ao carregar estoque:\n$error',
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.red)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () =>
                     ref.read(inventoryProvider.notifier).refreshItems(),
-                child: const Text('Retry'),
+                child: const Text('Tentar Novamente'),
               ),
             ],
           ),
@@ -192,10 +192,10 @@ class InventoryScreen extends ConsumerWidget {
         children: [
           Icon(Icons.inventory, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          Text('No inventory items found.',
+          Text('Nenhum item encontrado no estoque.',
               style: TextStyle(fontSize: 18, color: Colors.grey.shade600)),
           const SizedBox(height: 8),
-          const Text('Click the + button to add your first item.',
+          const Text('Clique no botão + para adicionar seu primeiro item.',
               style: TextStyle(color: Colors.grey)),
         ],
       ),
@@ -249,7 +249,7 @@ class _AddInventoryItemFormState
         Navigator.of(context).pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to add item')),
+          const SnackBar(content: Text('Falha ao adicionar item')),
         );
       }
     }
@@ -257,84 +257,86 @@ class _AddInventoryItemFormState
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Add Inventory Item',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                  labelText: 'Item Name', border: OutlineInputBorder()),
-              validator: (v) => v!.isEmpty ? 'Required' : null,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: TextFormField(
-                    controller: _qtyController,
-                    decoration: const InputDecoration(
-                        labelText: 'Quantity',
-                        border: OutlineInputBorder()),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    validator: (v) => v!.isEmpty
-                        ? 'Required'
-                        : (double.tryParse(v) == null ? 'Invalid' : null),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _unitController,
-                    decoration: const InputDecoration(
-                        labelText: 'Unit (kg, L…)',
-                        border: OutlineInputBorder()),
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _selectedType,
-              decoration: const InputDecoration(
-                  labelText: 'Type', border: OutlineInputBorder()),
-              items: _types
-                  .map((t) =>
-                      DropdownMenuItem(value: t, child: Text(t)))
-                  .toList(),
-              onChanged: (val) =>
-                  setState(() => _selectedType = val ?? 'Feed'),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF13A538),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Adicionar Item ao Estoque',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2))
-                  : const Text('Add Item'),
-            ),
-          ],
+              const SizedBox(height: 24),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                    labelText: 'Nome do Item', border: OutlineInputBorder()),
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _qtyController,
+                      decoration: const InputDecoration(
+                          labelText: 'Quantidade',
+                          border: OutlineInputBorder()),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      validator: (v) => v!.isEmpty
+                          ? 'Obrigatório'
+                          : (double.tryParse(v) == null ? 'Inválido' : null),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _unitController,
+                      decoration: const InputDecoration(
+                          labelText: 'Unidade (kg, L…)',
+                          border: OutlineInputBorder()),
+                      validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedType,
+                decoration: const InputDecoration(
+                    labelText: 'Tipo de Item', border: OutlineInputBorder()),
+                items: _types
+                    .map((t) =>
+                        DropdownMenuItem(value: t, child: Text(t == 'Feed' ? 'Ração' : (t == 'Medicine' ? 'Medicamento' : (t == 'Equipment' ? 'Equipamento' : 'Outro')))))
+                    .toList(),
+                onChanged: (val) =>
+                    setState(() => _selectedType = val ?? 'Feed'),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF13A538),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Adicionar Item'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -396,7 +398,7 @@ class _EditInventoryItemFormState
         Navigator.of(context).pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update item')),
+          const SnackBar(content: Text('Falha ao atualizar item')),
         );
       }
     }
@@ -404,84 +406,86 @@ class _EditInventoryItemFormState
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Edit Inventory Item',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                  labelText: 'Item Name', border: OutlineInputBorder()),
-              validator: (v) => v!.isEmpty ? 'Required' : null,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: TextFormField(
-                    controller: _qtyController,
-                    decoration: const InputDecoration(
-                        labelText: 'Quantity',
-                        border: OutlineInputBorder()),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    validator: (v) => v!.isEmpty
-                        ? 'Required'
-                        : (double.tryParse(v) == null ? 'Invalid' : null),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _unitController,
-                    decoration: const InputDecoration(
-                        labelText: 'Unit (kg, L…)',
-                        border: OutlineInputBorder()),
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _selectedType,
-              decoration: const InputDecoration(
-                  labelText: 'Type', border: OutlineInputBorder()),
-              items: _types
-                  .map((t) =>
-                      DropdownMenuItem(value: t, child: Text(t)))
-                  .toList(),
-              onChanged: (val) =>
-                  setState(() => _selectedType = val ?? 'Feed'),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF13A538),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Editar Item do Estoque',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2))
-                  : const Text('Save Changes'),
-            ),
-          ],
+              const SizedBox(height: 24),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                    labelText: 'Nome do Item', border: OutlineInputBorder()),
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _qtyController,
+                      decoration: const InputDecoration(
+                          labelText: 'Quantidade',
+                          border: OutlineInputBorder()),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      validator: (v) => v!.isEmpty
+                          ? 'Obrigatório'
+                          : (double.tryParse(v) == null ? 'Inválido' : null),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _unitController,
+                      decoration: const InputDecoration(
+                          labelText: 'Unidade (kg, L…)',
+                          border: OutlineInputBorder()),
+                      validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedType,
+                decoration: const InputDecoration(
+                    labelText: 'Tipo de Item', border: OutlineInputBorder()),
+                items: _types
+                    .map((t) =>
+                        DropdownMenuItem(value: t, child: Text(t == 'Feed' ? 'Ração' : (t == 'Medicine' ? 'Medicamento' : (t == 'Equipment' ? 'Equipamento' : 'Outro')))))
+                    .toList(),
+                onChanged: (val) =>
+                    setState(() => _selectedType = val ?? 'Feed'),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF13A538),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Salvar Alterações'),
+              ),
+            ],
+          ),
         ),
       ),
     );

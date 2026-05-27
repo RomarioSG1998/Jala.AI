@@ -75,18 +75,18 @@ class HarvestsScreen extends ConsumerWidget {
                     return await showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Delete Harvest Log'),
+                        title: const Text('Excluir Registro de Despesca'),
                         content: Text(
-                            'Delete the harvest of ${harvest.quantityKg} kg logged on $formattedDate?'),
+                            'Deseja excluir a despesca de ${harvest.quantityKg} kg registrada em $formattedDate?'),
                         actions: [
                           TextButton(
                               onPressed: () =>
                                   Navigator.of(context).pop(false),
-                              child: const Text('Cancel')),
+                              child: const Text('Cancelar')),
                           TextButton(
                             onPressed: () =>
                                 Navigator.of(context).pop(true),
-                            child: const Text('Delete',
+                            child: const Text('Excluir',
                                 style: TextStyle(color: Colors.red)),
                           ),
                         ],
@@ -156,7 +156,7 @@ class HarvestsScreen extends ConsumerWidget {
                               const Icon(Icons.location_on,
                                   size: 13, color: Colors.grey),
                               const SizedBox(width: 4),
-                              Text('Dest: ${harvest.destination}',
+                              Text('Destino: ${harvest.destination}',
                                   style: const TextStyle(fontSize: 13)),
                             ],
                           ),
@@ -176,14 +176,14 @@ class HarvestsScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, color: Colors.red, size: 48),
               const SizedBox(height: 16),
-              Text('Failed to load harvests:\n$error',
+              Text('Falha ao carregar despescas:\n$error',
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.red)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () =>
                     ref.read(harvestProvider.notifier).refreshHarvests(),
-                child: const Text('Retry'),
+                child: const Text('Tentar Novamente'),
               ),
             ],
           ),
@@ -199,11 +199,11 @@ class HarvestsScreen extends ConsumerWidget {
         children: [
           Icon(Icons.agriculture, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          Text('No harvests recorded yet.',
+          Text('Nenhuma despesca registrada ainda.',
               style:
                   TextStyle(fontSize: 18, color: Colors.grey.shade600)),
           const SizedBox(height: 8),
-          const Text('Click the + button to log your first harvest.',
+          const Text('Clique no botão + para registrar sua primeira despesca.',
               style: TextStyle(color: Colors.grey)),
         ],
       ),
@@ -255,7 +255,7 @@ class _LogHarvestFormState extends ConsumerState<LogHarvestForm> {
     if (!_formKey.currentState!.validate() || _selectedTankId == null) {
       if (_selectedTankId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a tank')),
+          const SnackBar(content: Text('Por favor, selecione um tanque')),
         );
       }
       return;
@@ -278,7 +278,7 @@ class _LogHarvestFormState extends ConsumerState<LogHarvestForm> {
         Navigator.of(context).pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to log harvest')),
+          const SnackBar(content: Text('Falha ao registrar despesca')),
         );
       }
     }
@@ -287,99 +287,101 @@ class _LogHarvestFormState extends ConsumerState<LogHarvestForm> {
   @override
   Widget build(BuildContext context) {
     final tanksAsync = ref.watch(tanksProvider);
-    final formattedDate = DateFormat('MMM dd, yyyy').format(_selectedDate);
+    final formattedDate = DateFormat('dd/MM/yyyy').format(_selectedDate);
 
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Log Harvest',
-              style:
-                  TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            // Tank Dropdown
-            tanksAsync.when(
-              data: (tanks) {
-                if (tanks.isEmpty) {
-                  return const Text(
-                      'No tanks available. Create a tank first.');
-                }
-                return DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                      labelText: 'Select Tank',
-                      border: OutlineInputBorder()),
-                  value: _selectedTankId,
-                  items: tanks
-                      .map((t) => DropdownMenuItem(
-                          value: t.id, child: Text(t.name)))
-                      .toList(),
-                  onChanged: (val) =>
-                      setState(() => _selectedTankId = val),
-                );
-              },
-              loading: () => const LinearProgressIndicator(),
-              error: (err, _) => Text('Error: $err'),
-            ),
-            const SizedBox(height: 16),
-            // Date Picker
-            GestureDetector(
-              onTap: _pickDate,
-              child: AbsorbPointer(
-                child: TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Harvest Date',
-                    hintText: formattedDate,
-                    border: const OutlineInputBorder(),
-                    suffixIcon: const Icon(Icons.calendar_today),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Registrar Despesca',
+                style:
+                    TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              // Tank Dropdown
+              tanksAsync.when(
+                data: (tanks) {
+                  if (tanks.isEmpty) {
+                    return const Text(
+                        'Nenhum tanque disponível. Crie um tanque primeiro.');
+                  }
+                  return DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(
+                        labelText: 'Selecionar Tanque',
+                        border: OutlineInputBorder()),
+                    value: _selectedTankId,
+                    items: tanks
+                        .map((t) => DropdownMenuItem(
+                            value: t.id, child: Text(t.name)))
+                        .toList(),
+                    onChanged: (val) =>
+                        setState(() => _selectedTankId = val),
+                  );
+                },
+                loading: () => const LinearProgressIndicator(),
+                error: (err, _) => Text('Erro ao carregar tanques: $err'),
+              ),
+              const SizedBox(height: 16),
+              // Date Picker
+              GestureDetector(
+                onTap: _pickDate,
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    decoration: InputDecoration(
+                      labelText: 'Data da Despesca',
+                      hintText: formattedDate,
+                      border: const OutlineInputBorder(),
+                      suffixIcon: const Icon(Icons.calendar_today),
+                    ),
+                    controller: TextEditingController(text: formattedDate),
                   ),
-                  controller: TextEditingController(text: formattedDate),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _quantityController,
-              decoration: const InputDecoration(
-                  labelText: 'Quantity (kg)',
-                  border: OutlineInputBorder()),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              validator: (v) => v!.isEmpty
-                  ? 'Required'
-                  : (double.tryParse(v) == null ? 'Invalid number' : null),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _destinationController,
-              decoration: const InputDecoration(
-                  labelText: 'Destination (e.g. Local Market)',
-                  border: OutlineInputBorder()),
-              validator: (v) => v!.isEmpty ? 'Required' : null,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF13A538),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _quantityController,
+                decoration: const InputDecoration(
+                    labelText: 'Quantidade (kg)',
+                    border: OutlineInputBorder()),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                validator: (v) => v!.isEmpty
+                    ? 'Obrigatório'
+                    : (double.tryParse(v) == null ? 'Número inválido' : null),
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2))
-                  : const Text('Log Harvest'),
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _destinationController,
+                decoration: const InputDecoration(
+                    labelText: 'Destino (ex: Mercado Local)',
+                    border: OutlineInputBorder()),
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF13A538),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Registrar Despesca'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -446,7 +448,7 @@ class _EditHarvestFormState extends ConsumerState<EditHarvestForm> {
         Navigator.of(context).pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update harvest')),
+          const SnackBar(content: Text('Falha ao atualizar despesca')),
         );
       }
     }
@@ -454,73 +456,75 @@ class _EditHarvestFormState extends ConsumerState<EditHarvestForm> {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('MMM dd, yyyy').format(_harvestDate);
+    final formattedDate = DateFormat('dd/MM/yyyy').format(_harvestDate);
 
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Edit Harvest',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            TextFormField(
-              controller: _qtyController,
-              decoration: const InputDecoration(
-                  labelText: 'Quantity (kg)', border: OutlineInputBorder()),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              validator: (v) => v!.isEmpty
-                  ? 'Required'
-                  : (double.tryParse(v) == null ? 'Invalid number' : null),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _destinationController,
-              decoration: const InputDecoration(
-                  labelText: 'Destination',
-                  hintText: 'e.g. Local Market',
-                  border: OutlineInputBorder()),
-              validator: (v) => v!.isEmpty ? 'Required' : null,
-            ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: _pickDate,
-              child: AbsorbPointer(
-                child: TextFormField(
-                  decoration: const InputDecoration(
-                    labelText: 'Harvest Date',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Editar Despesca',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              TextFormField(
+                controller: _qtyController,
+                decoration: const InputDecoration(
+                    labelText: 'Quantidade (kg)', border: OutlineInputBorder()),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                validator: (v) => v!.isEmpty
+                    ? 'Obrigatório'
+                    : (double.tryParse(v) == null ? 'Número inválido' : null),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _destinationController,
+                decoration: const InputDecoration(
+                    labelText: 'Destino',
+                    hintText: 'ex: Mercado Local',
+                    border: OutlineInputBorder()),
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+              ),
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: _pickDate,
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Data da Despesca',
+                      border: OutlineInputBorder(),
+                      suffixIcon: Icon(Icons.calendar_today),
+                    ),
+                    controller:
+                        TextEditingController(text: formattedDate),
                   ),
-                  controller:
-                      TextEditingController(text: formattedDate),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF13A538),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF13A538),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Salvar Alterações'),
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2))
-                  : const Text('Save Changes'),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -38,6 +38,19 @@ class MaintenanceScreen extends ConsumerWidget {
     }
   }
 
+  String _translateStatus(String status) {
+    switch (status.toUpperCase()) {
+      case 'COMPLETED':
+        return 'Concluída';
+      case 'IN_PROGRESS':
+        return 'Em Andamento';
+      case 'CANCELLED':
+        return 'Cancelada';
+      default:
+        return 'Pendente';
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tasksAsync = ref.watch(maintenanceProvider);
@@ -66,7 +79,7 @@ class MaintenanceScreen extends ConsumerWidget {
                 } catch (_) {
                   date = DateTime.now();
                 }
-                final formattedDate = DateFormat('MMM dd, yyyy').format(date);
+                final formattedDate = DateFormat('dd/MM/yyyy').format(date);
                 final isPast = date.isBefore(DateTime.now()) &&
                     task.status.toUpperCase() == 'PENDING';
 
@@ -89,18 +102,18 @@ class MaintenanceScreen extends ConsumerWidget {
                     return await showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Delete Task'),
+                        title: const Text('Excluir Tarefa'),
                         content: Text(
-                            'Delete maintenance task "${task.description}"?'),
+                            'Deseja excluir a tarefa de manutenção "${task.description}"?'),
                         actions: [
                           TextButton(
                               onPressed: () =>
                                   Navigator.of(context).pop(false),
-                              child: const Text('Cancel')),
+                              child: const Text('Cancelar')),
                           TextButton(
                             onPressed: () =>
                                 Navigator.of(context).pop(true),
-                            child: const Text('Delete',
+                            child: const Text('Excluir',
                                 style: TextStyle(color: Colors.red)),
                           ),
                         ],
@@ -169,7 +182,7 @@ class MaintenanceScreen extends ConsumerWidget {
                                   )),
                               if (isPast) ...[
                                 const SizedBox(width: 4),
-                                const Text('⚠️ Overdue',
+                                const Text('⚠️ Atrasada',
                                     style: TextStyle(
                                         fontSize: 11, color: Colors.red)),
                               ]
@@ -184,7 +197,7 @@ class MaintenanceScreen extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              task.status,
+                              _translateStatus(task.status),
                               style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
@@ -207,14 +220,14 @@ class MaintenanceScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, color: Colors.red, size: 48),
               const SizedBox(height: 16),
-              Text('Failed to load tasks:\n$error',
+              Text('Falha ao carregar tarefas:\n$error',
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.red)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () =>
                     ref.read(maintenanceProvider.notifier).refreshTasks(),
-                child: const Text('Retry'),
+                child: const Text('Tentar Novamente'),
               ),
             ],
           ),
@@ -230,11 +243,11 @@ class MaintenanceScreen extends ConsumerWidget {
         children: [
           Icon(Icons.build, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          Text('No maintenance tasks found.',
+          Text('Nenhuma tarefa de manutenção encontrada.',
               style:
                   TextStyle(fontSize: 18, color: Colors.grey.shade600)),
           const SizedBox(height: 8),
-          const Text('Click the + button to schedule a task.',
+          const Text('Clique no botão + para agendar uma tarefa.',
               style: TextStyle(color: Colors.grey)),
         ],
       ),
@@ -289,7 +302,7 @@ class _AddMaintenanceTaskFormState
     if (!_formKey.currentState!.validate() || _selectedTankId == null) {
       if (_selectedTankId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a tank')),
+          const SnackBar(content: Text('Por favor, selecione um tanque')),
         );
       }
       return;
@@ -313,7 +326,7 @@ class _AddMaintenanceTaskFormState
         Navigator.of(context).pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to create task')),
+          const SnackBar(content: Text('Falha ao criar tarefa')),
         );
       }
     }
@@ -322,97 +335,99 @@ class _AddMaintenanceTaskFormState
   @override
   Widget build(BuildContext context) {
     final tanksAsync = ref.watch(tanksProvider);
-    final formattedDate = DateFormat('MMM dd, yyyy').format(_scheduledDate);
+    final formattedDate = DateFormat('dd/MM/yyyy').format(_scheduledDate);
 
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Schedule Maintenance',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            tanksAsync.when(
-              data: (tanks) {
-                if (tanks.isEmpty) {
-                  return const Text('No tanks available.');
-                }
-                return DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                      labelText: 'Select Tank',
-                      border: OutlineInputBorder()),
-                  value: _selectedTankId,
-                  items: tanks
-                      .map((t) => DropdownMenuItem(
-                          value: t.id, child: Text(t.name)))
-                      .toList(),
-                  onChanged: (val) =>
-                      setState(() => _selectedTankId = val),
-                );
-              },
-              loading: () => const LinearProgressIndicator(),
-              error: (err, _) => Text('Error: $err'),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                  labelText: 'Description',
-                  hintText: 'e.g. Clean tank filters',
-                  border: OutlineInputBorder()),
-              maxLines: 2,
-              validator: (v) => v!.isEmpty ? 'Required' : null,
-            ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: _pickDate,
-              child: AbsorbPointer(
-                child: TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Scheduled Date',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: const Icon(Icons.calendar_today),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Agendar Manutenção',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              tanksAsync.when(
+                data: (tanks) {
+                  if (tanks.isEmpty) {
+                    return const Text('Nenhum tanque disponível.');
+                  }
+                  return DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(
+                        labelText: 'Selecionar Tanque',
+                        border: OutlineInputBorder()),
+                    value: _selectedTankId,
+                    items: tanks
+                        .map((t) => DropdownMenuItem(
+                            value: t.id, child: Text(t.name)))
+                        .toList(),
+                    onChanged: (val) =>
+                        setState(() => _selectedTankId = val),
+                  );
+                },
+                loading: () => const LinearProgressIndicator(),
+                error: (err, _) => Text('Erro ao carregar tanques: $err'),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                    labelText: 'Descrição',
+                    hintText: 'ex: Limpar filtros do tanque',
+                    border: OutlineInputBorder()),
+                maxLines: 2,
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+              ),
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: _pickDate,
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Data Agendada',
+                      border: OutlineInputBorder(),
+                      suffixIcon: Icon(Icons.calendar_today),
+                    ),
+                    controller:
+                        TextEditingController(text: formattedDate),
                   ),
-                  controller:
-                      TextEditingController(text: formattedDate),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _selectedStatus,
-              decoration: const InputDecoration(
-                  labelText: 'Status', border: OutlineInputBorder()),
-              items: _statuses
-                  .map((s) =>
-                      DropdownMenuItem(value: s, child: Text(s)))
-                  .toList(),
-              onChanged: (val) =>
-                  setState(() => _selectedStatus = val ?? 'PENDING'),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF13A538),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedStatus,
+                decoration: const InputDecoration(
+                    labelText: 'Status', border: OutlineInputBorder()),
+                items: _statuses
+                    .map((s) =>
+                        DropdownMenuItem(value: s, child: Text(s == 'PENDING' ? 'Pendente' : (s == 'IN_PROGRESS' ? 'Em Andamento' : (s == 'COMPLETED' ? 'Concluída' : 'Cancelada')))))
+                    .toList(),
+                onChanged: (val) =>
+                    setState(() => _selectedStatus = val ?? 'PENDING'),
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2))
-                  : const Text('Create Task'),
-            ),
-          ],
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF13A538),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Criar Tarefa'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -483,7 +498,7 @@ class _EditMaintenanceTaskFormState
         Navigator.of(context).pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update task')),
+          const SnackBar(content: Text('Falha ao atualizar tarefa')),
         );
       }
     }
@@ -491,75 +506,77 @@ class _EditMaintenanceTaskFormState
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('MMM dd, yyyy').format(_scheduledDate);
+    final formattedDate = DateFormat('dd/MM/yyyy').format(_scheduledDate);
 
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Edit Maintenance Task',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                  labelText: 'Description',
-                  hintText: 'e.g. Clean tank filters',
-                  border: OutlineInputBorder()),
-              maxLines: 2,
-              validator: (v) => v!.isEmpty ? 'Required' : null,
-            ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: _pickDate,
-              child: AbsorbPointer(
-                child: TextFormField(
-                  decoration: const InputDecoration(
-                    labelText: 'Scheduled Date',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Editar Tarefa de Manutenção',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                    labelText: 'Descrição',
+                    hintText: 'ex: Limpar filtros do tanque',
+                    border: OutlineInputBorder()),
+                maxLines: 2,
+                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+              ),
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: _pickDate,
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Data Agendada',
+                      border: OutlineInputBorder(),
+                      suffixIcon: Icon(Icons.calendar_today),
+                    ),
+                    controller:
+                        TextEditingController(text: formattedDate),
                   ),
-                  controller:
-                      TextEditingController(text: formattedDate),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _selectedStatus,
-              decoration: const InputDecoration(
-                  labelText: 'Status', border: OutlineInputBorder()),
-              items: _statuses
-                  .map((s) =>
-                      DropdownMenuItem(value: s, child: Text(s)))
-                  .toList(),
-              onChanged: (val) =>
-                  setState(() => _selectedStatus = val ?? 'PENDING'),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF13A538),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedStatus,
+                decoration: const InputDecoration(
+                    labelText: 'Status', border: OutlineInputBorder()),
+                items: _statuses
+                    .map((s) =>
+                        DropdownMenuItem(value: s, child: Text(s == 'PENDING' ? 'Pendente' : (s == 'IN_PROGRESS' ? 'Em Andamento' : (s == 'COMPLETED' ? 'Concluída' : 'Cancelada')))))
+                    .toList(),
+                onChanged: (val) =>
+                    setState(() => _selectedStatus = val ?? 'PENDING'),
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2))
-                  : const Text('Save Changes'),
-            ),
-          ],
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF13A538),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Salvar Alterações'),
+              ),
+            ],
+          ),
         ),
       ),
     );

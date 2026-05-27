@@ -551,7 +551,7 @@ class _SaasAdminBody extends ConsumerWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('OVERVIEW',
+                    const Text('VISÃO GERAL',
                         style: TextStyle(
                             color: Colors.black54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
@@ -582,7 +582,7 @@ class _SaasAdminBody extends ConsumerWidget {
             error: (e, _) => Text('$e', style: const TextStyle(color: Colors.red)),
           ),
           const SizedBox(height: 28),
-          const Text('Farm Tenants',
+          const Text('Clientes Farm (Tenants)',
               style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           tenantsAsync.when(
@@ -756,7 +756,7 @@ class _AppDrawer extends ConsumerWidget {
                     () { Navigator.pop(context); }),
 
                 if (role == 'SAAS_ADMIN') ...[
-                  _section('Admin'),
+                  _section('Administrador'),
                   _tile(context, Icons.business, 'Tenants', Colors.indigo, () {
                     Navigator.pop(context); context.go('/tenants');
                   }),

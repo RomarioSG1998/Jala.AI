@@ -224,7 +224,7 @@ class DummyScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: Center(
-        child: Text('$title is coming soon!', style: const TextStyle(fontSize: 24)),
+        child: Text('$title em breve!', style: const TextStyle(fontSize: 24)),
       ),
     );
   }

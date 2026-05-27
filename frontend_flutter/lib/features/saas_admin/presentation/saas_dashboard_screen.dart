@@ -24,7 +24,7 @@ class SaasDashboardScreen extends ConsumerWidget {
           ? null
           : AppBar(
               backgroundColor: const Color(0xFF161B22),
-              title: const Text('SaaS Dashboard',
+              title: const Text('Dashboard SaaS',
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               iconTheme: const IconThemeData(color: Colors.white),
               elevation: 0,
@@ -47,7 +47,7 @@ class SaasDashboardScreen extends ConsumerWidget {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Overview',
+                        const Text('Visão Geral',
                             style: TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
@@ -58,7 +58,7 @@ class SaasDashboardScreen extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: _kpiCard(
-                                label: 'Active Tenants',
+                                label: 'Tenants Ativos',
                                 value: '${tenants.length}',
                                 icon: Icons.business,
                                 color: Colors.blue,
@@ -67,7 +67,7 @@ class SaasDashboardScreen extends ConsumerWidget {
                             const SizedBox(width: 12),
                             Expanded(
                               child: _kpiCard(
-                                label: 'Plans Offered',
+                                label: 'Planos Oferecidos',
                                 value: '${plans.length}',
                                 icon: Icons.layers,
                                 color: Colors.purple,
@@ -77,7 +77,7 @@ class SaasDashboardScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 12),
                         _kpiCard(
-                          label: 'Total MRR (Plans Catalog)',
+                          label: 'MRR Total (Catálogo de Planos)',
                           value: currencyFmt.format(totalMrr),
                           icon: Icons.trending_up,
                           color: Colors.green,
@@ -89,19 +89,19 @@ class SaasDashboardScreen extends ConsumerWidget {
                   loading: () => const Center(
                       child: CircularProgressIndicator()),
                   error: (e, _) =>
-                      Text('Error: $e', style: const TextStyle(color: Colors.red)),
+                      Text('Erro: $e', style: const TextStyle(color: Colors.red)),
                 );
               },
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
               error: (e, _) =>
-                  Text('Error: $e', style: const TextStyle(color: Colors.red)),
+                  Text('Erro: $e', style: const TextStyle(color: Colors.red)),
             ),
 
             const SizedBox(height: 28),
 
             // ── Plans Catalog ────────────────────────────────────────
-            const Text('SaaS Plans Catalog',
+            const Text('Catálogo de Planos SaaS',
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -114,13 +114,13 @@ class SaasDashboardScreen extends ConsumerWidget {
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
               error: (e, _) =>
-                  Text('Error: $e', style: const TextStyle(color: Colors.red)),
+                  Text('Erro: $e', style: const TextStyle(color: Colors.red)),
             ),
 
             const SizedBox(height: 28),
 
             // ── Tenant List ──────────────────────────────────────────
-            const Text('Registered Farm Tenants',
+            const Text('Farm Tenants Registrados',
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -130,7 +130,7 @@ class SaasDashboardScreen extends ConsumerWidget {
               data: (tenants) {
                 if (tenants.isEmpty) {
                   return const Center(
-                    child: Text('No tenants found.',
+                    child: Text('Nenhum tenant encontrado.',
                         style: TextStyle(color: Colors.white54)),
                   );
                 }
@@ -142,7 +142,7 @@ class SaasDashboardScreen extends ConsumerWidget {
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
               error: (e, _) =>
-                  Text('Error: $e', style: const TextStyle(color: Colors.red)),
+                  Text('Erro: $e', style: const TextStyle(color: Colors.red)),
             ),
             const SizedBox(height: 32),
           ],
@@ -230,7 +230,7 @@ class SaasDashboardScreen extends ConsumerWidget {
                         fontSize: 16)),
                 const SizedBox(height: 4),
                 Text(
-                    '${plan.maxTanks} tanks · ${plan.maxUsers} users',
+                    '${plan.maxTanks} tanques · ${plan.maxUsers} usuários',
                     style: const TextStyle(
                         color: Colors.white54, fontSize: 12)),
               ],
@@ -253,7 +253,7 @@ class SaasDashboardScreen extends ConsumerWidget {
     String formatted = '';
     try {
       final dt = DateTime.parse(tenant.createdAt);
-      formatted = DateFormat('MMM dd, yyyy').format(dt);
+      formatted = DateFormat('dd/MM/yyyy').format(dt);
     } catch (_) {
       formatted = tenant.createdAt;
     }
@@ -301,7 +301,7 @@ class SaasDashboardScreen extends ConsumerWidget {
                   color: Colors.green.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text('Active',
+                child: const Text('Ativo',
                     style: TextStyle(
                         color: Colors.green,
                         fontSize: 11,

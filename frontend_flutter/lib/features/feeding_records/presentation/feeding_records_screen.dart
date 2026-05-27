@@ -310,107 +310,109 @@ class _AddFeedingRecordFormState extends ConsumerState<_AddFeedingRecordForm> {
         top: 24,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Registrar Trato / Alimentação',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _kNavyBlue),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Registrar Trato / Alimentação',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _kNavyBlue),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+  
+              // Dropdown Tanque
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: 'Selecione o Tanque',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.water),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
+                value: _selectedTankId,
+                items: tanks.map((t) {
+                  return DropdownMenuItem<String>(
+                    value: t.id,
+                    child: Text(t.name),
+                  );
+                }).toList(),
+                onChanged: (val) => setState(() => _selectedTankId = val),
+                validator: (val) => val == null ? 'Selecione o tanque' : null,
+              ),
+              const SizedBox(height: 16),
+  
+              // Dropdown Ração
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: 'Selecione a Ração',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.rice_bowl),
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Dropdown Tanque
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Selecione o Tanque',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: const Icon(Icons.water),
+                value: _selectedFeedId,
+                items: feeds.map((f) {
+                  return DropdownMenuItem<String>(
+                    value: f.id,
+                    child: Text('${f.itemName} (Disp: ${f.quantity} ${f.unit})'),
+                  );
+                }).toList(),
+                onChanged: (val) => setState(() {
+                  _selectedFeedId = val;
+                }),
+                validator: (val) => val == null ? 'Selecione a ração' : null,
               ),
-              value: _selectedTankId,
-              items: tanks.map((t) {
-                return DropdownMenuItem<String>(
-                  value: t.id,
-                  child: Text(t.name),
-                );
-              }).toList(),
-              onChanged: (val) => setState(() => _selectedTankId = val),
-              validator: (val) => val == null ? 'Selecione o tanque' : null,
-            ),
-            const SizedBox(height: 16),
-
-            // Dropdown Ração
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Selecione a Ração',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: const Icon(Icons.rice_bowl),
+              const SizedBox(height: 16),
+  
+              // Quantidade
+              TextFormField(
+                controller: _quantityController,
+                decoration: InputDecoration(
+                  labelText: 'Quantidade',
+                  suffixText: unit,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.scale),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (val) {
+                  if (val == null || val.isEmpty) return 'Digite a quantidade';
+                  final numVal = double.tryParse(val);
+                  if (numVal == null || numVal <= 0) return 'Digite um número maior que zero';
+                  if (numVal > availableQuantity) {
+                    return 'Quantidade maior que o disponível em estoque ($availableQuantity $unit)';
+                  }
+                  return null;
+                },
               ),
-              value: _selectedFeedId,
-              items: feeds.map((f) {
-                return DropdownMenuItem<String>(
-                  value: f.id,
-                  child: Text('${f.itemName} (Disp: ${f.quantity} ${f.unit})'),
-                );
-              }).toList(),
-              onChanged: (val) => setState(() {
-                _selectedFeedId = val;
-              }),
-              validator: (val) => val == null ? 'Selecione a ração' : null,
-            ),
-            const SizedBox(height: 16),
-
-            // Quantidade
-            TextFormField(
-              controller: _quantityController,
-              decoration: InputDecoration(
-                labelText: 'Quantidade',
-                suffixText: unit,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: const Icon(Icons.scale),
+              const SizedBox(height: 24),
+  
+              // Botão Salvar
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kNavyBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: _isSaving ? null : _saveForm,
+                child: _isSaving
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Text('Registrar Trato', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              validator: (val) {
-                if (val == null || val.isEmpty) return 'Digite a quantidade';
-                final numVal = double.tryParse(val);
-                if (numVal == null || numVal <= 0) return 'Digite um número maior que zero';
-                if (numVal > availableQuantity) {
-                  return 'Quantidade maior que o disponível em estoque ($availableQuantity $unit)';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 24),
-
-            // Botão Salvar
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _kNavyBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: _isSaving ? null : _saveForm,
-              child: _isSaving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : const Text('Registrar Trato', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -498,108 +500,110 @@ class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> 
         top: 24,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Editar Trato / Alimentação',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF003366)),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Editar Trato / Alimentação',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF003366)),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+  
+              // Dropdown Tanque
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: 'Selecione o Tanque',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.water),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
+                value: _selectedTankId,
+                items: tanks.map((t) {
+                  return DropdownMenuItem<String>(
+                    value: t.id,
+                    child: Text(t.name),
+                  );
+                }).toList(),
+                onChanged: (val) => setState(() => _selectedTankId = val),
+                validator: (val) => val == null ? 'Selecione o tanque' : null,
+              ),
+              const SizedBox(height: 16),
+  
+              // Dropdown Ração
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: 'Selecione a Ração',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.rice_bowl),
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Dropdown Tanque
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Selecione o Tanque',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: const Icon(Icons.water),
+                value: _selectedFeedId,
+                items: feeds.map((f) {
+                  final dispQty = f.quantity + (widget.record.feedId == f.id ? widget.record.quantity : 0.0);
+                  return DropdownMenuItem<String>(
+                    value: f.id,
+                    child: Text('${f.itemName} (Disp: $dispQty ${f.unit})'),
+                  );
+                }).toList(),
+                onChanged: (val) => setState(() {
+                  _selectedFeedId = val;
+                }),
+                validator: (val) => val == null ? 'Selecione a ração' : null,
               ),
-              value: _selectedTankId,
-              items: tanks.map((t) {
-                return DropdownMenuItem<String>(
-                  value: t.id,
-                  child: Text(t.name),
-                );
-              }).toList(),
-              onChanged: (val) => setState(() => _selectedTankId = val),
-              validator: (val) => val == null ? 'Selecione o tanque' : null,
-            ),
-            const SizedBox(height: 16),
-
-            // Dropdown Ração
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Selecione a Ração',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: const Icon(Icons.rice_bowl),
+              const SizedBox(height: 16),
+  
+              // Quantidade
+              TextFormField(
+                controller: _quantityController,
+                decoration: InputDecoration(
+                  labelText: 'Quantidade',
+                  suffixText: unit,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.scale),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (val) {
+                  if (val == null || val.isEmpty) return 'Digite a quantidade';
+                  final numVal = double.tryParse(val);
+                  if (numVal == null || numVal <= 0) return 'Digite um número maior que zero';
+                  if (numVal > availableQuantity) {
+                    return 'Quantidade maior que o disponível em estoque ($availableQuantity $unit)';
+                  }
+                  return null;
+                },
               ),
-              value: _selectedFeedId,
-              items: feeds.map((f) {
-                final dispQty = f.quantity + (widget.record.feedId == f.id ? widget.record.quantity : 0.0);
-                return DropdownMenuItem<String>(
-                  value: f.id,
-                  child: Text('${f.itemName} (Disp: $dispQty ${f.unit})'),
-                );
-              }).toList(),
-              onChanged: (val) => setState(() {
-                _selectedFeedId = val;
-              }),
-              validator: (val) => val == null ? 'Selecione a ração' : null,
-            ),
-            const SizedBox(height: 16),
-
-            // Quantidade
-            TextFormField(
-              controller: _quantityController,
-              decoration: InputDecoration(
-                labelText: 'Quantidade',
-                suffixText: unit,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: const Icon(Icons.scale),
+              const SizedBox(height: 24),
+  
+              // Botão Salvar
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF003366),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: _isSaving ? null : _saveForm,
+                child: _isSaving
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Text('Salvar Alterações', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              validator: (val) {
-                if (val == null || val.isEmpty) return 'Digite a quantidade';
-                final numVal = double.tryParse(val);
-                if (numVal == null || numVal <= 0) return 'Digite um número maior que zero';
-                if (numVal > availableQuantity) {
-                  return 'Quantidade maior que o disponível em estoque ($availableQuantity $unit)';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 24),
-
-            // Botão Salvar
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF003366),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: _isSaving ? null : _saveForm,
-              child: _isSaving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : const Text('Salvar Alterações', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
