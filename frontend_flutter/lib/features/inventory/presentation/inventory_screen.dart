@@ -4,6 +4,8 @@ import 'package:frontend_flutter/features/inventory/data/inventory_model.dart';
 import 'package:frontend_flutter/features/inventory/providers/inventory_provider.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 
+import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
+
 class InventoryScreen extends ConsumerWidget {
   const InventoryScreen({super.key});
 
@@ -43,20 +45,32 @@ class InventoryScreen extends ConsumerWidget {
     final inventoryAsync = ref.watch(inventoryProvider);
     final authState = ref.watch(authNotifierProvider);
     final isOwner = authState.accountType == 'FARM_OWNER' || authState.accountType == 'CLIENT';
+    final searchQuery = ref.watch(globalSearchQueryProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
 
       body: inventoryAsync.when(
         data: (items) {
-          if (items.isEmpty) return _buildEmptyState();
+          final filtered = items.where((item) {
+            if (searchQuery.isEmpty) return true;
+            final nameMatch = item.itemName.toLowerCase().contains(searchQuery.toLowerCase());
+            final typeMatch = item.type.toLowerCase().contains(searchQuery.toLowerCase());
+            return nameMatch || typeMatch;
+          }).toList();
+
+          if (filtered.isEmpty) {
+            return searchQuery.isNotEmpty
+                ? _buildEmptyState(message: 'Nenhum item encontrado para "$searchQuery"')
+                : _buildEmptyState();
+          }
           return RefreshIndicator(
             onRefresh: () => ref.read(inventoryProvider.notifier).refreshItems(),
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-              itemCount: items.length,
+              itemCount: filtered.length,
               itemBuilder: (context, index) {
-                final item = items[index];
+                final item = filtered[index];
                 final style = _typeStyle(item.type);
 
                 return Dismissible(
@@ -88,7 +102,7 @@ class InventoryScreen extends ConsumerWidget {
                               child: const Text('Cancelar')),
                           TextButton(
                             onPressed: () =>
-                                Navigator.of(context).pop(true),
+                                  Navigator.of(context).pop(true),
                             child: const Text('Excluir',
                                 style: TextStyle(color: Colors.red)),
                           ),
@@ -187,18 +201,20 @@ class InventoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState({String message = 'Nenhum item encontrado no estoque.'}) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.inventory, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          Text('Nenhum item encontrado no estoque.',
-              style: TextStyle(fontSize: 18, color: Colors.grey.shade600)),
+          Text(message,
+              style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+              textAlign: TextAlign.center,),
           const SizedBox(height: 8),
-          const Text('Clique no botão + para adicionar seu primeiro item.',
-              style: TextStyle(color: Colors.grey)),
+          if (message == 'Nenhum item encontrado no estoque.')
+            const Text('Clique no botão + para adicionar seu primeiro item.',
+                style: TextStyle(color: Colors.grey)),
         ],
       ),
     );

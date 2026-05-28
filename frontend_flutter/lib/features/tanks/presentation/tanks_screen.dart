@@ -54,7 +54,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
     final isOwner = authState.accountType == 'FARM_OWNER' || authState.accountType == 'CLIENT';
 
     final summaryAsyncValue = ref.watch(farmSummaryProvider);
-    final searchQuery = ref.watch(tankSearchQueryProvider);
+    final searchQuery = ref.watch(globalSearchQueryProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA), // Fundo Gelo

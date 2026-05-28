@@ -3,16 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/features/saas_admin/providers/saas_providers.dart';
 import 'package:frontend_flutter/features/saas_admin/data/saas_models.dart';
 import 'package:intl/intl.dart';
+import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 
 class TenantsScreen extends ConsumerWidget {
   const TenantsScreen({super.key});
 
   static const _kNavyBlue = Color(0xFF003366);
-  static const _kGreen = Color(0xFF13A538);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tenantsAsync = ref.watch(tenantsProvider);
+    final searchQuery = ref.watch(globalSearchQueryProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -25,6 +26,14 @@ class TenantsScreen extends ConsumerWidget {
         onRefresh: () => ref.read(tenantsProvider.notifier).refresh(),
         child: tenantsAsync.when(
           data: (tenants) {
+            final filtered = tenants.where((t) {
+              if (searchQuery.isEmpty) return true;
+              final query = searchQuery.toLowerCase();
+              final nameMatch = t.name.toLowerCase().contains(query);
+              final cnpjMatch = t.cnpj.toLowerCase().contains(query);
+              return nameMatch || cnpjMatch;
+            }).toList();
+
             return ListView(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
               children: [
@@ -38,11 +47,11 @@ class TenantsScreen extends ConsumerWidget {
                   style: TextStyle(fontSize: 12, color: Colors.black54),
                 ),
                 const SizedBox(height: 20),
-                if (tenants.isEmpty)
-                  _buildEmptyState()
+                if (filtered.isEmpty)
+                  _buildEmptyState(message: searchQuery.isNotEmpty ? 'Nenhum tenant encontrado para "$searchQuery"' : 'Nenhum tenant cadastrado')
                 else
                   Column(
-                    children: tenants
+                    children: filtered
                         .map((t) => _buildTenantCard(context, t))
                         .toList(),
                   ),
@@ -126,7 +135,7 @@ class TenantsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState({String message = 'Nenhum tenant cadastrado'}) {
     return Container(
       padding: const EdgeInsets.all(40),
       alignment: Alignment.center,
@@ -134,16 +143,19 @@ class TenantsScreen extends ConsumerWidget {
         children: [
           Icon(Icons.business_outlined, size: 60, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          const Text(
-            'Nenhum tenant cadastrado',
-            style: TextStyle(color: Colors.black54, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Adicione um novo cliente tenant clicando no botão +',
-            style: TextStyle(color: Colors.grey, fontSize: 12),
+          Text(
+            message,
+            style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
+          if (message == 'Nenhum tenant cadastrado') ...[
+            const SizedBox(height: 4),
+            const Text(
+              'Adicione um novo cliente tenant clicando no botão +',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ],
       ),
     );

@@ -18,6 +18,8 @@ class FeedingRecordsScreen extends ConsumerWidget {
     final tanksAsync = ref.watch(tanksProvider);
     final inventoryAsync = ref.watch(inventoryProvider);
 
+    final searchQuery = ref.watch(globalSearchQueryProvider);
+
     final tankMap = tanksAsync.maybeWhen(
       data: (list) => {for (var t in list) t.id: t.name},
       orElse: () => <String, String>{},
@@ -49,12 +51,22 @@ class FeedingRecordsScreen extends ConsumerWidget {
         onRefresh: () => ref.read(feedingRecordProvider.notifier).refreshRecords(),
         child: recordsAsync.when(
           data: (records) {
-            if (records.isEmpty) {
-              return _buildEmptyState();
+            final filtered = records.where((record) {
+              if (searchQuery.isEmpty) return true;
+              final tankName = (tankMap[record.tankId] ?? '').toLowerCase();
+              final feedName = (feedMap[record.feedId] ?? '').toLowerCase();
+              final query = searchQuery.toLowerCase();
+              return tankName.contains(query) || feedName.contains(query);
+            }).toList();
+
+            if (filtered.isEmpty) {
+              return searchQuery.isNotEmpty
+                  ? _buildEmptyState(message: 'Nenhum trato encontrado para "$searchQuery"')
+                  : _buildEmptyState();
             }
 
             // Show newest records first
-            final sortedRecords = List.from(records)
+            final sortedRecords = List.from(filtered)
               ..sort((a, b) => b.feedingTime.compareTo(a.feedingTime));
 
             return ListView.builder(
@@ -180,8 +192,8 @@ class FeedingRecordsScreen extends ConsumerWidget {
                               const Icon(Icons.access_time_rounded, size: 14, color: Colors.grey),
                               const SizedBox(width: 4),
                               Text(
-                                formattedTime,
-                                style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
+                                  formattedTime,
+                                  style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
                               ),
                             ],
                           ),
@@ -222,7 +234,7 @@ class FeedingRecordsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState({String message = 'Nenhum trato registrado'}) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -231,16 +243,19 @@ class FeedingRecordsScreen extends ConsumerWidget {
           children: [
             Icon(Icons.restaurant, size: 64, color: Colors.grey.shade300),
             const SizedBox(height: 16),
-            const Text(
-              'Nenhum trato registrado',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black54),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Clique no botão central "+" para registrar a alimentação diária de seus peixes.',
+            Text(
+              message,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black54),
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 13),
             ),
+            if (message == 'Nenhum trato registrado') ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Clique no botão central "+" para registrar a alimentação diária de seus peixes.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              ),
+            ],
           ],
         ),
       ),

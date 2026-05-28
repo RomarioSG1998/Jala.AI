@@ -36,21 +36,35 @@ class WaterQualityScreen extends ConsumerWidget {
     final authState = ref.watch(authNotifierProvider);
     final isOwner = authState.accountType == 'FARM_OWNER' || authState.accountType == 'CLIENT';
 
+    final searchQuery = ref.watch(globalSearchQueryProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
 
       body: wqAsyncValue.when(
         data: (records) {
-          if (records.isEmpty) {
-            return _buildEmptyState();
+          final filtered = records.where((record) {
+            if (searchQuery.isEmpty) return true;
+            final tankName = (tankMap[record.tankId] ?? '').toLowerCase();
+            final query = searchQuery.toLowerCase();
+            final phMatch = record.ph.toString().contains(query);
+            final tempMatch = record.temperature.toString().contains(query);
+            final oxygenMatch = record.dissolvedOxygen.toString().contains(query);
+            return tankName.contains(query) || phMatch || tempMatch || oxygenMatch;
+          }).toList();
+
+          if (filtered.isEmpty) {
+            return searchQuery.isNotEmpty
+                ? _buildEmptyState(message: 'Nenhum registro encontrado para "$searchQuery"')
+                : _buildEmptyState();
           }
           return RefreshIndicator(
             onRefresh: () => ref.read(waterQualityProvider.notifier).refreshRecords(),
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-              itemCount: records.length,
+              itemCount: filtered.length,
               itemBuilder: (context, index) {
-                final record = records[index];
+                final record = filtered[index];
                 
                 Color phColor = Colors.green;
                 if (record.ph < 6.5 || record.ph > 8.5) {
@@ -195,7 +209,7 @@ class WaterQualityScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState({String message = 'Nenhum registro de qualidade da água encontrado.'}) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -203,8 +217,9 @@ class WaterQualityScreen extends ConsumerWidget {
           Icon(Icons.science, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
-            'Nenhum registro de qualidade da água encontrado.',
+            message,
             style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

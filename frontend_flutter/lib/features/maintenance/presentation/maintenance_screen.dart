@@ -58,20 +58,35 @@ class MaintenanceScreen extends ConsumerWidget {
     final authState = ref.watch(authNotifierProvider);
     final isOwner = authState.accountType == 'FARM_OWNER' || authState.accountType == 'CLIENT';
 
+    final searchQuery = ref.watch(globalSearchQueryProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       floatingActionButton: null,
       body: tasksAsync.when(
         data: (tasks) {
-          if (tasks.isEmpty) return _buildEmptyState();
+          final filtered = tasks.where((task) {
+            if (searchQuery.isEmpty) return true;
+            final query = searchQuery.toLowerCase();
+            final descMatch = task.description.toLowerCase().contains(query);
+            final statusMatch = task.status.toLowerCase().contains(query);
+            final statusPtMatch = _translateStatus(task.status).toLowerCase().contains(query);
+            return descMatch || statusMatch || statusPtMatch;
+          }).toList();
+
+          if (filtered.isEmpty) {
+            return searchQuery.isNotEmpty
+                ? _buildEmptyState(message: 'Nenhuma tarefa encontrada para "$searchQuery"')
+                : _buildEmptyState();
+          }
           return RefreshIndicator(
             onRefresh: () =>
                 ref.read(maintenanceProvider.notifier).refreshTasks(),
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-              itemCount: tasks.length,
+              itemCount: filtered.length,
               itemBuilder: (context, index) {
-                final task = tasks[index];
+                final task = filtered[index];
                 final style = _statusStyle(task.status);
 
                 DateTime date;
@@ -238,19 +253,21 @@ class MaintenanceScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState({String message = 'Nenhuma tarefa de manutenção encontrada.'}) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.build, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          Text('Nenhuma tarefa de manutenção encontrada.',
+          Text(message,
               style:
-                  TextStyle(fontSize: 18, color: Colors.grey.shade600)),
+                  TextStyle(fontSize: 18, color: Colors.grey.shade600),
+              textAlign: TextAlign.center,),
           const SizedBox(height: 8),
-          const Text('Clique no botão + para agendar uma tarefa.',
-              style: TextStyle(color: Colors.grey)),
+          if (message == 'Nenhuma tarefa de manutenção encontrada.')
+            const Text('Clique no botão + para agendar uma tarefa.',
+                style: TextStyle(color: Colors.grey)),
         ],
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/features/finances/providers/transaction_provider.dart';
 import 'package:frontend_flutter/features/finances/data/transaction_model.dart';
 import 'package:intl/intl.dart';
+import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 
 class FinancesScreen extends ConsumerWidget {
   const FinancesScreen({super.key});
@@ -14,6 +15,7 @@ class FinancesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final transactionsAsync = ref.watch(transactionProvider);
     final currencyFmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final searchQuery = ref.watch(globalSearchQueryProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -26,10 +28,20 @@ class FinancesScreen extends ConsumerWidget {
         onRefresh: () => ref.read(transactionProvider.notifier).refreshTransactions(),
         child: transactionsAsync.when(
           data: (transactions) {
+            final filtered = transactions.where((tx) {
+              if (searchQuery.isEmpty) return true;
+              final query = searchQuery.toLowerCase();
+              final typeMatch = tx.type.toLowerCase().contains(query);
+              final typePtMatch = (tx.type.toLowerCase() == 'income' ? 'receita' : 'despesa').contains(query);
+              final amountMatch = tx.amount.toString().contains(query);
+              final amountFormattedMatch = currencyFmt.format(tx.amount).toLowerCase().contains(query);
+              return typeMatch || typePtMatch || amountMatch || amountFormattedMatch;
+            }).toList();
+
             double totalIncome = 0;
             double totalExpense = 0;
 
-            for (final tx in transactions) {
+            for (final tx in filtered) {
               if (tx.type.toLowerCase() == 'income') {
                 totalIncome += tx.amount;
               } else {
@@ -50,11 +62,11 @@ class FinancesScreen extends ConsumerWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
                 ),
                 const SizedBox(height: 12),
-                if (transactions.isEmpty)
-                  _buildEmptyState()
+                if (filtered.isEmpty)
+                  _buildEmptyState(message: searchQuery.isNotEmpty ? 'Nenhuma transação encontrada para "$searchQuery"' : 'Nenhuma transação registrada')
                 else
                   Column(
-                    children: transactions
+                    children: filtered
                         .map((tx) => _buildTransactionItem(context, ref, tx, currencyFmt))
                         .toList(),
                   ),
@@ -243,7 +255,7 @@ class FinancesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState({String message = 'Nenhuma transação registrada'}) {
     return Container(
       padding: const EdgeInsets.all(40),
       alignment: Alignment.center,
@@ -251,16 +263,19 @@ class FinancesScreen extends ConsumerWidget {
         children: [
           Icon(Icons.account_balance_wallet_outlined, size: 60, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          const Text(
-            'Nenhuma transação registrada',
-            style: TextStyle(color: Colors.black54, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Adicione uma nova transação financeira clicando no botão +',
-            style: TextStyle(color: Colors.grey, fontSize: 12),
+          Text(
+            message,
+            style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
+          if (message == 'Nenhuma transação registrada') ...[
+            const SizedBox(height: 4),
+            const Text(
+              'Adicione uma nova transação financeira clicando no botão +',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ],
       ),
     );

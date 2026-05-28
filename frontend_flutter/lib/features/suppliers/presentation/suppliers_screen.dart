@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/features/suppliers/providers/supplier_provider.dart';
 import 'package:frontend_flutter/features/suppliers/data/supplier_model.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
+import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 
 class SuppliersScreen extends ConsumerWidget {
   const SuppliersScreen({super.key});
@@ -15,6 +16,7 @@ class SuppliersScreen extends ConsumerWidget {
     final suppliersAsync = ref.watch(supplierProvider);
     final authState = ref.watch(authNotifierProvider);
     final isAdmin = authState.accountType == 'SAAS_ADMIN';
+    final searchQuery = ref.watch(globalSearchQueryProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -27,6 +29,15 @@ class SuppliersScreen extends ConsumerWidget {
         onRefresh: () => ref.read(supplierProvider.notifier).refreshSuppliers(),
         child: suppliersAsync.when(
           data: (suppliers) {
+            final filtered = suppliers.where((s) {
+              if (searchQuery.isEmpty) return true;
+              final query = searchQuery.toLowerCase();
+              final nameMatch = s.companyName.toLowerCase().contains(query);
+              final cnpjMatch = s.cnpj.toLowerCase().contains(query);
+              final typeMatch = s.supplyType.toLowerCase().contains(query);
+              return nameMatch || cnpjMatch || typeMatch;
+            }).toList();
+
             return ListView(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
               children: [
@@ -42,11 +53,11 @@ class SuppliersScreen extends ConsumerWidget {
                   style: const TextStyle(fontSize: 12, color: Colors.black54),
                 ),
                 const SizedBox(height: 20),
-                if (suppliers.isEmpty)
-                  _buildEmptyState()
+                if (filtered.isEmpty)
+                  _buildEmptyState(message: searchQuery.isNotEmpty ? 'Nenhum fornecedor encontrado para "$searchQuery"' : 'Nenhum fornecedor cadastrado')
                 else
                   Column(
-                    children: suppliers
+                    children: filtered
                         .map((s) => _buildSupplierCard(context, ref, s, isAdmin))
                         .toList(),
                   ),
@@ -172,7 +183,7 @@ class SuppliersScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState({String message = 'Nenhum fornecedor cadastrado'}) {
     return Container(
       padding: const EdgeInsets.all(40),
       alignment: Alignment.center,
@@ -180,16 +191,19 @@ class SuppliersScreen extends ConsumerWidget {
         children: [
           Icon(Icons.business_center_outlined, size: 60, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          const Text(
-            'Nenhum fornecedor cadastrado',
-            style: TextStyle(color: Colors.black54, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Adicione um novo fornecedor nacional clicando no botão +',
-            style: TextStyle(color: Colors.grey, fontSize: 12),
+          Text(
+            message,
+            style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
+          if (message == 'Nenhum fornecedor cadastrado') ...[
+            const SizedBox(height: 4),
+            const Text(
+              'Adicione um novo fornecedor nacional clicando no botão +',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ],
       ),
     );

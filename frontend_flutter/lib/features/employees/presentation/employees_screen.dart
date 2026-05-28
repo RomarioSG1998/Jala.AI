@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import '../providers/employees_provider.dart';
 import '../providers/employee_permissions_provider.dart';
 import '../data/employee_model.dart';
@@ -14,6 +15,7 @@ class EmployeesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final employeesAsync = ref.watch(employeesProvider);
+    final searchQuery = ref.watch(globalSearchQueryProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -22,7 +24,15 @@ class EmployeesScreen extends ConsumerWidget {
       ),
       body: employeesAsync.when(
         data: (employees) {
-          if (employees.isEmpty) {
+          final filtered = employees.where((emp) {
+            if (searchQuery.isEmpty) return true;
+            final nameMatch = emp.name.toLowerCase().contains(searchQuery.toLowerCase());
+            final emailMatch = emp.email.toLowerCase().contains(searchQuery.toLowerCase());
+            final roleMatch = emp.accountType.toLowerCase().contains(searchQuery.toLowerCase());
+            return nameMatch || emailMatch || roleMatch;
+          }).toList();
+
+          if (filtered.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -30,14 +40,18 @@ class EmployeesScreen extends ConsumerWidget {
                   Icon(Icons.people_outline, size: 72, color: Colors.grey.shade400),
                   const SizedBox(height: 16),
                   Text(
-                    'Nenhum funcionário cadastrado',
+                    searchQuery.isNotEmpty
+                        ? 'Nenhum funcionário encontrado para "$searchQuery"'
+                        : 'Nenhum funcionário cadastrado',
                     style: TextStyle(fontSize: 18, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Pressione + para adicionar um funcionário.',
-                    style: TextStyle(color: Colors.grey.shade500),
-                  ),
+                  if (searchQuery.isEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Pressione + para adicionar um funcionário.',
+                      style: TextStyle(color: Colors.grey.shade500),
+                    ),
+                  ],
                 ],
               ),
             );
@@ -45,9 +59,9 @@ class EmployeesScreen extends ConsumerWidget {
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: employees.length,
+            itemCount: filtered.length,
             itemBuilder: (context, index) {
-              final emp = employees[index];
+              final emp = filtered[index];
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

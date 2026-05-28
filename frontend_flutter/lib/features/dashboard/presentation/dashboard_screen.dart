@@ -35,6 +35,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   static const _kNavyBlue = Color(0xFF003366);
   static const _kGreen = Color(0xFF13A538);
   late final TextEditingController _searchController;
+  int _lastIndex = 0;
 
   @override
   void initState() {
@@ -114,7 +115,53 @@ class _AppShellState extends ConsumerState<AppShell> {
     );
 
     final isSearchVisible = ref.watch(searchBarVisibleProvider);
-    final searchQuery = ref.watch(tankSearchQueryProvider);
+    final searchQuery = ref.watch(globalSearchQueryProvider);
+
+    if (currentIndex != _lastIndex) {
+      _lastIndex = currentIndex;
+      Future.microtask(() {
+        ref.read(searchBarVisibleProvider.notifier).setVisible(false);
+        ref.read(globalSearchQueryProvider.notifier).setQuery('');
+        _searchController.clear();
+      });
+    }
+
+    final state = GoRouterState.of(context);
+    final currentRoute = state.matchedLocation;
+
+    String searchHint = 'Pesquisar...';
+    switch (currentRoute) {
+      case '/tanks':
+        searchHint = 'Buscar tanques por nome ou espécie...';
+        break;
+      case '/water-quality':
+        searchHint = 'Buscar leituras de água...';
+        break;
+      case '/inventory':
+        searchHint = 'Buscar itens no estoque...';
+        break;
+      case '/harvests':
+        searchHint = 'Buscar despescas/colheitas...';
+        break;
+      case '/maintenance':
+        searchHint = 'Buscar tarefas de manutenção...';
+        break;
+      case '/tenants':
+        searchHint = 'Buscar tenants/clientes...';
+        break;
+      case '/suppliers':
+        searchHint = 'Buscar fornecedores...';
+        break;
+      case '/finances':
+        searchHint = 'Buscar transações financeiras...';
+        break;
+      case '/feeding-records':
+        searchHint = 'Buscar registros de alimentação...';
+        break;
+      case '/employees':
+        searchHint = 'Buscar funcionários...';
+        break;
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -128,7 +175,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () {
                   ref.read(searchBarVisibleProvider.notifier).setVisible(false);
-                  ref.read(tankSearchQueryProvider.notifier).setQuery('');
+                  ref.read(globalSearchQueryProvider.notifier).setQuery('');
                   _searchController.clear();
                 },
               ),
@@ -137,13 +184,13 @@ class _AppShellState extends ConsumerState<AppShell> {
                 autofocus: true,
                 style: const TextStyle(color: Colors.white, fontSize: 16),
                 cursorColor: _kGreen,
-                decoration: const InputDecoration(
-                  hintText: 'Buscar tanques por nome ou espécie...',
-                  hintStyle: TextStyle(color: Colors.white60, fontSize: 16),
+                decoration: InputDecoration(
+                  hintText: searchHint,
+                  hintStyle: const TextStyle(color: Colors.white60, fontSize: 16),
                   border: InputBorder.none,
                 ),
                 onChanged: (val) {
-                  ref.read(tankSearchQueryProvider.notifier).setQuery(val);
+                  ref.read(globalSearchQueryProvider.notifier).setQuery(val);
                 },
               ),
               actions: [
@@ -151,7 +198,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                   IconButton(
                     icon: const Icon(Icons.clear, color: Colors.white),
                     onPressed: () {
-                      ref.read(tankSearchQueryProvider.notifier).setQuery('');
+                      ref.read(globalSearchQueryProvider.notifier).setQuery('');
                       _searchController.clear();
                     },
                   ),
@@ -204,9 +251,6 @@ class _AppShellState extends ConsumerState<AppShell> {
                   icon: const Icon(Icons.search, color: Colors.white),
                   onPressed: () {
                     ref.read(searchBarVisibleProvider.notifier).setVisible(true);
-                    if (widget.navigationShell.currentIndex != 1) {
-                      widget.navigationShell.goBranch(1);
-                    }
                   },
                 ),
                 Stack(

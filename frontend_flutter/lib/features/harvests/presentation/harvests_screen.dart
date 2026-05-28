@@ -31,21 +31,34 @@ class HarvestsScreen extends ConsumerWidget {
     final harvestsAsync = ref.watch(harvestProvider);
     final authState = ref.watch(authNotifierProvider);
     final isOwner = authState.accountType == 'FARM_OWNER' || authState.accountType == 'CLIENT';
+    final searchQuery = ref.watch(globalSearchQueryProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
 
       body: harvestsAsync.when(
         data: (harvests) {
-          if (harvests.isEmpty) return _buildEmptyState();
+          final filtered = harvests.where((harvest) {
+            if (searchQuery.isEmpty) return true;
+            final query = searchQuery.toLowerCase();
+            final destinationMatch = harvest.destination.toLowerCase().contains(query);
+            final qtyMatch = harvest.quantityKg.toString().contains(query);
+            return destinationMatch || qtyMatch;
+          }).toList();
+
+          if (filtered.isEmpty) {
+            return searchQuery.isNotEmpty
+                ? _buildEmptyState(message: 'Nenhuma despesca encontrada para "$searchQuery"')
+                : _buildEmptyState();
+          }
           return RefreshIndicator(
             onRefresh: () =>
                 ref.read(harvestProvider.notifier).refreshHarvests(),
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-              itemCount: harvests.length,
+              itemCount: filtered.length,
               itemBuilder: (context, index) {
-                final harvest = harvests[index];
+                final harvest = filtered[index];
 
                 // Parse and format the date
                 DateTime date;
@@ -194,19 +207,21 @@ class HarvestsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState({String message = 'Nenhuma despesca registrada ainda.'}) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.agriculture, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          Text('Nenhuma despesca registrada ainda.',
+          Text(message,
               style:
-                  TextStyle(fontSize: 18, color: Colors.grey.shade600)),
+                  TextStyle(fontSize: 18, color: Colors.grey.shade600),
+              textAlign: TextAlign.center,),
           const SizedBox(height: 8),
-          const Text('Clique no botão + para registrar sua primeira despesca.',
-              style: TextStyle(color: Colors.grey)),
+          if (message == 'Nenhuma despesca registrada ainda.')
+            const Text('Clique no botão + para registrar sua primeira despesca.',
+                style: TextStyle(color: Colors.grey)),
         ],
       ),
     );
