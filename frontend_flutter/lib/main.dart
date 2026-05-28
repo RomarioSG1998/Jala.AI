@@ -48,15 +48,10 @@ final routerProvider = Provider<GoRouter>((ref) {
   final routerNotifier = ref.watch(routerNotifierProvider);
 
   return GoRouter(
-    initialLocation: '/splash',
+    initialLocation: '/login',
     refreshListenable: routerNotifier,
     redirect: (context, state) {
       final authState = ref.read(authNotifierProvider);
-
-      // While credentials are being loaded from storage, go to splash screen.
-      // This prevents a premature redirect to /login that causes a blank screen.
-      if (authState.isLoading) return state.matchedLocation == '/splash' ? null : '/splash';
-
       final isGoingToLogin = state.matchedLocation == '/login';
       if (!authState.isAuthenticated && !isGoingToLogin) return '/login';
       if (authState.isAuthenticated && isGoingToLogin) return '/dashboard';
@@ -67,23 +62,15 @@ final routerProvider = Provider<GoRouter>((ref) {
 
         // SaaS Admin exclusive routes
         final isSaasRoute = location == '/tenants' || location == '/suppliers' || location == '/saas-dashboard';
-        if (isSaasRoute && role != 'SAAS_ADMIN') {
-          return '/dashboard';
-        }
+        if (isSaasRoute && role != 'SAAS_ADMIN') return '/dashboard';
 
         // Farm Owner / Client exclusive routes
         final isOwnerRoute = location == '/employees' || location == '/finances' || location == '/maintenance';
-        if (isOwnerRoute && role != 'FARM_OWNER' && role != 'CLIENT') {
-          return '/dashboard';
-        }
+        if (isOwnerRoute && role != 'FARM_OWNER' && role != 'CLIENT') return '/dashboard';
       }
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/splash',
-        builder: (context, state) => const SplashScreen(),
-      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
@@ -292,38 +279,6 @@ class DummyScreen extends StatelessWidget {
       appBar: AppBar(title: Text(title)),
       body: Center(
         child: Text('$title em breve!', style: const TextStyle(fontSize: 24)),
-      ),
-    );
-  }
-}
-
-// ─── Tela de Splash (aguarda inicialização da autenticação) ───────────────────
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFF003366),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.water, color: Colors.white, size: 64),
-            SizedBox(height: 24),
-            Text(
-              'AquaGestor',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
-              ),
-            ),
-            SizedBox(height: 48),
-            CircularProgressIndicator(color: Colors.white54),
-          ],
-        ),
       ),
     );
   }
