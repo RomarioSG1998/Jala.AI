@@ -48,11 +48,11 @@ class AuthNotifier extends Notifier<AuthState> {
   AuthState build() {
     _repository = ref.watch(authRepositoryProvider);
     _tokenStorage = ref.watch(tokenStorageProvider);
-    
-    // Check initial auth state asynchronously without blocking build
+
+    // Start in loading state so the router waits before redirecting
     _checkInitialAuth();
-    
-    return AuthState();
+
+    return AuthState(isLoading: true);
   }
 
   Future<void> _checkInitialAuth() async {
@@ -68,7 +68,8 @@ class AuthNotifier extends Notifier<AuthState> {
       if (accountType != null) {
         await _tokenStorage.saveUserDetails(email ?? '', accountType, userId: userId);
       }
-      state = state.copyWith(
+      state = AuthState(
+        isLoading: false,
         isAuthenticated: true,
         email: email,
         accountType: accountType,
@@ -81,6 +82,9 @@ class AuthNotifier extends Notifier<AuthState> {
     if (token != null) {
       await _tokenStorage.clearAll();
     }
+
+    // Auth check complete — not authenticated
+    state = AuthState(isLoading: false, isAuthenticated: false);
   }
 
   String? _extractAccountTypeFromToken(String? token) {
