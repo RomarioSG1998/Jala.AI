@@ -23,6 +23,39 @@ import 'package:frontend_flutter/features/maintenance/providers/maintenance_prov
 import 'package:frontend_flutter/features/maintenance/data/maintenance_model.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
 
+class AppNotification {
+  final String id;
+  final String title;
+  final String description;
+  final String time;
+  final IconData icon;
+  final Color iconColor;
+  final VoidCallback? onAction;
+
+  AppNotification({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.time,
+    required this.icon,
+    required this.iconColor,
+    this.onAction,
+  });
+}
+
+class DismissedNotificationsNotifier extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => <String>{};
+
+  void dismiss(String id) {
+    state = {...state, id};
+  }
+}
+
+final dismissedNotificationsProvider = NotifierProvider<DismissedNotificationsNotifier, Set<String>>(() {
+  return DismissedNotificationsNotifier();
+});
+
 // ─── AppShell – Casca Permanente com Header e Bottom Nav ────────────────────
 
 class AppShell extends ConsumerStatefulWidget {
@@ -107,6 +140,9 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 
   void _showNotificationDialog(BuildContext context) {
+    final authState = ref.read(authNotifierProvider);
+    final role = authState.accountType ?? '';
+
     showDialog(
       context: context,
       builder: (context) {
@@ -115,12 +151,140 @@ class _AppShellState extends ConsumerState<AppShell> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           elevation: 10,
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 450),
+            constraints: const BoxConstraints(maxWidth: 480),
             padding: const EdgeInsets.all(20),
             child: Consumer(
               builder: (context, ref, child) {
                 final tasksAsync = ref.watch(maintenanceProvider);
+                final tenantsAsync = ref.watch(tenantsProvider);
                 final tanksAsync = ref.watch(tanksProvider);
+                final dismissed = ref.watch(dismissedNotificationsProvider);
+
+                final List<AppNotification> notifications = [];
+
+                if (role == 'SAAS_ADMIN') {
+                  final tenants = tenantsAsync.maybeWhen(data: (list) => list, orElse: () => <FarmTenant>[]);
+                  for (var t in tenants) {
+                    final empId = '${t.id}_employee';
+                    if (!dismissed.contains(empId)) {
+                      notifications.add(AppNotification(
+                        id: empId,
+                        title: 'Novo Funcionário Cadastrado',
+                        description: 'Um novo funcionário foi registrado na fazenda ${t.name}.',
+                        time: 'Recente',
+                        icon: Icons.person_add_rounded,
+                        iconColor: Colors.green,
+                      ));
+                    }
+                    final payId = '${t.id}_payment';
+                    if (!dismissed.contains(payId)) {
+                      notifications.add(AppNotification(
+                        id: payId,
+                        title: 'Pagamento Aprovado',
+                        description: 'Assinatura do Plano Profissional renovada para ${t.name}.',
+                        time: 'Hoje',
+                        icon: Icons.monetization_on_rounded,
+                        iconColor: Colors.blue,
+                      ));
+                    }
+                    final tankId = '${t.id}_tank';
+                    if (!dismissed.contains(tankId)) {
+                      notifications.add(AppNotification(
+                        id: tankId,
+                        title: 'Novo Tanque Adquirido',
+                        description: 'Fazenda ${t.name} registrou um novo tanque de piscicultura.',
+                        time: 'Ontem',
+                        icon: Icons.water_drop_rounded,
+                        iconColor: Colors.cyan,
+                      ));
+                    }
+                  }
+                } else if (role == 'FARM_OWNER' || role == 'CLIENT') {
+                  final tasks = tasksAsync.maybeWhen(data: (list) => list, orElse: () => <MaintenanceTask>[]);
+                  final completedTasks = tasks.where((t) => t.status.toUpperCase() == 'COMPLETED').toList();
+                  final tankMap = tanksAsync.maybeWhen(
+                    data: (list) => {for (var t in list) t.id: t.name},
+                    orElse: () => <String, String>{},
+                  );
+
+                  for (var task in completedTasks) {
+                    final notifId = 'completed_${task.id}';
+                    if (!dismissed.contains(notifId)) {
+                      final tankName = tankMap[task.tankId] ?? 'Tanque não identificado';
+                      String formattedDate = task.scheduledDate;
+                      try {
+                        final parsed = DateTime.parse(task.scheduledDate);
+                        formattedDate = DateFormat('dd/MM/yyyy').format(parsed);
+                      } catch (_) {}
+
+                      notifications.add(AppNotification(
+                        id: notifId,
+                        title: 'Tarefa Concluída',
+                        description: '${task.description} concluída no tanque $tankName.',
+                        time: formattedDate,
+                        icon: Icons.check_circle_rounded,
+                        iconColor: Colors.green,
+                      ));
+                    }
+                  }
+                } else { // FIELD_OPERATOR
+                  final tasks = tasksAsync.maybeWhen(data: (list) => list, orElse: () => <MaintenanceTask>[]);
+                  final activeTasks = tasks.where((t) => t.status.toUpperCase() == 'PENDING' || t.status.toUpperCase() == 'IN_PROGRESS').toList();
+                  final tankMap = tanksAsync.maybeWhen(
+                    data: (list) => {for (var t in list) t.id: t.name},
+                    orElse: () => <String, String>{},
+                  );
+
+                  for (var task in activeTasks) {
+                    final notifId = 'pending_${task.id}';
+                    if (!dismissed.contains(notifId)) {
+                      final tankName = tankMap[task.tankId] ?? 'Tanque não identificado';
+                      String formattedDate = task.scheduledDate;
+                      try {
+                        final parsed = DateTime.parse(task.scheduledDate);
+                        formattedDate = DateFormat('dd/MM/yyyy').format(parsed);
+                      } catch (_) {}
+
+                      notifications.add(AppNotification(
+                        id: notifId,
+                        title: task.status.toUpperCase() == 'IN_PROGRESS'
+                            ? 'Tarefa Em Andamento'
+                            : 'Tarefa Pendente',
+                        description: '${task.description} no tanque $tankName.',
+                        time: formattedDate,
+                        icon: task.status.toUpperCase() == 'IN_PROGRESS'
+                            ? Icons.pending_rounded
+                            : Icons.schedule_rounded,
+                        iconColor: task.status.toUpperCase() == 'IN_PROGRESS'
+                            ? Colors.blue
+                            : Colors.orange,
+                        onAction: () async {
+                          final success = await ref
+                              .read(maintenanceProvider.notifier)
+                              .updateTask(
+                                task.id,
+                                task.description,
+                                'COMPLETED',
+                                task.scheduledDate,
+                              );
+                          if (success) {
+                            ref.invalidate(farmSummaryProvider);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Tarefa marcada como concluída!'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                      ));
+                    }
+                  }
+                }
+
+                // Check loading state of primary provider
+                final isLoading = (role == 'SAAS_ADMIN' && tenantsAsync.isLoading) ||
+                                  (role != 'SAAS_ADMIN' && tasksAsync.isLoading);
 
                 return Column(
                   mainAxisSize: MainAxisSize.min,
@@ -130,14 +294,18 @@ class _AppShellState extends ConsumerState<AppShell> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Icon(Icons.notifications_active, color: Color(0xFF003366), size: 24),
-                            SizedBox(width: 8),
+                            const Icon(Icons.notifications_active, color: Color(0xFF003366), size: 24),
+                            const SizedBox(width: 8),
                             Text(
-                              'Notificações',
-                              style: TextStyle(
-                                fontSize: 18,
+                              role == 'SAAS_ADMIN'
+                                  ? 'Painel de Eventos SaaS'
+                                  : role == 'FIELD_OPERATOR'
+                                      ? 'Suas Tarefas Operacionais'
+                                      : 'Notificações do Sistema',
+                              style: const TextStyle(
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: Color(0xFF003366),
                               ),
@@ -150,201 +318,159 @@ class _AppShellState extends ConsumerState<AppShell> {
                         ),
                       ],
                     ),
-                    const Divider(height: 20, thickness: 1),
+                    const Divider(height: 15, thickness: 1),
 
                     // Body
-                    tasksAsync.when(
-                      loading: () => const SizedBox(
+                    if (isLoading)
+                      const SizedBox(
                         height: 150,
                         child: Center(child: CircularProgressIndicator()),
-                      ),
-                      error: (err, _) => SizedBox(
-                        height: 150,
-                        child: Center(
-                          child: Text(
-                            'Erro ao carregar tarefas: $err',
-                            style: const TextStyle(color: Colors.red),
-                            textAlign: TextAlign.center,
+                      )
+                    else if (notifications.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.done_all_rounded,
+                                color: Colors.green,
+                                size: 48,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Nenhuma notificação!',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              role == 'SAAS_ADMIN'
+                                  ? 'Sem novos cadastros, pagamentos ou tanques.'
+                                  : role == 'FIELD_OPERATOR'
+                                      ? 'Todas as tarefas foram concluídas!'
+                                      : 'Nenhum evento recente de manutenção.',
+                              style: const TextStyle(fontSize: 13, color: Colors.grey),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 320),
+                        child: Scrollbar(
+                          thumbVisibility: true,
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: notifications.length,
+                            itemBuilder: (context, index) {
+                              final item = notifications[index];
+                              return Card(
+                                margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                                color: Colors.grey.shade50,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(color: Colors.grey.shade200),
+                                ),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                  leading: CircleAvatar(
+                                    backgroundColor: item.iconColor.withOpacity(0.1),
+                                    radius: 18,
+                                    child: Icon(
+                                      item.icon,
+                                      color: item.iconColor,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    item.title,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        item.description,
+                                        style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        item.time,
+                                        style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (item.onAction != null)
+                                        IconButton(
+                                          icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                                          tooltip: 'Marcar como concluída',
+                                          onPressed: item.onAction,
+                                        ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.grey, size: 20),
+                                        tooltip: 'Ignorar',
+                                        onPressed: () {
+                                          ref.read(dismissedNotificationsProvider.notifier).dismiss(item.id);
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  onTap: role == 'SAAS_ADMIN'
+                                      ? () {
+                                          Navigator.pop(context);
+                                          context.go('/tenants');
+                                        }
+                                      : () {
+                                          Navigator.pop(context);
+                                          context.go('/maintenance');
+                                        },
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
-                      data: (tasks) {
-                        final pending = tasks
-                            .where((t) =>
-                                t.status.toUpperCase() == 'PENDING' ||
-                                t.status.toUpperCase() == 'IN_PROGRESS')
-                            .toList();
 
-                        if (pending.isEmpty) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 32),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.shade50,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.check_circle_outline,
-                                    color: Colors.green,
-                                    size: 48,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                const Text(
-                                  'Tudo em dia!',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Nenhuma tarefa de manutenção pendente.',
-                                  style: TextStyle(fontSize: 13, color: Colors.grey),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-
-                        // Map of tank IDs to names
-                        final tankMap = tanksAsync.maybeWhen(
-                          data: (list) => {for (var t in list) t.id: t.name},
-                          orElse: () => <String, String>{},
-                        );
-
-                        return ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 320),
-                          child: Scrollbar(
-                            thumbVisibility: true,
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: pending.length,
-                              itemBuilder: (context, index) {
-                                final task = pending[index];
-                                final isToday = task.scheduledDate.startsWith(
-                                  DateTime.now().toString().substring(0, 10),
-                                );
-                                
-                                String formattedDate = task.scheduledDate;
-                                try {
-                                  final parsed = DateTime.parse(task.scheduledDate);
-                                  formattedDate = DateFormat('dd/MM/yyyy').format(parsed);
-                                } catch (_) {}
-
-                                final tankName = tankMap[task.tankId] ?? 'Tanque não identificado';
-
-                                return Card(
-                                  margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                                  color: Colors.grey.shade50,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    side: BorderSide(color: Colors.grey.shade200),
-                                  ),
-                                  child: ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                    leading: CircleAvatar(
-                                      backgroundColor: task.status.toUpperCase() == 'IN_PROGRESS'
-                                          ? Colors.blue.shade50
-                                          : Colors.orange.shade50,
-                                      radius: 18,
-                                      child: Icon(
-                                        task.status.toUpperCase() == 'IN_PROGRESS'
-                                            ? Icons.pending_outlined
-                                            : Icons.schedule,
-                                        color: task.status.toUpperCase() == 'IN_PROGRESS'
-                                            ? Colors.blue
-                                            : Colors.orange,
-                                        size: 20,
-                                      ),
-                                    ),
-                                    title: Text(
-                                      task.description,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    subtitle: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Tanque: $tankName',
-                                          style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          'Agendado: $formattedDate',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: isToday ? Colors.red : Colors.grey,
-                                            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    trailing: IconButton(
-                                      icon: const Icon(Icons.check_circle_outline, color: Colors.green),
-                                      onPressed: () async {
-                                        final success = await ref
-                                            .read(maintenanceProvider.notifier)
-                                            .updateTask(
-                                              task.id,
-                                              task.description,
-                                              'COMPLETED',
-                                              task.scheduledDate,
-                                            );
-                                        if (success) {
-                                          ref.invalidate(farmSummaryProvider);
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('Tarefa marcada como concluída!'),
-                                              duration: Duration(seconds: 2),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                    ),
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      context.go('/maintenance');
-                                    },
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-                    // View all button
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF003366),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                    if (role != 'SAAS_ADMIN') ...[
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF003366),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          context.go('/maintenance');
+                        },
+                        child: const Text(
+                          'Ver Todas as Tarefas',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        context.go('/maintenance');
-                      },
-                      child: const Text(
-                        'Ver Todas as Tarefas',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
+                    ],
                   ],
                 );
               },
@@ -360,11 +486,30 @@ class _AppShellState extends ConsumerState<AppShell> {
     final authState = ref.watch(authNotifierProvider);
     final role = authState.accountType ?? '';
     final currentIndex = widget.navigationShell.currentIndex;
-    final summaryAsync = ref.watch(farmSummaryProvider);
-    final pendingTasks = summaryAsync.maybeWhen(
-      data: (s) => s.pendingMaintenanceTasks,
-      orElse: () => 0,
-    );
+    final tasksAsync = ref.watch(maintenanceProvider);
+    final tenantsAsync = ref.watch(tenantsProvider);
+    final dismissed = ref.watch(dismissedNotificationsProvider);
+
+    int notificationCount = 0;
+
+    if (role == 'SAAS_ADMIN') {
+      final tenants = tenantsAsync.maybeWhen(data: (list) => list, orElse: () => <FarmTenant>[]);
+      int count = 0;
+      for (var t in tenants) {
+        if (!dismissed.contains('${t.id}_employee')) count++;
+        if (!dismissed.contains('${t.id}_payment')) count++;
+        if (!dismissed.contains('${t.id}_tank')) count++;
+      }
+      notificationCount = count;
+    } else if (role == 'FARM_OWNER' || role == 'CLIENT') {
+      final tasks = tasksAsync.maybeWhen(data: (list) => list, orElse: () => <MaintenanceTask>[]);
+      final completed = tasks.where((t) => t.status.toUpperCase() == 'COMPLETED').toList();
+      notificationCount = completed.where((t) => !dismissed.contains('completed_${t.id}')).length;
+    } else { // FIELD_OPERATOR
+      final tasks = tasksAsync.maybeWhen(data: (list) => list, orElse: () => <MaintenanceTask>[]);
+      final active = tasks.where((t) => t.status.toUpperCase() == 'PENDING' || t.status.toUpperCase() == 'IN_PROGRESS').toList();
+      notificationCount = active.where((t) => !dismissed.contains('pending_${t.id}')).length;
+    }
 
     final isSearchVisible = ref.watch(searchBarVisibleProvider);
     final searchQuery = ref.watch(globalSearchQueryProvider);
@@ -512,14 +657,14 @@ class _AppShellState extends ConsumerState<AppShell> {
                         icon: const Icon(Icons.notifications_none, color: Colors.white),
                         onPressed: () => _showNotificationDialog(context),
                     ),
-                    if (pendingTasks > 0)
+                    if (notificationCount > 0)
                       Positioned(
                         right: 8,
                         top: 8,
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                          child: Text('$pendingTasks',
+                          child: Text('$notificationCount',
                               style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
                         ),
                       )
