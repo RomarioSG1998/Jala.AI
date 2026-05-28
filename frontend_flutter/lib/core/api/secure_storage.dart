@@ -6,8 +6,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 // On Web, uses localStorage via WebOptions (flutter_secure_storage >= 5.0)
 final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
   if (kIsWeb) {
+    // No publicKey = no crypto overhead — avoids IndexedDB initialization hangs on web
     return const FlutterSecureStorage(
-      webOptions: WebOptions(dbName: 'aquasertao_secure', publicKey: 'aquasertao'),
+      webOptions: WebOptions(dbName: 'aquasertao_secure'),
     );
   }
   return const FlutterSecureStorage();

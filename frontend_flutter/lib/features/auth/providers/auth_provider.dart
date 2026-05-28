@@ -49,8 +49,19 @@ class AuthNotifier extends Notifier<AuthState> {
     _repository = ref.watch(authRepositoryProvider);
     _tokenStorage = ref.watch(tokenStorageProvider);
 
-    // Start in loading state so the router waits before redirecting
-    _checkInitialAuth();
+    // Start in loading state, but enforce a max 3s timeout in case storage hangs
+    _checkInitialAuth().timeout(
+      const Duration(seconds: 3),
+      onTimeout: () {
+        if (state.isLoading) {
+          state = AuthState(isLoading: false, isAuthenticated: false);
+        }
+      },
+    ).catchError((_) {
+      if (state.isLoading) {
+        state = AuthState(isLoading: false, isAuthenticated: false);
+      }
+    });
 
     return AuthState(isLoading: true);
   }
