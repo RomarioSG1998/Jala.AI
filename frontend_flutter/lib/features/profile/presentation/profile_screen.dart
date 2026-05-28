@@ -241,7 +241,7 @@ class ProfileScreen extends ConsumerWidget {
                           ]);
                         }
                         return _buildInfoCard(
-                          perms.map((p) {
+                          perms.map<Widget>((p) {
                             final idx = perms.indexOf(p);
                             final isLast = idx == perms.length - 1;
                             return Column(
