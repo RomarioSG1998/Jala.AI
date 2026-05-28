@@ -217,13 +217,10 @@ class _AppShellState extends ConsumerState<AppShell> {
                 alignment: Alignment.centerLeft,
                 child: Row(
                   children: [
-                    SizedBox(
+                    const SizedBox(
                       height: 54,
                       width: 54,
-                      child: Image.network(
-                        '/logo_emblem.png',
-                        fit: BoxFit.contain,
-                      ),
+                      child: Icon(Icons.water, color: Colors.white, size: 36),
                     ),
                     const SizedBox(width: 10),
                     Column(
