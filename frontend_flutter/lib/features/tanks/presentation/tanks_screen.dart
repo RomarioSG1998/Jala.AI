@@ -54,6 +54,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
     final isOwner = authState.accountType == 'FARM_OWNER' || authState.accountType == 'CLIENT';
 
     final summaryAsyncValue = ref.watch(farmSummaryProvider);
+    final searchQuery = ref.watch(tankSearchQueryProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA), // Fundo Gelo
@@ -101,12 +102,19 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
                     if (_activeFilter == 'Ativos') return isTankActive;
                     if (_activeFilter == 'Inativos') return !isTankActive;
                     return true;
+                  }).where((t) {
+                    if (searchQuery.isEmpty) return true;
+                    final nameMatch = t.name.toLowerCase().contains(searchQuery.toLowerCase());
+                    final speciesMatch = t.fishSpecies.toLowerCase().contains(searchQuery.toLowerCase());
+                    return nameMatch || speciesMatch;
                   }).toList();
 
                   if (filtered.isEmpty) {
                     return SliverToBoxAdapter(
                       child: _buildEmptyState(
-                        message: 'Nenhum tanque encontrado para o filtro selecionado',
+                        message: searchQuery.isNotEmpty
+                            ? 'Nenhum tanque encontrado para "$searchQuery"'
+                            : 'Nenhum tanque encontrado para o filtro selecionado',
                       ),
                     );
                   }

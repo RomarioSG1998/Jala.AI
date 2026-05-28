@@ -89,3 +89,23 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
 final tanksProvider = AsyncNotifierProvider<TanksNotifier, List<Tank>>(() {
   return TanksNotifier();
 });
+
+class TankSearchQuery extends Notifier<String> {
+  @override
+  String build() => '';
+
+  void setQuery(String query) => state = query;
+}
+
+final tankSearchQueryProvider = NotifierProvider<TankSearchQuery, String>(TankSearchQuery.new);
+
+class SearchBarVisible extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void setVisible(bool visible) => state = visible;
+}
+
+final searchBarVisibleProvider = NotifierProvider<SearchBarVisible, bool>(SearchBarVisible.new);
+
+

@@ -22,15 +22,33 @@ import 'package:frontend_flutter/features/employees/providers/employee_permissio
 
 // ─── AppShell – Casca Permanente com Header e Bottom Nav ────────────────────
 
-class AppShell extends ConsumerWidget {
+class AppShell extends ConsumerStatefulWidget {
   final StatefulNavigationShell navigationShell;
 
   const AppShell({super.key, required this.navigationShell});
 
+  @override
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell> {
   static const _kNavyBlue = Color(0xFF003366);
   static const _kGreen = Color(0xFF13A538);
+  late final TextEditingController _searchController;
 
-  void _handleCentralFabPressed(BuildContext context, WidgetRef ref) {
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _handleCentralFabPressed(BuildContext context) {
     final state = GoRouterState.of(context);
     final currentRoute = state.matchedLocation;
     final authState = ref.read(authNotifierProvider);
@@ -85,101 +103,146 @@ class AppShell extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final role = authState.accountType ?? '';
-    final currentIndex = navigationShell.currentIndex;
+    final currentIndex = widget.navigationShell.currentIndex;
     final summaryAsync = ref.watch(farmSummaryProvider);
     final pendingTasks = summaryAsync.maybeWhen(
       data: (s) => s.pendingMaintenanceTasks,
       orElse: () => 0,
     );
 
-    // Título dinâmico por aba
-    const tabTitles = ['Início', 'Tanques', 'Qualidade da Água', 'Menu'];
+    final isSearchVisible = ref.watch(searchBarVisibleProvider);
+    final searchQuery = ref.watch(tankSearchQueryProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       extendBody: true,
       // ── AppBar permanente ────────────────────────────────────────────────
-      appBar: AppBar(
-        backgroundColor: _kNavyBlue,
-        elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Row(
-            children: [
-              SizedBox(
-                height: 54,
-                width: 54,
-                child: Image.network(
-                  '/logo_emblem.png',
-                  fit: BoxFit.contain,
+      appBar: isSearchVisible
+          ? AppBar(
+              backgroundColor: _kNavyBlue,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () {
+                  ref.read(searchBarVisibleProvider.notifier).setVisible(false);
+                  ref.read(tankSearchQueryProvider.notifier).setQuery('');
+                  _searchController.clear();
+                },
+              ),
+              title: TextField(
+                controller: _searchController,
+                autofocus: true,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                cursorColor: _kGreen,
+                decoration: const InputDecoration(
+                  hintText: 'Buscar tanques por nome ou espécie...',
+                  hintStyle: TextStyle(color: Colors.white60, fontSize: 16),
+                  border: InputBorder.none,
+                ),
+                onChanged: (val) {
+                  ref.read(tankSearchQueryProvider.notifier).setQuery(val);
+                },
+              ),
+              actions: [
+                if (searchQuery.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.clear, color: Colors.white),
+                    onPressed: () {
+                      ref.read(tankSearchQueryProvider.notifier).setQuery('');
+                      _searchController.clear();
+                    },
+                  ),
+              ],
+            )
+          : AppBar(
+              backgroundColor: _kNavyBlue,
+              elevation: 0,
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
                 ),
               ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: const TextSpan(
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+              title: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  children: [
+                    SizedBox(
+                      height: 54,
+                      width: 54,
+                      child: Image.network(
+                        '/logo_emblem.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        TextSpan(text: 'Aqua', style: TextStyle(color: Colors.white)),
-                        TextSpan(text: 'Sertão', style: TextStyle(color: _kGreen)),
+                        RichText(
+                          text: const TextSpan(
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                            children: [
+                              TextSpan(text: 'Aqua', style: TextStyle(color: Colors.white)),
+                              TextSpan(text: 'Sertão', style: TextStyle(color: _kGreen)),
+                            ],
+                          ),
+                        ),
+                        const Text('PISCICULTURA INTELIGENTE',
+                            style: TextStyle(color: Colors.white70, fontSize: 8, fontWeight: FontWeight.w600, letterSpacing: 1.2)),
                       ],
                     ),
-                  ),
-                  const Text('PISCICULTURA INTELIGENTE',
-                      style: TextStyle(color: Colors.white70, fontSize: 8, fontWeight: FontWeight.w600, letterSpacing: 1.2)),
-                ],
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-        actions: [
-          IconButton(icon: const Icon(Icons.search, color: Colors.white), onPressed: () {}),
-          Stack(
-            children: [
-              IconButton(
-                  icon: const Icon(Icons.notifications_none, color: Colors.white), onPressed: () {}),
-              if (pendingTasks > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                    child: Text('$pendingTasks',
-                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
-                  ),
-                )
-            ],
-          ),
-        ],
-      ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.search, color: Colors.white),
+                  onPressed: () {
+                    ref.read(searchBarVisibleProvider.notifier).setVisible(true);
+                    if (widget.navigationShell.currentIndex != 1) {
+                      widget.navigationShell.goBranch(1);
+                    }
+                  },
+                ),
+                Stack(
+                  children: [
+                    IconButton(
+                        icon: const Icon(Icons.notifications_none, color: Colors.white), onPressed: () {}),
+                    if (pendingTasks > 0)
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                          child: Text('$pendingTasks',
+                              style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                        ),
+                      )
+                  ],
+                ),
+              ],
+            ),
       // ── Drawer lateral ───────────────────────────────────────────────────
       drawer: _AppDrawer(role: role, ref: ref),
       // ── Bottom Navigation permanente ─────────────────────────────────────
-      bottomNavigationBar: _buildBottomNav(context, ref, currentIndex, role),
+      bottomNavigationBar: _buildBottomNav(context, currentIndex, role),
       // ── Corpo dinâmico ───────────────────────────────────────────────────
       body: Padding(
         padding: const EdgeInsets.only(bottom: 90),
         child: role == 'SAAS_ADMIN' && currentIndex == 0
             ? const _SaasAdminBody()
-            : navigationShell,
+            : widget.navigationShell,
       ),
     );
   }
 
-  Widget _buildBottomNav(BuildContext context, WidgetRef ref, int currentIndex, String role) {
+  Widget _buildBottomNav(BuildContext context, int currentIndex, String role) {
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.topCenter,
@@ -212,7 +275,7 @@ class AppShell extends ConsumerWidget {
         ),
         Positioned(
           top: -12,
-          child: _buildCentralFab(context, ref),
+          child: _buildCentralFab(context),
         ),
       ],
     );
@@ -224,7 +287,7 @@ class AppShell extends ConsumerWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
-          navigationShell.goBranch(index);
+          widget.navigationShell.goBranch(index);
         },
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -263,7 +326,7 @@ class AppShell extends ConsumerWidget {
     );
   }
 
-  Widget _buildCentralFab(BuildContext context, WidgetRef ref) {
+  Widget _buildCentralFab(BuildContext context) {
     return Container(
       width: 58,
       height: 58,
@@ -287,7 +350,7 @@ class AppShell extends ConsumerWidget {
         color: Colors.transparent,
         child: InkWell(
           customBorder: const CircleBorder(),
-          onTap: () => _handleCentralFabPressed(context, ref),
+          onTap: () => _handleCentralFabPressed(context),
           child: const Center(
             child: Icon(
               Icons.add_rounded,
