@@ -844,32 +844,38 @@ class _AppDrawer extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(color: Color(0xFF003366)),
-            child: Row(children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: Colors.white12,
-                child: const Icon(Icons.person, color: Colors.white, size: 26),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(
-                  authState.email?.split('@').first ?? 'Usuário',
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                  overflow: TextOverflow.ellipsis,
+            child: InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/profile');
+              },
+              child: Row(children: [
+                CircleAvatar(
+                  radius: 26,
+                  backgroundColor: Colors.white12,
+                  child: const Icon(Icons.person, color: Colors.white, size: 26),
                 ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                      color: Colors.white12, borderRadius: BorderRadius.circular(8)),
-                  child: Text(role,
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                ),
-              ])),
-            ]),
+                const SizedBox(width: 14),
+                Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(
+                    authState.email?.split('@').first ?? 'Usuário',
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                        color: Colors.white12, borderRadius: BorderRadius.circular(8)),
+                    child: Text(role,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                  ),
+                ])),
+              ]),
+            ),
           ),
 
           // Items

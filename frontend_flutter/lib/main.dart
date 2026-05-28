@@ -16,6 +16,7 @@ import 'package:frontend_flutter/features/suppliers/presentation/suppliers_scree
 import 'package:frontend_flutter/features/saas_admin/presentation/tenants_screen.dart';
 import 'package:frontend_flutter/features/feeding_records/presentation/feeding_records_screen.dart';
 import 'package:frontend_flutter/features/employees/presentation/employees_screen.dart';
+import 'package:frontend_flutter/features/profile/presentation/profile_screen.dart';
 
 void main() {
   runApp(
@@ -61,6 +62,10 @@ class AquaSertaoApp extends ConsumerWidget {
         GoRoute(
           path: '/login',
           builder: (context, state) => const LoginScreen(),
+        ),
+        GoRoute(
+          path: '/profile',
+          builder: (context, state) => const ProfileScreen(),
         ),
         // ── Shell permanente com Bottom Navigation ─────────────────────────
         StatefulShellRoute.indexedStack(
