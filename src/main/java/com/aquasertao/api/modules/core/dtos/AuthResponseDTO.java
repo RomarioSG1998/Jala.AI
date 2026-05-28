@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -13,4 +15,5 @@ public class AuthResponseDTO {
     private String token;
     private String email;
     private String accountType;
+    private UUID userId;
 }

@@ -43,6 +43,7 @@ public class AuthService {
                 .token(jwtToken)
                 .email(user.getEmail())
                 .accountType(user.getAccountType())
+                .userId(user.getId())
                 .build();
     }
 
@@ -63,6 +64,7 @@ public class AuthService {
                 .token(jwtToken)
                 .email(user.getEmail())
                 .accountType(user.getAccountType())
+                .userId(user.getId())
                 .build();
     }
 }

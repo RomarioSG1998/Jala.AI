@@ -10,6 +10,7 @@ class AuthState {
   final String? error;
   final String? email;
   final String? accountType;
+  final String? userId;
 
   AuthState({
     this.isLoading = false,
@@ -17,6 +18,7 @@ class AuthState {
     this.error,
     this.email,
     this.accountType,
+    this.userId,
   });
 
   AuthState copyWith({
@@ -25,6 +27,7 @@ class AuthState {
     String? error,
     String? email,
     String? accountType,
+    String? userId,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
@@ -32,6 +35,7 @@ class AuthState {
       error: error,
       email: email ?? this.email,
       accountType: accountType ?? this.accountType,
+      userId: userId ?? this.userId,
     );
   }
 }
@@ -54,6 +58,7 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> _checkInitialAuth() async {
     final token = await _tokenStorage.getToken();
     final email = await _tokenStorage.getEmail();
+    final userId = await _tokenStorage.getUserId();
     // Prefer accountType from JWT payload (authoritative), fall back to stored value
     String? accountType = _extractAccountTypeFromToken(token);
     accountType ??= await _tokenStorage.getAccountType();
@@ -61,12 +66,13 @@ class AuthNotifier extends Notifier<AuthState> {
     if (token != null && !_isTokenExpired(token)) {
       // Sync storage with JWT value if needed
       if (accountType != null) {
-        await _tokenStorage.saveUserDetails(email ?? '', accountType);
+        await _tokenStorage.saveUserDetails(email ?? '', accountType, userId: userId);
       }
       state = state.copyWith(
         isAuthenticated: true,
         email: email,
         accountType: accountType,
+        userId: userId,
       );
       return;
     }
@@ -123,13 +129,18 @@ class AuthNotifier extends Notifier<AuthState> {
         // Always clear any stale session before writing new credentials
         await _tokenStorage.clearAll();
         await _tokenStorage.saveToken(token);
-        await _tokenStorage.saveUserDetails(resEmail ?? email, resAccountType ?? 'UNKNOWN');
+        await _tokenStorage.saveUserDetails(
+          resEmail ?? email,
+          resAccountType ?? 'UNKNOWN',
+          userId: response['userId']?.toString(),
+        );
 
         state = state.copyWith(
-          isLoading: false, 
+          isLoading: false,
           isAuthenticated: true,
           email: resEmail ?? email,
           accountType: resAccountType,
+          userId: response['userId']?.toString(),
         );
         return true;
       } else {

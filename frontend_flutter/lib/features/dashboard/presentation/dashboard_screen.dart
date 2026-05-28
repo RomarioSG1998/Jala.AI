@@ -18,6 +18,7 @@ import 'package:frontend_flutter/features/suppliers/presentation/suppliers_scree
 import 'package:frontend_flutter/features/saas_admin/presentation/tenants_screen.dart';
 import 'package:frontend_flutter/features/feeding_records/presentation/feeding_records_screen.dart';
 import 'package:frontend_flutter/features/employees/presentation/employees_screen.dart';
+import 'package:frontend_flutter/features/employees/providers/employee_permissions_provider.dart';
 
 // ─── AppShell – Casca Permanente com Header e Bottom Nav ────────────────────
 
@@ -772,23 +773,28 @@ class _AppDrawer extends ConsumerWidget {
                   }),
                 ],
 
-                if (role == 'FARM_OWNER' || role == 'CLIENT' || role == 'FIELD_OPERATOR') ...[
+                if (role == 'FARM_OWNER' || role == 'CLIENT' || role == 'FIELD_OPERATOR') ...[                  
                   _section('Operacional'),
-                  _tile(context, Icons.water, 'Tanques', Colors.blue, () {
-                    Navigator.pop(context); context.go('/tanks');
-                  }),
-                  _tile(context, Icons.science, 'Qualidade da Água', Colors.teal, () {
-                    Navigator.pop(context); context.go('/water-quality');
-                  }),
-                  _tile(context, Icons.restaurant, 'Alimentação', Colors.purple, () {
-                    Navigator.pop(context); context.go('/feeding-records');
-                  }),
-                  _tile(context, Icons.inventory, 'Estoque', Colors.orange, () {
-                    Navigator.pop(context); context.go('/inventory');
-                  }),
-                  _tile(context, Icons.agriculture, 'Colheitas', Colors.green, () {
-                    Navigator.pop(context); context.go('/harvests');
-                  }),
+                  if (role != 'FIELD_OPERATOR') ...[
+                    _tile(context, Icons.water, 'Tanques', Colors.blue, () {
+                      Navigator.pop(context); context.go('/tanks');
+                    }),
+                    _tile(context, Icons.science, 'Qualidade da Água', Colors.teal, () {
+                      Navigator.pop(context); context.go('/water-quality');
+                    }),
+                    _tile(context, Icons.restaurant, 'Alimentação', Colors.purple, () {
+                      Navigator.pop(context); context.go('/feeding-records');
+                    }),
+                    _tile(context, Icons.inventory, 'Estoque', Colors.orange, () {
+                      Navigator.pop(context); context.go('/inventory');
+                    }),
+                    _tile(context, Icons.agriculture, 'Colheitas', Colors.green, () {
+                      Navigator.pop(context); context.go('/harvests');
+                    }),
+                  ],
+                  if (role == 'FIELD_OPERATOR') ...[
+                    _FieldOperatorDrawerItems(userId: authState.userId ?? '', context: context),
+                  ],
                 ],
 
                 if (role == 'FARM_OWNER' || role == 'CLIENT') ...[
@@ -839,6 +845,78 @@ class _AppDrawer extends ConsumerWidget {
               fontSize: 11,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.2)),
+    );
+  }
+}
+
+// ─── Field Operator Drawer Items (permission-aware) ───────────────────────────
+
+class _FieldOperatorDrawerItems extends ConsumerWidget {
+  final String userId;
+  final BuildContext context;
+
+  const _FieldOperatorDrawerItems({required this.userId, required this.context});
+
+  static const _kFarmId = '55555555-5555-5555-5555-555555555555';
+
+  static const _moduleRoutes = {
+    'tanks':           ('/tanks',           Icons.water,                 'Tanques',           Colors.blue),
+    'water_quality':   ('/water-quality',   Icons.science,               'Qualidade da Água', Colors.teal),
+    'feeding_records': ('/feeding-records', Icons.restaurant,            'Alimentação',       Colors.purple),
+    'inventory':       ('/inventory',       Icons.inventory,             'Estoque',           Colors.orange),
+    'harvests':        ('/harvests',        Icons.agriculture,           'Colheitas',         Colors.green),
+    'maintenance':     ('/maintenance',     Icons.build,                 'Manutenção',        Colors.grey),
+  };
+
+  @override
+  Widget build(BuildContext ctx, WidgetRef ref) {
+    if (userId.isEmpty) return const SizedBox.shrink();
+
+    final key = '$userId:$_kFarmId';
+    final permsAsync = ref.watch(currentUserPermissionsProvider(key));
+
+    return permsAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: LinearProgressIndicator(),
+      ),
+      error: (_, __) {
+        // On error fall back to showing all operational modules
+        return Column(
+          children: _moduleRoutes.entries.map((e) {
+            final (route, icon, label, color) = e.value;
+            return ListTile(
+              onTap: () { Navigator.pop(context); context.go(route); },
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              title: Text(label, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
+            );
+          }).toList(),
+        );
+      },
+      data: (perms) {
+        final permMap = {for (final p in perms) p.moduleName: p.isEnabled};
+        return Column(
+          children: _moduleRoutes.entries.map((e) {
+            final moduleKey = e.key;
+            final (route, icon, label, color) = e.value;
+            final enabled = permMap[moduleKey] ?? true;
+            if (!enabled) return const SizedBox.shrink();
+            return ListTile(
+              onTap: () { Navigator.pop(context); context.go(route); },
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              title: Text(label, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 }

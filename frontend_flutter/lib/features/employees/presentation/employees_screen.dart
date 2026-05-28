@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/employees_provider.dart';
+import '../providers/employee_permissions_provider.dart';
 import '../data/employee_model.dart';
+import '../data/employee_permission_model.dart';
+
+// Hardcoded test farm ID (matches seed data)
+const _kFarmId = '55555555-5555-5555-5555-555555555555';
 
 class EmployeesScreen extends ConsumerWidget {
   const EmployeesScreen({super.key});
@@ -30,7 +35,7 @@ class EmployeesScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Clique no botão abaixo para adicionar.',
+                    'Pressione + para adicionar um funcionário.',
                     style: TextStyle(color: Colors.grey.shade500),
                   ),
                 ],
@@ -49,20 +54,30 @@ class EmployeesScreen extends ConsumerWidget {
                 elevation: 0,
                 color: Colors.white,
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   leading: CircleAvatar(
                     backgroundColor: const Color(0xFF003366).withOpacity(0.1),
                     child: const Icon(Icons.person, color: Color(0xFF003366)),
                   ),
-                  title: Text(emp.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  subtitle: Text(emp.email, style: TextStyle(color: Colors.grey.shade600)),
+                  title: Text(emp.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  subtitle: Text(emp.email, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // ── Permissions button ─────────────────────────
+                      Tooltip(
+                        message: 'Gerenciar Acessos',
+                        child: IconButton(
+                          icon: const Icon(Icons.shield_outlined, color: Color(0xFF13A538)),
+                          onPressed: () => _showPermissionsSheet(context, emp),
+                        ),
+                      ),
+                      // ── Edit button ────────────────────────────────
                       IconButton(
                         icon: const Icon(Icons.edit_outlined, color: Colors.blue),
                         onPressed: () => EmployeesScreen.showAddEmployeeModal(context, emp),
                       ),
+                      // ── Delete button ──────────────────────────────
                       IconButton(
                         icon: const Icon(Icons.delete_outline, color: Colors.red),
                         onPressed: () => _confirmDelete(context, ref, emp),
@@ -82,19 +97,31 @@ class EmployeesScreen extends ConsumerWidget {
     );
   }
 
+  // ── Permissions sheet ──────────────────────────────────────────────────────
+  void _showPermissionsSheet(BuildContext context, Employee emp) {
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => EmployeePermissionsSheet(employee: emp),
+    );
+  }
+
+  // ── Confirm delete ─────────────────────────────────────────────────────────
   void _confirmDelete(BuildContext context, WidgetRef ref, Employee emp) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (context) => AlertDialog(
         title: const Text('Remover Funcionário'),
-        content: Text('Deseja realmente remover o acesso de ${emp.name}?'),
+        content: Text('Tem certeza que deseja remover "${emp.name}"?\nEsta ação não poderá ser desfeita.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
+            onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
+            onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             child: const Text('Remover'),
           ),
@@ -104,18 +131,15 @@ class EmployeesScreen extends ConsumerWidget {
 
     if (confirm == true) {
       final success = await ref.read(employeesProvider.notifier).deleteEmployee(emp.id);
-      if (success) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Funcionário removido com sucesso!')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao remover funcionário.')),
+          SnackBar(content: Text(success ? 'Funcionário removido com sucesso!' : 'Erro ao remover funcionário.')),
         );
       }
     }
   }
 
+  // ── Static modal – called by central FAB ───────────────────────────────────
   static void showAddEmployeeModal(BuildContext context, [Employee? employee]) {
     showModalBottomSheet(
       context: context,
@@ -134,6 +158,195 @@ class EmployeesScreen extends ConsumerWidget {
   }
 }
 
+// ─── Employee Permissions Sheet ───────────────────────────────────────────────
+
+class EmployeePermissionsSheet extends ConsumerWidget {
+  final Employee employee;
+  const EmployeePermissionsSheet({super.key, required this.employee});
+
+  String get _key => '${employee.id}:$_kFarmId';
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final permsAsync = ref.watch(employeePermissionsProvider(_key));
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header ───────────────────────────────────────────────────────
+          Row(
+            children: [
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF13A538).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.shield_outlined, color: Color(0xFF13A538), size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Controle de Acesso',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF003366)),
+                    ),
+                    Text(
+                      employee.name,
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Ative ou desative os módulos que este funcionário poderá acessar.',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+          ),
+          const Divider(height: 28),
+
+          // ── Module toggles ────────────────────────────────────────────────
+          permsAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (e, _) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text('Erro: $e', style: const TextStyle(color: Colors.red)),
+            ),
+            data: (perms) {
+              // Build a map for quick lookup
+              final permMap = {for (final p in perms) p.moduleName: p.isEnabled};
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: kAvailableModules.map((mod) {
+                  final isEnabled = permMap[mod.key] ?? true;
+                  return _ModuleTile(
+                    mod: mod,
+                    isEnabled: isEnabled,
+                    onToggle: (val) {
+                      ref
+                          .read(employeePermissionsProvider(_key).notifier)
+                          .toggle(mod.key, val);
+                    },
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Module Tile ─────────────────────────────────────────────────────────────
+
+class _ModuleTile extends StatelessWidget {
+  final ModuleInfo mod;
+  final bool isEnabled;
+  final ValueChanged<bool> onToggle;
+
+  const _ModuleTile({
+    required this.mod,
+    required this.isEnabled,
+    required this.onToggle,
+  });
+
+  static const _moduleIcons = {
+    'tanks':           Icons.water,
+    'water_quality':   Icons.science,
+    'inventory':       Icons.inventory_2_outlined,
+    'feeding_records': Icons.restaurant_outlined,
+    'harvests':        Icons.agriculture_outlined,
+    'maintenance':     Icons.build_outlined,
+  };
+
+  static const _moduleColors = {
+    'tanks':           Colors.blue,
+    'water_quality':   Colors.teal,
+    'inventory':       Colors.orange,
+    'feeding_records': Colors.purple,
+    'harvests':        Colors.green,
+    'maintenance':     Colors.grey,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _moduleColors[mod.key] ?? Colors.blueGrey;
+    final icon = _moduleIcons[mod.key] ?? Icons.widgets;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: isEnabled ? color.withOpacity(0.05) : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isEnabled ? color.withOpacity(0.2) : Colors.grey.shade200,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38, height: 38,
+            decoration: BoxDecoration(
+              color: isEnabled ? color.withOpacity(0.12) : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: isEnabled ? color : Colors.grey.shade400, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  mod.label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isEnabled ? Colors.black87 : Colors.grey.shade400,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  mod.description,
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: isEnabled,
+            onChanged: onToggle,
+            activeColor: color,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Add / Edit Employee Form ─────────────────────────────────────────────────
+
 class AddEmployeeForm extends ConsumerStatefulWidget {
   final Employee? employee;
   const AddEmployeeForm({super.key, this.employee});
@@ -144,67 +357,59 @@ class AddEmployeeForm extends ConsumerStatefulWidget {
 
 class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _isLoading = false;
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _emailCtrl;
+  final TextEditingController _passwordCtrl = TextEditingController();
+  bool _obscurePassword = true;
+  bool _isSaving = false;
+
+  bool get _isEditing => widget.employee != null;
 
   @override
   void initState() {
     super.initState();
-    if (widget.employee != null) {
-      _nameController.text = widget.employee!.name;
-      _emailController.text = widget.employee!.email;
-    }
+    _nameCtrl  = TextEditingController(text: widget.employee?.name ?? '');
+    _emailCtrl = TextEditingController(text: widget.employee?.email ?? '');
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
+    setState(() => _isSaving = true);
 
-    final success = widget.employee == null
-        ? await ref.read(employeesProvider.notifier).registerEmployee(
-              _nameController.text.trim(),
-              _emailController.text.trim(),
-              _passwordController.text.trim(),
-            )
-        : await ref.read(employeesProvider.notifier).updateEmployee(
-              widget.employee!.id,
-              _nameController.text.trim(),
-              _emailController.text.trim(),
-              _passwordController.text.trim().isEmpty ? null : _passwordController.text.trim(),
-            );
+    bool success;
+    if (_isEditing) {
+      success = await ref.read(employeesProvider.notifier).updateEmployee(
+            widget.employee!.id,
+            _nameCtrl.text.trim(),
+            _emailCtrl.text.trim(),
+            _passwordCtrl.text.trim().isEmpty ? null : _passwordCtrl.text.trim(),
+          );
+    } else {
+      success = await ref.read(employeesProvider.notifier).registerEmployee(
+            _nameCtrl.text.trim(),
+            _emailCtrl.text.trim(),
+            _passwordCtrl.text.trim(),
+          );
+    }
 
     if (mounted) {
-      setState(() => _isLoading = false);
+      setState(() => _isSaving = false);
       if (success) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.employee == null
-                  ? 'Funcionário cadastrado com sucesso!'
-                  : 'Funcionário atualizado com sucesso!',
-            ),
-          ),
+          SnackBar(content: Text(_isEditing ? 'Funcionário atualizado!' : 'Funcionário cadastrado!')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.employee == null
-                  ? 'Erro ao cadastrar funcionário. Verifique se o e-mail já existe.'
-                  : 'Erro ao atualizar funcionário. Verifique se o e-mail já existe.',
-            ),
-          ),
+          const SnackBar(content: Text('Erro ao salvar. Verifique os dados.')),
         );
       }
     }
@@ -214,78 +419,89 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                widget.employee == null ? 'Cadastrar Funcionário' : 'Editar Funcionário',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              // Title
+              Row(
+                children: [
+                  const Icon(Icons.person_add_outlined, color: Color(0xFF003366)),
+                  const SizedBox(width: 10),
+                  Text(
+                    _isEditing ? 'Editar Funcionário' : 'Novo Funcionário',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF003366)),
+                  ),
+                  const Spacer(),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // Name
               TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nome Completo',
-                  border: OutlineInputBorder(),
+                controller: _nameCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Nome completo',
+                  prefixIcon: const Icon(Icons.person_outline),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Informe o nome' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+
+              // Email
               TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
+                controller: _emailCtrl,
+                decoration: InputDecoration(
                   labelText: 'E-mail',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 keyboardType: TextInputType.emailAddress,
-                validator: (v) {
-                  if (v!.isEmpty) return 'Obrigatório';
-                  if (!v.contains('@')) return 'E-mail inválido';
-                  return null;
-                },
+                validator: (v) => (v == null || !v.contains('@')) ? 'E-mail inválido' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+
+              // Password
               TextFormField(
-                controller: _passwordController,
+                controller: _passwordCtrl,
+                obscureText: _obscurePassword,
                 decoration: InputDecoration(
-                  labelText: widget.employee == null ? 'Senha Inicial' : 'Nova Senha (opcional)',
-                  border: const OutlineInputBorder(),
+                  labelText: _isEditing ? 'Nova senha (deixe em branco para não alterar)' : 'Senha',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
                 ),
-                obscureText: true,
                 validator: (v) {
-                  if (widget.employee == null) {
-                    if (v == null || v.isEmpty) return 'Obrigatório';
-                    if (v.length < 6) return 'Mínimo de 6 caracteres';
-                  } else {
-                    if (v != null && v.isNotEmpty && v.length < 6) {
-                      return 'Mínimo de 6 caracteres';
-                    }
+                  if (!_isEditing && (v == null || v.trim().length < 6)) {
+                    return 'Senha deve ter pelo menos 6 caracteres';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
+
+              // Save button
+              ElevatedButton.icon(
+                onPressed: _isSaving ? null : _save,
+                icon: _isSaving
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.save_outlined),
+                label: Text(_isEditing ? 'Salvar Alterações' : 'Cadastrar Funcionário'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF003366),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : Text(widget.employee == null ? 'Cadastrar' : 'Salvar Alterações'),
               ),
-              const SizedBox(height: 24),
             ],
           ),
         ),
