@@ -218,13 +218,13 @@ class _AppShellState extends ConsumerState<AppShell> {
                 child: Row(
                   children: [
                     SizedBox(
-                      height: 44,
-                      width: 44,
+                      height: 50,
+                      width: 50,
                       child: Image.network(
                         '/logo_emblem.png',
                         fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.water, color: Colors.white, size: 32),
+                            const Icon(Icons.water, color: Colors.white, size: 36),
                       ),
                     ),
                     const SizedBox(width: 10),
