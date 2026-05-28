@@ -18,7 +18,8 @@ import 'package:frontend_flutter/features/feeding_records/presentation/feeding_r
 import 'package:frontend_flutter/features/employees/presentation/employees_screen.dart';
 import 'package:frontend_flutter/features/profile/presentation/profile_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
     const ProviderScope(
       child: AquaSertaoApp(),

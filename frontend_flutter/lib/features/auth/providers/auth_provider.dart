@@ -56,31 +56,35 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> _checkInitialAuth() async {
-    final token = await _tokenStorage.getToken();
-    final email = await _tokenStorage.getEmail();
-    final userId = await _tokenStorage.getUserId();
-    // Prefer accountType from JWT payload (authoritative), fall back to stored value
-    String? accountType = _extractAccountTypeFromToken(token);
-    accountType ??= await _tokenStorage.getAccountType();
+    try {
+      final token = await _tokenStorage.getToken();
+      final email = await _tokenStorage.getEmail();
+      final userId = await _tokenStorage.getUserId();
+      // Prefer accountType from JWT payload (authoritative), fall back to stored value
+      String? accountType = _extractAccountTypeFromToken(token);
+      accountType ??= await _tokenStorage.getAccountType();
 
-    if (token != null && !_isTokenExpired(token)) {
-      // Sync storage with JWT value if needed
-      if (accountType != null) {
-        await _tokenStorage.saveUserDetails(email ?? '', accountType, userId: userId);
+      if (token != null && !_isTokenExpired(token)) {
+        // Sync storage with JWT value if needed
+        if (accountType != null) {
+          await _tokenStorage.saveUserDetails(email ?? '', accountType, userId: userId);
+        }
+        state = AuthState(
+          isLoading: false,
+          isAuthenticated: true,
+          email: email,
+          accountType: accountType,
+          userId: userId,
+        );
+        return;
       }
-      state = AuthState(
-        isLoading: false,
-        isAuthenticated: true,
-        email: email,
-        accountType: accountType,
-        userId: userId,
-      );
-      return;
-    }
 
-    // Clear stale/invalid session data to avoid "logged-in but unauthorized" requests.
-    if (token != null) {
-      await _tokenStorage.clearAll();
+      // Clear stale/invalid session data to avoid "logged-in but unauthorized" requests.
+      if (token != null) {
+        await _tokenStorage.clearAll();
+      }
+    } catch (e) {
+      // Storage unavailable (e.g. browser blocks IndexedDB in incognito) — treat as logged out.
     }
 
     // Auth check complete — not authenticated
