@@ -52,12 +52,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Center(
-                      child: SizedBox(
-                        height: 240,
-                        width: 240,
-                        child: Image.network(
-                          '/logo_emblem.png',
-                          fit: BoxFit.contain,
+                      child: Container(
+                        height: 120,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF003366), Color(0xFF005599)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF00FF66).withOpacity(0.3),
+                              blurRadius: 30,
+                              spreadRadius: 5,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.water,
+                          size: 64,
+                          color: Color(0xFF00FF66),
                         ),
                       ),
                     ),
