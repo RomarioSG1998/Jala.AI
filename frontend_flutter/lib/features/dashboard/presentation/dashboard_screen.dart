@@ -56,6 +56,19 @@ final dismissedNotificationsProvider = NotifierProvider<DismissedNotificationsNo
   return DismissedNotificationsNotifier();
 });
 
+class SeenNotificationsNotifier extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => <String>{};
+
+  void markAsSeen(List<String> ids) {
+    state = {...state, ...ids};
+  }
+}
+
+final seenNotificationsProvider = NotifierProvider<SeenNotificationsNotifier, Set<String>>(() {
+  return SeenNotificationsNotifier();
+});
+
 // ─── AppShell – Casca Permanente com Header e Bottom Nav ────────────────────
 
 class AppShell extends ConsumerStatefulWidget {
@@ -282,6 +295,16 @@ class _AppShellState extends ConsumerState<AppShell> {
                   }
                 }
 
+                if (notifications.isNotEmpty) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (context.mounted) {
+                      ref.read(seenNotificationsProvider.notifier).markAsSeen(
+                        notifications.map((n) => n.id).toList(),
+                      );
+                    }
+                  });
+                }
+
                 // Check loading state of primary provider
                 final isLoading = (role == 'SAAS_ADMIN' && tenantsAsync.isLoading) ||
                                   (role != 'SAAS_ADMIN' && tasksAsync.isLoading);
@@ -489,6 +512,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     final tasksAsync = ref.watch(maintenanceProvider);
     final tenantsAsync = ref.watch(tenantsProvider);
     final dismissed = ref.watch(dismissedNotificationsProvider);
+    final seen = ref.watch(seenNotificationsProvider);
 
     int notificationCount = 0;
 
@@ -496,19 +520,22 @@ class _AppShellState extends ConsumerState<AppShell> {
       final tenants = tenantsAsync.maybeWhen(data: (list) => list, orElse: () => <FarmTenant>[]);
       int count = 0;
       for (var t in tenants) {
-        if (!dismissed.contains('${t.id}_employee')) count++;
-        if (!dismissed.contains('${t.id}_payment')) count++;
-        if (!dismissed.contains('${t.id}_tank')) count++;
+        final empId = '${t.id}_employee';
+        final payId = '${t.id}_payment';
+        final tankId = '${t.id}_tank';
+        if (!dismissed.contains(empId) && !seen.contains(empId)) count++;
+        if (!dismissed.contains(payId) && !seen.contains(payId)) count++;
+        if (!dismissed.contains(tankId) && !seen.contains(tankId)) count++;
       }
       notificationCount = count;
     } else if (role == 'FARM_OWNER' || role == 'CLIENT') {
       final tasks = tasksAsync.maybeWhen(data: (list) => list, orElse: () => <MaintenanceTask>[]);
       final completed = tasks.where((t) => t.status.toUpperCase() == 'COMPLETED').toList();
-      notificationCount = completed.where((t) => !dismissed.contains('completed_${t.id}')).length;
+      notificationCount = completed.where((t) => !dismissed.contains('completed_${t.id}') && !seen.contains('completed_${t.id}')).length;
     } else { // FIELD_OPERATOR
       final tasks = tasksAsync.maybeWhen(data: (list) => list, orElse: () => <MaintenanceTask>[]);
       final active = tasks.where((t) => t.status.toUpperCase() == 'PENDING' || t.status.toUpperCase() == 'IN_PROGRESS').toList();
-      notificationCount = active.where((t) => !dismissed.contains('pending_${t.id}')).length;
+      notificationCount = active.where((t) => !dismissed.contains('pending_${t.id}') && !seen.contains('pending_${t.id}')).length;
     }
 
     final isSearchVisible = ref.watch(searchBarVisibleProvider);
