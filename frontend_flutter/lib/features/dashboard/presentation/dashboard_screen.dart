@@ -19,6 +19,9 @@ import 'package:frontend_flutter/features/saas_admin/presentation/tenants_screen
 import 'package:frontend_flutter/features/feeding_records/presentation/feeding_records_screen.dart';
 import 'package:frontend_flutter/features/employees/presentation/employees_screen.dart';
 import 'package:frontend_flutter/features/employees/providers/employee_permissions_provider.dart';
+import 'package:frontend_flutter/features/maintenance/providers/maintenance_provider.dart';
+import 'package:frontend_flutter/features/maintenance/data/maintenance_model.dart';
+import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
 
 // ─── AppShell – Casca Permanente com Header e Bottom Nav ────────────────────
 
@@ -101,6 +104,255 @@ class _AppShellState extends ConsumerState<AppShell> {
         }
         break;
     }
+  }
+
+  void _showNotificationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          elevation: 10,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 450),
+            padding: const EdgeInsets.all(20),
+            child: Consumer(
+              builder: (context, ref, child) {
+                final tasksAsync = ref.watch(maintenanceProvider);
+                final tanksAsync = ref.watch(tanksProvider);
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.notifications_active, color: Color(0xFF003366), size: 24),
+                            SizedBox(width: 8),
+                            Text(
+                              'Notificações',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF003366),
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.grey),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 20, thickness: 1),
+
+                    // Body
+                    tasksAsync.when(
+                      loading: () => const SizedBox(
+                        height: 150,
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                      error: (err, _) => SizedBox(
+                        height: 150,
+                        child: Center(
+                          child: Text(
+                            'Erro ao carregar tarefas: $err',
+                            style: const TextStyle(color: Colors.red),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                      data: (tasks) {
+                        final pending = tasks
+                            .where((t) =>
+                                t.status.toUpperCase() == 'PENDING' ||
+                                t.status.toUpperCase() == 'IN_PROGRESS')
+                            .toList();
+
+                        if (pending.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.check_circle_outline,
+                                    color: Colors.green,
+                                    size: 48,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'Tudo em dia!',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Nenhuma tarefa de manutenção pendente.',
+                                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        // Map of tank IDs to names
+                        final tankMap = tanksAsync.maybeWhen(
+                          data: (list) => {for (var t in list) t.id: t.name},
+                          orElse: () => <String, String>{},
+                        );
+
+                        return ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 320),
+                          child: Scrollbar(
+                            thumbVisibility: true,
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: pending.length,
+                              itemBuilder: (context, index) {
+                                final task = pending[index];
+                                final isToday = task.scheduledDate.startsWith(
+                                  DateTime.now().toString().substring(0, 10),
+                                );
+                                
+                                String formattedDate = task.scheduledDate;
+                                try {
+                                  final parsed = DateTime.parse(task.scheduledDate);
+                                  formattedDate = DateFormat('dd/MM/yyyy').format(parsed);
+                                } catch (_) {}
+
+                                final tankName = tankMap[task.tankId] ?? 'Tanque não identificado';
+
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                                  color: Colors.grey.shade50,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: BorderSide(color: Colors.grey.shade200),
+                                  ),
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    leading: CircleAvatar(
+                                      backgroundColor: task.status.toUpperCase() == 'IN_PROGRESS'
+                                          ? Colors.blue.shade50
+                                          : Colors.orange.shade50,
+                                      radius: 18,
+                                      child: Icon(
+                                        task.status.toUpperCase() == 'IN_PROGRESS'
+                                            ? Icons.pending_outlined
+                                            : Icons.schedule,
+                                        color: task.status.toUpperCase() == 'IN_PROGRESS'
+                                            ? Colors.blue
+                                            : Colors.orange,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    title: Text(
+                                      task.description,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Tanque: $tankName',
+                                          style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Agendado: $formattedDate',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: isToday ? Colors.red : Colors.grey,
+                                            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                                      onPressed: () async {
+                                        final success = await ref
+                                            .read(maintenanceProvider.notifier)
+                                            .updateTask(
+                                              task.id,
+                                              task.description,
+                                              'COMPLETED',
+                                              task.scheduledDate,
+                                            );
+                                        if (success) {
+                                          ref.invalidate(farmSummaryProvider);
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Tarefa marcada como concluída!'),
+                                              duration: Duration(seconds: 2),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                      context.go('/maintenance');
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+                    // View all button
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF003366),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context.go('/maintenance');
+                      },
+                      child: const Text(
+                        'Ver Todas as Tarefas',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -257,7 +509,9 @@ class _AppShellState extends ConsumerState<AppShell> {
                 Stack(
                   children: [
                     IconButton(
-                        icon: const Icon(Icons.notifications_none, color: Colors.white), onPressed: () {}),
+                        icon: const Icon(Icons.notifications_none, color: Colors.white),
+                        onPressed: () => _showNotificationDialog(context),
+                    ),
                     if (pendingTasks > 0)
                       Positioned(
                         right: 8,
