@@ -24,8 +24,9 @@ import 'package:frontend_flutter/features/employees/providers/employee_permissio
 
 class AppShell extends ConsumerStatefulWidget {
   final StatefulNavigationShell navigationShell;
+  final String currentLocation;
 
-  const AppShell({super.key, required this.navigationShell});
+  const AppShell({super.key, required this.navigationShell, required this.currentLocation});
 
   @override
   ConsumerState<AppShell> createState() => _AppShellState();
@@ -50,8 +51,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 
   void _handleCentralFabPressed(BuildContext context) {
-    final state = GoRouterState.of(context);
-    final currentRoute = state.matchedLocation;
+    final currentRoute = widget.currentLocation;
     final authState = ref.read(authNotifierProvider);
 
     switch (currentRoute) {
@@ -126,18 +126,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       });
     }
 
-    String currentRoute = '';
-    try {
-      currentRoute = GoRouterState.of(context).matchedLocation;
-    } catch (_) {
-      try {
-        currentRoute = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
-      } catch (_) {
-        if (currentIndex == 0) currentRoute = '/dashboard';
-        else if (currentIndex == 1) currentRoute = '/tanks';
-        else if (currentIndex == 2) currentRoute = '/water-quality';
-      }
-    }
+    final currentRoute = widget.currentLocation;
 
     String searchHint = 'Pesquisar...';
     switch (currentRoute) {

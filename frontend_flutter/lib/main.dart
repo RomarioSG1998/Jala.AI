@@ -70,7 +70,10 @@ class AquaSertaoApp extends ConsumerWidget {
         // ── Shell permanente com Bottom Navigation ─────────────────────────
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) {
-            return AppShell(navigationShell: navigationShell);
+            return AppShell(
+              navigationShell: navigationShell,
+              currentLocation: state.matchedLocation,
+            );
           },
           branches: [
             // Aba 0 – Início (Dashboard)
