@@ -23,6 +23,7 @@ import 'package:frontend_flutter/features/maintenance/providers/maintenance_prov
 import 'package:frontend_flutter/features/maintenance/data/maintenance_model.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
 import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class AppNotification {
@@ -46,11 +47,30 @@ class AppNotification {
 }
 
 class DismissedNotificationsNotifier extends Notifier<Set<String>> {
-  @override
-  Set<String> build() => <String>{};
+  static const _storageKey = 'dismissed_notifications';
 
-  void dismiss(String id) {
+  @override
+  Set<String> build() {
+    _load();
+    return <String>{};
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_storageKey);
+      if (list != null) {
+        state = list.toSet();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> dismiss(String id) async {
     state = {...state, id};
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_storageKey, state.toList());
+    } catch (_) {}
   }
 }
 
@@ -59,11 +79,31 @@ final dismissedNotificationsProvider = NotifierProvider<DismissedNotificationsNo
 });
 
 class SeenNotificationsNotifier extends Notifier<Set<String>> {
-  @override
-  Set<String> build() => <String>{};
+  static const _storageKey = 'seen_notifications';
 
-  void markAsSeen(List<String> ids) {
-    state = {...state, ...ids};
+  @override
+  Set<String> build() {
+    _load();
+    return <String>{};
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_storageKey);
+      if (list != null) {
+        state = list.toSet();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> markAsSeen(List<String> ids) async {
+    final newState = {...state, ...ids};
+    state = newState;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_storageKey, newState.toList());
+    } catch (_) {}
   }
 }
 
