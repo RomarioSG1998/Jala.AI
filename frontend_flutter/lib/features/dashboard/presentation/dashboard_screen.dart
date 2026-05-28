@@ -23,7 +23,8 @@ import 'package:frontend_flutter/features/maintenance/providers/maintenance_prov
 import 'package:frontend_flutter/features/maintenance/data/maintenance_model.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
 import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:frontend_flutter/core/api/secure_storage.dart';
 
 
 class AppNotification {
@@ -51,26 +52,40 @@ class DismissedNotificationsNotifier extends Notifier<Set<String>> {
 
   @override
   Set<String> build() {
-    _load();
+    final authState = ref.watch(authNotifierProvider);
+    if (authState.isAuthenticated && authState.email != null) {
+      _load(authState.email!);
+    }
     return <String>{};
   }
 
-  Future<void> _load() async {
+  Future<void> _load(String email) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final list = prefs.getStringList(_storageKey);
-      if (list != null) {
-        state = list.toSet();
+      final storage = ref.read(secureStorageProvider);
+      final jsonStr = await storage.read(key: '${_storageKey}_$email');
+      debugPrint("LOADED dismissed_notifications for $email: $jsonStr");
+      if (jsonStr != null) {
+        final List<dynamic> list = json.decode(jsonStr);
+        state = list.map((e) => e.toString()).toSet();
+      } else {
+        state = <String>{};
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint("ERROR LOADING dismissed_notifications: $e");
+    }
   }
 
   Future<void> dismiss(String id) async {
+    final authState = ref.read(authNotifierProvider);
+    final email = authState.email ?? 'global';
     state = {...state, id};
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_storageKey, state.toList());
-    } catch (_) {}
+      final storage = ref.read(secureStorageProvider);
+      await storage.write(key: '${_storageKey}_$email', value: json.encode(state.toList()));
+      debugPrint("SAVED dismissed_notifications for $email: ${state.toList()}");
+    } catch (e) {
+      debugPrint("ERROR SAVING dismissed_notifications: $e");
+    }
   }
 }
 
@@ -83,27 +98,41 @@ class SeenNotificationsNotifier extends Notifier<Set<String>> {
 
   @override
   Set<String> build() {
-    _load();
+    final authState = ref.watch(authNotifierProvider);
+    if (authState.isAuthenticated && authState.email != null) {
+      _load(authState.email!);
+    }
     return <String>{};
   }
 
-  Future<void> _load() async {
+  Future<void> _load(String email) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final list = prefs.getStringList(_storageKey);
-      if (list != null) {
-        state = list.toSet();
+      final storage = ref.read(secureStorageProvider);
+      final jsonStr = await storage.read(key: '${_storageKey}_$email');
+      debugPrint("LOADED seen_notifications for $email: $jsonStr");
+      if (jsonStr != null) {
+        final List<dynamic> list = json.decode(jsonStr);
+        state = list.map((e) => e.toString()).toSet();
+      } else {
+        state = <String>{};
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint("ERROR LOADING seen_notifications: $e");
+    }
   }
 
   Future<void> markAsSeen(List<String> ids) async {
+    final authState = ref.read(authNotifierProvider);
+    final email = authState.email ?? 'global';
     final newState = {...state, ...ids};
     state = newState;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_storageKey, newState.toList());
-    } catch (_) {}
+      final storage = ref.read(secureStorageProvider);
+      await storage.write(key: '${_storageKey}_$email', value: json.encode(newState.toList()));
+      debugPrint("SAVED seen_notifications for $email: ${newState.toList()}");
+    } catch (e) {
+      debugPrint("ERROR SAVING seen_notifications: $e");
+    }
   }
 }
 
