@@ -126,8 +126,18 @@ class _AppShellState extends ConsumerState<AppShell> {
       });
     }
 
-    final state = GoRouterState.of(context);
-    final currentRoute = state.matchedLocation;
+    String currentRoute = '';
+    try {
+      currentRoute = GoRouterState.of(context).matchedLocation;
+    } catch (_) {
+      try {
+        currentRoute = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
+      } catch (_) {
+        if (currentIndex == 0) currentRoute = '/dashboard';
+        else if (currentIndex == 1) currentRoute = '/tanks';
+        else if (currentIndex == 2) currentRoute = '/water-quality';
+      }
+    }
 
     String searchHint = 'Pesquisar...';
     switch (currentRoute) {
