@@ -867,8 +867,10 @@ class _AppDrawer extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 8),
               children: [
-                _tile(context, Icons.dashboard, 'Dashboard', const Color(0xFF003366),
-                    () { Navigator.pop(context); }),
+                _tile(context, Icons.dashboard, 'Dashboard', const Color(0xFF003366), () {
+                  Navigator.pop(context);
+                  context.go('/dashboard');
+                }),
 
                 if (role == 'SAAS_ADMIN') ...[
                   _section('Administrador'),
