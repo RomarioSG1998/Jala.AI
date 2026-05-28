@@ -4,6 +4,7 @@ import 'package:frontend_flutter/features/finances/providers/transaction_provide
 import 'package:frontend_flutter/features/finances/data/transaction_model.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
+import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
 
 class FinancesScreen extends ConsumerWidget {
   const FinancesScreen({super.key});
@@ -181,6 +182,9 @@ class FinancesScreen extends ConsumerWidget {
         padding: const EdgeInsets.only(right: 20),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
+      confirmDismiss: (direction) async {
+        return await PasswordConfirmationDialog.confirm(context, ref);
+      },
       onDismissed: (_) {
         ref.read(transactionProvider.notifier).deleteTransaction(tx.id);
         ScaffoldMessenger.of(context).showSnackBar(

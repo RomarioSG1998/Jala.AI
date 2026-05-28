@@ -5,6 +5,7 @@ import 'package:frontend_flutter/features/harvests/providers/harvest_provider.da
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
 
 class HarvestsScreen extends ConsumerWidget {
   const HarvestsScreen({super.key});
@@ -85,27 +86,8 @@ class HarvestsScreen extends ConsumerWidget {
                     ),
                     child: const Icon(Icons.delete, color: Colors.white),
                   ),
-                  confirmDismiss: (direction) async {
-                    return await showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Excluir Registro de Despesca'),
-                        content: Text(
-                            'Deseja excluir a despesca de ${harvest.quantityKg} kg registrada em $formattedDate?'),
-                        actions: [
-                          TextButton(
-                              onPressed: () =>
-                                  Navigator.of(context).pop(false),
-                              child: const Text('Cancelar')),
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.of(context).pop(true),
-                            child: const Text('Excluir',
-                                style: TextStyle(color: Colors.red)),
-                          ),
-                        ],
-                      ),
-                    );
+                   confirmDismiss: (direction) async {
+                    return await PasswordConfirmationDialog.confirm(context, ref);
                   },
                   onDismissed: (_) {
                     ref

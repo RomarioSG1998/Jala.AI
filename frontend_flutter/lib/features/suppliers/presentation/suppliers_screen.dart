@@ -4,6 +4,7 @@ import 'package:frontend_flutter/features/suppliers/providers/supplier_provider.
 import 'package:frontend_flutter/features/suppliers/data/supplier_model.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
+import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
 
 class SuppliersScreen extends ConsumerWidget {
   const SuppliersScreen({super.key});
@@ -87,6 +88,9 @@ class SuppliersScreen extends ConsumerWidget {
         padding: const EdgeInsets.only(right: 20),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
+      confirmDismiss: (direction) async {
+        return await PasswordConfirmationDialog.confirm(context, ref);
+      },
       onDismissed: (_) {
         ref.read(supplierProvider.notifier).deleteSupplier(s.id);
         ScaffoldMessenger.of(context).showSnackBar(

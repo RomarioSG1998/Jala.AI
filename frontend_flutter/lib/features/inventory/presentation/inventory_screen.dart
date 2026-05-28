@@ -5,6 +5,7 @@ import 'package:frontend_flutter/features/inventory/providers/inventory_provider
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
+import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
 
 class InventoryScreen extends ConsumerWidget {
   const InventoryScreen({super.key});
@@ -88,27 +89,8 @@ class InventoryScreen extends ConsumerWidget {
                     ),
                     child: const Icon(Icons.delete, color: Colors.white),
                   ),
-                  confirmDismiss: (direction) async {
-                    return await showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Excluir Item'),
-                        content: Text(
-                            'Tem certeza de que deseja excluir "${item.itemName}"?'),
-                        actions: [
-                          TextButton(
-                              onPressed: () =>
-                                  Navigator.of(context).pop(false),
-                              child: const Text('Cancelar')),
-                          TextButton(
-                            onPressed: () =>
-                                  Navigator.of(context).pop(true),
-                            child: const Text('Excluir',
-                                style: TextStyle(color: Colors.red)),
-                          ),
-                        ],
-                      ),
-                    );
+                   confirmDismiss: (direction) async {
+                    return await PasswordConfirmationDialog.confirm(context, ref);
                   },
                   onDismissed: (direction) {
                     ref.read(inventoryProvider.notifier).deleteItem(item.id);

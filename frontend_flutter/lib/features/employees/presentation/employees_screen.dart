@@ -5,6 +5,7 @@ import '../providers/employees_provider.dart';
 import '../providers/employee_permissions_provider.dart';
 import '../data/employee_model.dart';
 import '../data/employee_permission_model.dart';
+import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
 
 // Hardcoded test farm ID (matches seed data)
 const _kFarmId = '55555555-5555-5555-5555-555555555555';
@@ -124,24 +125,7 @@ class EmployeesScreen extends ConsumerWidget {
 
   // ── Confirm delete ─────────────────────────────────────────────────────────
   void _confirmDelete(BuildContext context, WidgetRef ref, Employee emp) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Remover Funcionário'),
-        content: Text('Tem certeza que deseja remover "${emp.name}"?\nEsta ação não poderá ser desfeita.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('Remover'),
-          ),
-        ],
-      ),
-    );
+    final confirm = await PasswordConfirmationDialog.confirm(context, ref);
 
     if (confirm == true) {
       final success = await ref.read(employeesProvider.notifier).deleteEmployee(emp.id);

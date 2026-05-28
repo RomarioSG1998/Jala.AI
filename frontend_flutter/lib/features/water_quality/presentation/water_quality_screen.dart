@@ -4,6 +4,7 @@ import 'package:frontend_flutter/features/water_quality/providers/water_quality_
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
 
 class WaterQualityScreen extends ConsumerWidget {
   const WaterQualityScreen({super.key});
@@ -89,21 +90,8 @@ class WaterQualityScreen extends ConsumerWidget {
                     ),
                     child: const Icon(Icons.delete, color: Colors.white),
                   ),
-                  confirmDismiss: (direction) async {
-                    return await showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Excluir Registro'),
-                        content: const Text('Tem certeza de que deseja excluir este registro de qualidade da água?'),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancelar')),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
-                          ),
-                        ],
-                      ),
-                    );
+                   confirmDismiss: (direction) async {
+                    return await PasswordConfirmationDialog.confirm(context, ref);
                   },
                   onDismissed: (direction) {
                     ref.read(waterQualityProvider.notifier).deleteRecord(record.id);

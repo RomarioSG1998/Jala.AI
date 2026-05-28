@@ -22,6 +22,8 @@ import 'package:frontend_flutter/features/employees/providers/employee_permissio
 import 'package:frontend_flutter/features/maintenance/providers/maintenance_provider.dart';
 import 'package:frontend_flutter/features/maintenance/data/maintenance_model.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
+import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
+
 
 class AppNotification {
   final String id;
@@ -453,8 +455,11 @@ class _AppShellState extends ConsumerState<AppShell> {
                                       IconButton(
                                         icon: const Icon(Icons.delete_outline, color: Colors.grey, size: 20),
                                         tooltip: 'Ignorar',
-                                        onPressed: () {
-                                          ref.read(dismissedNotificationsProvider.notifier).dismiss(item.id);
+                                        onPressed: () async {
+                                          final confirmed = await PasswordConfirmationDialog.confirm(context, ref);
+                                          if (confirmed) {
+                                            ref.read(dismissedNotificationsProvider.notifier).dismiss(item.id);
+                                          }
                                         },
                                       ),
                                     ],

@@ -5,6 +5,7 @@ import 'package:frontend_flutter/features/feeding_records/providers/feeding_reco
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import 'package:frontend_flutter/features/inventory/providers/inventory_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
 
 const Color _kNavyBlue = Color(0xFF003366);
 const Color _kGreen = Color(0xFF2E7D32);
@@ -99,26 +100,8 @@ class FeedingRecordsScreen extends ConsumerWidget {
                     ),
                     child: const Icon(Icons.delete, color: Colors.white),
                   ),
-                  confirmDismiss: (_) async {
-                    return await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Excluir Trato'),
-                        content: const Text(
-                          'Deseja realmente remover este registro de alimentação? A ração será devolvida ao estoque.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Cancelar'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
-                          ),
-                        ],
-                      ),
-                    );
+                   confirmDismiss: (_) async {
+                    return await PasswordConfirmationDialog.confirm(context, ref);
                   },
                   onDismissed: (_) async {
                     final err = await ref

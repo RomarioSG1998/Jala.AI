@@ -6,6 +6,7 @@ import 'package:frontend_flutter/features/tanks/presentation/widgets/tank_card.d
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
 import 'package:frontend_flutter/features/dashboard/providers/farm_summary_provider.dart';
 import 'package:frontend_flutter/features/dashboard/data/farm_summary_model.dart';
+import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
 
 class TanksScreen extends ConsumerStatefulWidget {
   const TanksScreen({super.key});
@@ -588,24 +589,7 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
   }
 
   Future<void> _delete() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Excluir Tanque'),
-        content: Text('Deseja realmente excluir o tanque "${widget.tank.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('Excluir'),
-          ),
-        ],
-      ),
-    );
+    final confirm = await PasswordConfirmationDialog.confirm(context, ref);
 
     if (confirm == true && mounted) {
       setState(() => _isLoading = true);

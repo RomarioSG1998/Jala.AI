@@ -5,6 +5,7 @@ import 'package:frontend_flutter/features/maintenance/providers/maintenance_prov
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
 
 class MaintenanceScreen extends ConsumerWidget {
   const MaintenanceScreen({super.key});
@@ -114,27 +115,8 @@ class MaintenanceScreen extends ConsumerWidget {
                     ),
                     child: const Icon(Icons.delete, color: Colors.white),
                   ),
-                  confirmDismiss: (direction) async {
-                    return await showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Excluir Tarefa'),
-                        content: Text(
-                            'Deseja excluir a tarefa de manutenção "${task.description}"?'),
-                        actions: [
-                          TextButton(
-                              onPressed: () =>
-                                  Navigator.of(context).pop(false),
-                              child: const Text('Cancelar')),
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.of(context).pop(true),
-                            child: const Text('Excluir',
-                                style: TextStyle(color: Colors.red)),
-                          ),
-                        ],
-                      ),
-                    );
+                   confirmDismiss: (direction) async {
+                    return await PasswordConfirmationDialog.confirm(context, ref);
                   },
                   onDismissed: (_) {
                     ref
