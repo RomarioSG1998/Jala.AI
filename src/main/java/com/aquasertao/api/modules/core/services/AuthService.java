@@ -12,7 +12,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.aquasertao.api.modules.core.dtos.ProfileImageDTO;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -66,5 +68,20 @@ public class AuthService {
                 .accountType(user.getAccountType())
                 .userId(user.getId())
                 .build();
-    }
+     }
+
+     public ProfileImageDTO getProfileImage(UUID userId) {
+         var user = repository.findById(userId)
+                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
+         return ProfileImageDTO.builder()
+                 .profileImage(user.getProfileImage())
+                 .build();
+     }
+
+     public void updateProfileImage(UUID userId, ProfileImageDTO dto) {
+         var user = repository.findById(userId)
+                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
+         user.setProfileImage(dto.getProfileImage());
+         repository.save(user);
+     }
 }

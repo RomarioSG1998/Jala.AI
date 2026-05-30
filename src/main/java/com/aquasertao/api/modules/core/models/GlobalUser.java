@@ -38,6 +38,9 @@ public class GlobalUser implements UserDetails {
     @Column(name = "account_type", nullable = false, length = 50)
     private String accountType; // SAAS_ADMIN, CLIENT
 
+    @Column(name = "profile_image", columnDefinition = "TEXT")
+    private String profileImage;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
