@@ -11,11 +11,15 @@ class FarmSummaryRepository {
   final String _farmId = '55555555-5555-5555-5555-555555555555';
 
   Future<FarmSummary> getSummary() async {
+    return getSummaryForFarm(_farmId);
+  }
+
+  Future<FarmSummary> getSummaryForFarm(String farmId) async {
     try {
-      final response = await _dio.get('/api/farms/$_farmId/summary');
+      final response = await _dio.get('/api/farms/$farmId/summary');
       return FarmSummary.fromJson(response.data);
     } catch (e) {
-      throw Exception('Failed to load farm summary: $e');
+      throw Exception('Failed to load farm summary for $farmId: $e');
     }
   }
 }

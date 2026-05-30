@@ -4,6 +4,7 @@ import 'package:frontend_flutter/features/saas_admin/providers/saas_providers.da
 import 'package:frontend_flutter/features/saas_admin/data/saas_models.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
+import 'package:frontend_flutter/features/saas_admin/presentation/widgets/tenant_summary_card.dart';
 
 class TenantsScreen extends ConsumerWidget {
   const TenantsScreen({super.key});
@@ -51,7 +52,7 @@ class TenantsScreen extends ConsumerWidget {
                 else
                   Column(
                     children: filtered
-                        .map((t) => _buildTenantCard(context, t))
+                        .map((t) => TenantSummaryCard(tenant: t))
                         .toList(),
                   ),
               ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend_flutter/features/saas_admin/presentation/widgets/tenant_summary_card.dart';
 import 'package:go_router/go_router.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/saas_admin/providers/saas_providers.dart';
@@ -175,6 +176,17 @@ class _AppShellState extends ConsumerState<AppShell> {
   void _handleCentralFabPressed(BuildContext context) {
     final currentRoute = widget.currentLocation;
     final authState = ref.read(authNotifierProvider);
+
+    if (authState.accountType == 'SAAS_ADMIN') {
+      if (currentRoute == '/tanks') {
+        TenantsScreen.showAddTenantModal(context, ref);
+        return;
+      }
+      if (currentRoute == '/water-quality') {
+        SuppliersScreen.showAddSupplierModal(context, ref);
+        return;
+      }
+    }
 
     switch (currentRoute) {
       case '/tanks':
@@ -790,6 +802,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 
   Widget _buildBottomNav(BuildContext context, int currentIndex, String role) {
+    final isSaasAdmin = role == 'SAAS_ADMIN';
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.topCenter,
@@ -813,9 +826,21 @@ class _AppShellState extends ConsumerState<AppShell> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Início', currentIndex == 0),
-              _buildNavItem(1, Icons.water_drop_rounded, Icons.water_drop_outlined, 'Tanques', currentIndex == 1),
+              _buildNavItem(
+                1,
+                isSaasAdmin ? Icons.business_rounded : Icons.water_drop_rounded,
+                isSaasAdmin ? Icons.business_outlined : Icons.water_drop_outlined,
+                isSaasAdmin ? 'Clientes' : 'Tanques',
+                currentIndex == 1,
+              ),
               const SizedBox(width: 48), // Espaço reservado para o FAB central
-              _buildNavItem(2, Icons.bar_chart_rounded, Icons.bar_chart_outlined, 'Qualidade', currentIndex == 2),
+              _buildNavItem(
+                2,
+                isSaasAdmin ? Icons.handshake_rounded : Icons.bar_chart_rounded,
+                isSaasAdmin ? Icons.handshake_outlined : Icons.bar_chart_outlined,
+                isSaasAdmin ? 'Fornecedores' : 'Qualidade',
+                currentIndex == 2,
+              ),
               _buildNavItem(3, Icons.apps_rounded, Icons.apps_outlined, 'Menu', currentIndex == 3),
             ],
           ),
@@ -1218,7 +1243,7 @@ class _SaasAdminBody extends ConsumerWidget {
           tenantsAsync.when(
             data: (tenants) => tenants.isEmpty
                 ? Text('Nenhum tenant.', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : Colors.black54))
-                : Column(children: tenants.map((t) => _tenantCard(context, t)).toList()),
+                : Column(children: tenants.map((t) => TenantSummaryCard(tenant: t)).toList()),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Text('$e', style: const TextStyle(color: Colors.red)),
           ),
@@ -1294,56 +1319,7 @@ class _SaasAdminBody extends ConsumerWidget {
     );
   }
 
-  Widget _tenantCard(BuildContext context, dynamic tenant) {
-    String formatted = '';
-    try {
-      formatted = DateFormat('dd/MM/yyyy').format(DateTime.parse(tenant.createdAt));
-    } catch (_) {}
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: isDark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
-        boxShadow: [
-          if (!isDark)
-            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)
-        ],
-      ),
-      child: Row(children: [
-        CircleAvatar(
-          backgroundColor: isDark ? Colors.indigo.withOpacity(0.2) : Colors.indigo.shade50,
-          child: Icon(Icons.business, color: isDark ? Colors.indigo.shade300 : Colors.indigo, size: 20),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(tenant.name,
-              style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold)),
-          if ((tenant.cnpj as String).isNotEmpty)
-            Text('CNPJ: ${tenant.cnpj}',
-                style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.black54, fontSize: 12)),
-        ])),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text('Ativo',
-                style: TextStyle(
-                    color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold)),
-          ),
-          const SizedBox(height: 4),
-          if (formatted.isNotEmpty)
-            Text(formatted, style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 11)),
-        ]),
-      ]),
-    );
-  }
+
 }
 
 // ─── Drawer lateral ──────────────────────────────────────────────────────────

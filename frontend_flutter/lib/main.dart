@@ -109,7 +109,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/tanks',
-                builder: (context, state) => const TanksScreen(),
+                builder: (context, state) {
+                  final authState = ref.read(authNotifierProvider);
+                  if (authState.accountType == 'SAAS_ADMIN') {
+                    return const TenantsScreen();
+                  }
+                  return const TanksScreen();
+                },
               ),
             ],
           ),
@@ -118,7 +124,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/water-quality',
-                builder: (context, state) => const WaterQualityScreen(),
+                builder: (context, state) {
+                  final authState = ref.read(authNotifierProvider);
+                  if (authState.accountType == 'SAAS_ADMIN') {
+                    return const SuppliersScreen();
+                  }
+                  return const WaterQualityScreen();
+                },
               ),
             ],
           ),

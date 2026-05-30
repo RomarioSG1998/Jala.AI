@@ -25,3 +25,9 @@ class FarmSummaryNotifier extends AsyncNotifier<FarmSummary> {
 final farmSummaryProvider = AsyncNotifierProvider<FarmSummaryNotifier, FarmSummary>(() {
   return FarmSummaryNotifier();
 });
+
+// Family provider to fetch summary for any tenant by ID
+final farmSummaryByIdProvider = FutureProvider.family<FarmSummary, String>((ref, farmId) async {
+  final repository = ref.watch(farmSummaryRepositoryProvider);
+  return repository.getSummaryForFarm(farmId);
+});
