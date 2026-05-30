@@ -40,7 +40,7 @@ class FeedingRecordRepository {
   Future<FeedingRecord> createRecord(Map<String, dynamic> data) async {
     try {
       data['farmId'] = _farmId;
-      data['userId'] = _userId;
+      data['userId'] ??= _userId;
       final response = await _dio.post('/api/feeding-records', data: data);
       return FeedingRecord.fromJson(response.data);
     } on DioException catch (e) {
@@ -53,7 +53,7 @@ class FeedingRecordRepository {
   Future<FeedingRecord> updateRecord(String id, Map<String, dynamic> data) async {
     try {
       data['farmId'] = _farmId;
-      data['userId'] = _userId;
+      data['userId'] ??= _userId;
       final response = await _dio.put('/api/feeding-records/$id', data: data);
       return FeedingRecord.fromJson(response.data);
     } on DioException catch (e) {
