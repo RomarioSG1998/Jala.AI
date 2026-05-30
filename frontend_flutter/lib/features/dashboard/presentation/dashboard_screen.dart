@@ -1465,6 +1465,9 @@ class _AppDrawer extends ConsumerWidget {
                   _tile(context, Icons.people, 'Funcionários', Colors.indigo, () {
                     Navigator.pop(context); context.go('/employees');
                   }),
+                  _tile(context, Icons.assignment_turned_in, 'Aprovações', Colors.deepOrange, () {
+                    Navigator.pop(context); context.go('/approvals');
+                  }),
                 ],
               ],
             ),

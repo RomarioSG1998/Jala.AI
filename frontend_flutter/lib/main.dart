@@ -17,6 +17,7 @@ import 'package:frontend_flutter/features/saas_admin/presentation/tenants_screen
 import 'package:frontend_flutter/features/feeding_records/presentation/feeding_records_screen.dart';
 import 'package:frontend_flutter/features/employees/presentation/employees_screen.dart';
 import 'package:frontend_flutter/features/profile/presentation/profile_screen.dart';
+import 'package:frontend_flutter/features/approvals/presentation/approvals_screen.dart';
 import 'package:frontend_flutter/core/theme/theme_provider.dart';
 
 void main() async {
@@ -66,7 +67,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (isSaasRoute && role != 'SAAS_ADMIN') return '/dashboard';
 
         // Farm Owner / Client exclusive routes
-        final isOwnerRoute = location == '/employees' || location == '/finances' || location == '/maintenance';
+        final isOwnerRoute = location == '/employees' || location == '/finances' || location == '/maintenance' || location == '/approvals';
         if (isOwnerRoute && role != 'FARM_OWNER' && role != 'CLIENT') return '/dashboard';
       }
       return null;
@@ -158,6 +159,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/employees',
                 builder: (context, state) => const EmployeesScreen(),
+              ),
+              GoRoute(
+                path: '/approvals',
+                builder: (context, state) => const ApprovalsScreen(),
               ),
             ],
           ),
@@ -323,6 +328,7 @@ class MoreMenuBody extends ConsumerWidget {
           _menuTile(context, Icons.people, 'Funcionários', 'Gerenciar equipe', Colors.indigo, '/employees'),
           _menuTile(context, Icons.build, 'Manutenção', 'Tarefas e agendamentos', Colors.grey, '/maintenance'),
           _menuTile(context, Icons.attach_money, 'Finanças', 'Controle financeiro', Colors.green.shade700, '/finances'),
+          _menuTile(context, Icons.assignment_turned_in, 'Aprovações', 'Central de solicitações', Colors.deepOrange, '/approvals'),
         ],
         if (role == 'SAAS_ADMIN') ...[
           _menuTile(context, Icons.business, 'Tenants', 'Gerenciar clientes', Colors.indigo, '/tenants'),
