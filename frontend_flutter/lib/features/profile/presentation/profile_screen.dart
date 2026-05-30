@@ -199,8 +199,6 @@ class ProfileScreen extends ConsumerWidget {
                   _buildInfoCard(context, [
                     _buildInfoTile(context, Icons.email_outlined, 'E-mail', authState.email ?? 'Não informado'),
                     _buildDivider(context),
-                    _buildInfoTile(context, Icons.vpn_key_outlined, 'ID de Usuário', authState.userId ?? 'Não informado'),
-                    _buildDivider(context),
                     _buildInfoTile(
                       context,
                       Icons.check_circle_outline,

@@ -124,10 +124,6 @@ class TenantsScreen extends ConsumerWidget {
                 'Criado em: $dateStr',
                 style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
               ),
-              Text(
-                'Owner ID: ${t.ownerId.substring(0, 8)}...',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-              ),
             ],
           ),
         ],
