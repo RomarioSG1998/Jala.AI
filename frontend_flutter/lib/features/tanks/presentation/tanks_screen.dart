@@ -195,7 +195,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
     return Transform.translate(
       offset: const Offset(0, -10),
       child: SizedBox(
-        height: 80,
+        height: 95,
         child: ListView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -285,7 +285,18 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
             ],
           ),
           const SizedBox(height: 6),
-          Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+          ),
           const Spacer(),
           if (progress != null)
             ClipRRect(
