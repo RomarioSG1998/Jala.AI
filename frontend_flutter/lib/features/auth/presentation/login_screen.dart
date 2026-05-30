@@ -42,23 +42,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: Icon(
-              isDark ? Icons.dark_mode : Icons.light_mode,
-              color: isDark ? Colors.white70 : Colors.black54,
-            ),
-            onPressed: () {
-              ref.read(themeNotifierProvider.notifier).toggleTheme();
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
