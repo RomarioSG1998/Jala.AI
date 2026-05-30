@@ -75,7 +75,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             child: Icon(
                               Icons.water, 
                               size: 64, 
-                              color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF10B981),
+                              color: isDark ? const Color(0xFF00FF66) : const Color(0xFF13A538),
                             ),
                           ),
                         ),
@@ -97,7 +97,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           TextSpan(
                             text: 'Sertão', 
-                            style: TextStyle(color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF13A538)),
+                            style: TextStyle(color: isDark ? const Color(0xFF00FF66) : const Color(0xFF13A538)),
                           ),
                         ],
                       ),
@@ -212,8 +212,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onPressed: authState.isLoading ? null : _submitLogin,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 18),
-                        backgroundColor: isDark ? const Color(0xFF38BDF8) : const Color(0xFF003366),
-                        foregroundColor: isDark ? Colors.black : Colors.white,
+                        backgroundColor: isDark ? const Color(0xFF00FF66) : const Color(0xFF13A538),
+                        foregroundColor: isDark ? const Color(0xFF030D1B) : Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 4,
                       ),
@@ -223,7 +223,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2.5,
-                                color: isDark ? Colors.black : Colors.white,
+                                color: isDark ? const Color(0xFF030D1B) : Colors.white,
                               ),
                             )
                           : const Text(
