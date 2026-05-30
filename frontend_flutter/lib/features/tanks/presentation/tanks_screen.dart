@@ -195,10 +195,10 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
     return Transform.translate(
       offset: const Offset(0, -10),
       child: SizedBox(
-        height: 95,
+        height: 105,
         child: ListView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
           children: [
             summaryAsync.maybeWhen(
               data: (summary) => _kpiCard(context, Icons.water, 'Tanques ativos', '${summary.activeTanks} de ${summary.totalTanks}', Colors.blue, summary.totalTanks > 0 ? (summary.activeTanks / summary.totalTanks) : 0.0),
