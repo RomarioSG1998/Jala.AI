@@ -37,6 +37,7 @@ public class TankService {
                 .mortalityCount(requestDTO.getMortalityCount() != null ? requestDTO.getMortalityCount() : 0)
                 .nextHarvestDate(harvestDate)
                 .status(requestDTO.getStatus() != null ? requestDTO.getStatus() : "ACTIVE")
+                .customImage(requestDTO.getCustomImage())
                 .build();
 
         Tank savedTank = tankRepository.save(tank);
@@ -78,6 +79,9 @@ public class TankService {
         if (requestDTO.getStatus() != null) {
             existingTank.setStatus(requestDTO.getStatus());
         }
+        if (requestDTO.getCustomImage() != null) {
+            existingTank.setCustomImage(requestDTO.getCustomImage().isEmpty() ? null : requestDTO.getCustomImage());
+        }
 
         Tank updatedTank = tankRepository.save(existingTank);
         return mapToDTO(updatedTank);
@@ -101,6 +105,7 @@ public class TankService {
                 .mortalityCount(tank.getMortalityCount())
                 .nextHarvestDate(tank.getNextHarvestDate())
                 .status(tank.getStatus())
+                .customImage(tank.getCustomImage())
                 .build();
     }
 }

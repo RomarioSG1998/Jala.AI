@@ -21,4 +21,5 @@ public class TankRequestDTO {
     private Integer mortalityCount;
     private String nextHarvestDate; // "yyyy-MM-dd" or null
     private String status;          // "ACTIVE" or "INACTIVE"
+    private String customImage;
 }

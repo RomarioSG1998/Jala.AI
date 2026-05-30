@@ -7,6 +7,7 @@ class Tank {
   final int mortalityCount;
   final String? nextHarvestDate;
   final String status;
+  final String? customImage;
 
   Tank({
     required this.id,
@@ -17,6 +18,7 @@ class Tank {
     required this.mortalityCount,
     this.nextHarvestDate,
     required this.status,
+    this.customImage,
   });
 
   factory Tank.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class Tank {
       mortalityCount: (json['mortalityCount'] as num?)?.toInt() ?? 0,
       nextHarvestDate: json['nextHarvestDate'],
       status: json['status'] ?? 'ACTIVE',
+      customImage: json['customImage'],
     );
   }
 
@@ -42,6 +45,7 @@ class Tank {
       'mortalityCount': mortalityCount,
       'nextHarvestDate': nextHarvestDate,
       'status': status,
+      'customImage': customImage,
     };
   }
 }

@@ -49,4 +49,7 @@ public class Tank {
     @Column(name = "status", length = 20)
     @Builder.Default
     private String status = "ACTIVE";
+
+    @Column(name = "custom_image", columnDefinition = "TEXT")
+    private String customImage;
 }

@@ -22,4 +22,5 @@ public class TankResponseDTO {
     private Integer mortalityCount;
     private LocalDate nextHarvestDate;
     private String status;
+    private String customImage;
 }

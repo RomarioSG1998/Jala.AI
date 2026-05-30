@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
@@ -100,15 +101,30 @@ class TankCard extends ConsumerWidget {
                           height: 140,
                           color: isDark ? const Color(0xFF0F172A) : Colors.blue.shade50,
                           child: isActive 
-                              ? Image.network(
-                                  '/tank_piscicultura.png',
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Icon(Icons.water, color: Colors.blue, size: 40),
-                                )
-                              : Container(
-                                  color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
-                                  child: Icon(Icons.water, color: Colors.grey, size: 40),
-                                ),
+                              ? (tank.customImage != null && tank.customImage!.isNotEmpty
+                                  ? Image.memory(
+                                      base64Decode(tank.customImage!),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Icon(Icons.water, color: Colors.blue, size: 40),
+                                    )
+                                  : Image.network(
+                                      '/tank_piscicultura.png',
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Icon(Icons.water, color: Colors.blue, size: 40),
+                                    ))
+                              : (tank.customImage != null && tank.customImage!.isNotEmpty
+                                  ? Opacity(
+                                      opacity: 0.5,
+                                      child: Image.memory(
+                                        base64Decode(tank.customImage!),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Icon(Icons.water, color: Colors.grey, size: 40),
+                                      ),
+                                    )
+                                  : Container(
+                                      color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
+                                      child: Icon(Icons.water, color: Colors.grey, size: 40),
+                                    )),
                         ),
                         Positioned(
                           top: 8,

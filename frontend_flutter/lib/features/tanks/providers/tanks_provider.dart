@@ -25,12 +25,13 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
     }
   }
 
-  Future<bool> createTank(String name, String species, int capacity) async {
+  Future<bool> createTank(String name, String species, int capacity, [String? customImage]) async {
     try {
       final newTank = await _repository.createTank({
         'name': name,
         'fishSpecies': species,
         'fishCapacity': capacity,
+        'customImage': customImage,
       });
       // Update state optimistically or by fetching
       if (state.hasValue) {
@@ -50,8 +51,10 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
     int averageWeight,
     int mortalityCount,
     String? nextHarvestDate,
-    String status,
-  ) async {
+    String status, [
+    String? customImage,
+    bool clearImage = false,
+  ]) async {
     try {
       final updatedTank = await _repository.updateTank(id, {
         'name': name,
@@ -61,6 +64,7 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
         'mortalityCount': mortalityCount,
         'nextHarvestDate': nextHarvestDate,
         'status': status,
+        'customImage': clearImage ? "" : customImage,
       });
       if (state.hasValue) {
         state = AsyncValue.data(

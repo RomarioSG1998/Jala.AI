@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/tanks/presentation/widgets/tank_card.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
@@ -449,6 +451,7 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
   final _nameController = TextEditingController();
   final _speciesController = TextEditingController();
   final _capacityController = TextEditingController();
+  String? _customImageBase64;
   bool _isLoading = false;
 
   @override
@@ -459,6 +462,24 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 600,
+        maxHeight: 600,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _customImageBase64 = base64Encode(bytes);
+        });
+      }
+    } catch (_) {}
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
@@ -466,6 +487,7 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
           _nameController.text.trim(),
           _speciesController.text.trim(),
           int.parse(_capacityController.text.trim()),
+          _customImageBase64,
         );
     if (mounted) {
       setState(() => _isLoading = false);
@@ -479,6 +501,7 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -489,6 +512,68 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text('Adicionar Novo Tanque', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  height: 140,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Theme.of(context).primaryColor.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: _customImageBase64 != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.memory(
+                                base64Decode(_customImageBase64!),
+                                fit: BoxFit.cover,
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Colors.black54,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.close, size: 16, color: Colors.white),
+                                    onPressed: () {
+                                      setState(() {
+                                        _customImageBase64 = null;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_photo_alternate_outlined,
+                              size: 40,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Adicionar Foto do Tanque (Opcional)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
               const SizedBox(height: 24),
               TextFormField(controller: _nameController, decoration: const InputDecoration(labelText: 'Nome do Tanque', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
               const SizedBox(height: 16),
@@ -528,6 +613,8 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
   late TextEditingController _mortalityController;
   late TextEditingController _harvestDateController;
   late String _status;
+  String? _customImageBase64;
+  bool _clearImage = false;
   bool _isLoading = false;
 
   @override
@@ -540,6 +627,7 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
     _mortalityController = TextEditingController(text: widget.tank.mortalityCount.toString());
     _harvestDateController = TextEditingController(text: widget.tank.nextHarvestDate ?? '');
     _status = widget.tank.status;
+    _customImageBase64 = widget.tank.customImage;
   }
 
   @override
@@ -551,6 +639,25 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
     _mortalityController.dispose();
     _harvestDateController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 600,
+        maxHeight: 600,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _customImageBase64 = base64Encode(bytes);
+          _clearImage = false;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _selectDate() async {
@@ -586,6 +693,8 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
           int.parse(_mortalityController.text.trim()),
           _harvestDateController.text.isEmpty ? null : _harvestDateController.text,
           _status,
+          _customImageBase64,
+          _clearImage,
         );
 
     if (mounted) {
@@ -653,6 +762,71 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
                 ],
               ),
               const SizedBox(height: 24),
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  height: 140,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF1E293B)
+                        : Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Theme.of(context).primaryColor.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: _customImageBase64 != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.memory(
+                                base64Decode(_customImageBase64!),
+                                fit: BoxFit.cover,
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: Colors.black54,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.close, size: 16, color: Colors.white),
+                                    onPressed: () {
+                                      setState(() {
+                                        _customImageBase64 = null;
+                                        _clearImage = true;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_photo_alternate_outlined,
+                              size: 40,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Alterar Foto do Tanque (Opcional)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Nome do Tanque', border: OutlineInputBorder()),
