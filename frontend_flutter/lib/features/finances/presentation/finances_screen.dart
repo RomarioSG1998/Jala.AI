@@ -17,13 +17,12 @@ class FinancesScreen extends ConsumerWidget {
     final transactionsAsync = ref.watch(transactionProvider);
     final currencyFmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
     final searchQuery = ref.watch(globalSearchQueryProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: _kNavyBlue,
         title: const Text('Finanças', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(transactionProvider.notifier).refreshTransactions(),
@@ -56,15 +55,15 @@ class FinancesScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
               children: [
                 // Summary Cards
-                _buildSummaryCards(totalIncome, totalExpense, netBalance, currencyFmt),
+                _buildSummaryCards(context, totalIncome, totalExpense, netBalance, currencyFmt),
                 const SizedBox(height: 28),
-                const Text(
+                Text(
                   'Transações Recentes',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
                 ),
                 const SizedBox(height: 12),
                 if (filtered.isEmpty)
-                  _buildEmptyState(message: searchQuery.isNotEmpty ? 'Nenhuma transação encontrada para "$searchQuery"' : 'Nenhuma transação registrada')
+                  _buildEmptyState(context, message: searchQuery.isNotEmpty ? 'Nenhuma transação encontrada para "$searchQuery"' : 'Nenhuma transação registrada')
                 else
                   Column(
                     children: filtered
@@ -87,7 +86,7 @@ class FinancesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSummaryCards(double income, double expense, double balance, NumberFormat fmt) {
+  Widget _buildSummaryCards(BuildContext context, double income, double expense, double balance, NumberFormat fmt) {
     return Column(
       children: [
         Container(
@@ -124,11 +123,11 @@ class FinancesScreen extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-              child: _buildMiniCard('Receitas', fmt.format(income), Icons.arrow_upward, Colors.green),
+              child: _buildMiniCard(context, 'Receitas', fmt.format(income), Icons.arrow_upward, Colors.green),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildMiniCard('Despesas', fmt.format(expense), Icons.arrow_downward, Colors.red),
+              child: _buildMiniCard(context, 'Despesas', fmt.format(expense), Icons.arrow_downward, Colors.red),
             ),
           ],
         ),
@@ -136,11 +135,12 @@ class FinancesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMiniCard(String label, String value, IconData icon, Color color) {
+  Widget _buildMiniCard(BuildContext context, String label, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
+        border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
@@ -153,7 +153,7 @@ class FinancesScreen extends ConsumerWidget {
             children: [
               Icon(icon, color: color, size: 16),
               const SizedBox(width: 6),
-              Text(label, style: const TextStyle(color: Colors.black54, fontSize: 12)),
+              Text(label, style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.black54, fontSize: 12)),
             ],
           ),
           const SizedBox(height: 8),
@@ -210,7 +210,8 @@ class FinancesScreen extends ConsumerWidget {
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
+            border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
@@ -234,7 +235,7 @@ class FinancesScreen extends ConsumerWidget {
                   children: [
                     Text(
                       isIncome ? 'Venda / Recebimento' : 'Compra / Despesa',
-                      style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
+                      style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -259,7 +260,7 @@ class FinancesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState({String message = 'Nenhuma transação registrada'}) {
+  Widget _buildEmptyState(BuildContext context, {String message = 'Nenhuma transação registrada'}) {
     return Container(
       padding: const EdgeInsets.all(40),
       alignment: Alignment.center,
@@ -269,7 +270,7 @@ class FinancesScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600),
+            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.black54, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
           if (message == 'Nenhuma transação registrada') ...[

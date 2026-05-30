@@ -79,7 +79,12 @@ class _PasswordConfirmationDialogState extends State<PasswordConfirmationDialog>
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: Theme.of(context).brightness == Brightness.dark
+            ? const BorderSide(color: Color(0xFF263350), width: 1.0)
+            : BorderSide.none,
+      ),
       title: const Row(
         children: [
           Icon(Icons.lock_outline, color: Colors.red),
@@ -91,9 +96,14 @@ class _PasswordConfirmationDialogState extends State<PasswordConfirmationDialog>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'Por motivos de segurança, confirme sua senha de acesso para autorizar a exclusão.',
-            style: TextStyle(fontSize: 13, color: Colors.black54),
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey.shade300
+                  : Colors.black54,
+            ),
           ),
           const SizedBox(height: 16),
           TextField(

@@ -39,14 +39,12 @@ class FeedingRecordsScreen extends ConsumerWidget {
     final timeFmt = DateFormat('dd/MM/yyyy HH:mm');
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: _kNavyBlue,
         title: const Text(
           'Registro de Alimentação',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(feedingRecordProvider.notifier).refreshRecords(),
@@ -62,8 +60,8 @@ class FeedingRecordsScreen extends ConsumerWidget {
 
             if (filtered.isEmpty) {
               return searchQuery.isNotEmpty
-                  ? _buildEmptyState(message: 'Nenhum trato encontrado para "$searchQuery"')
-                  : _buildEmptyState();
+                  ? _buildEmptyState(context, message: 'Nenhum trato encontrado para "$searchQuery"')
+                  : _buildEmptyState(context);
             }
 
             // Show newest records first
@@ -129,7 +127,8 @@ class FeedingRecordsScreen extends ConsumerWidget {
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
+                      border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -147,9 +146,9 @@ class FeedingRecordsScreen extends ConsumerWidget {
                       ),
                       title: Text(
                         tankName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
                           fontSize: 16,
                         ),
                       ),
@@ -164,7 +163,7 @@ class FeedingRecordsScreen extends ConsumerWidget {
                               Expanded(
                                 child: Text(
                                   '$feedName: ${record.quantity} $unit',
-                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                                  style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade300 : Colors.grey.shade600, fontSize: 13),
                                 ),
                               ),
                             ],
@@ -217,7 +216,7 @@ class FeedingRecordsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState({String message = 'Nenhum trato registrado'}) {
+  Widget _buildEmptyState(BuildContext context, {String message = 'Nenhum trato registrado'}) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -228,7 +227,7 @@ class FeedingRecordsScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             Text(
               message,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black54),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.black54),
               textAlign: TextAlign.center,
             ),
             if (message == 'Nenhum trato registrado') ...[
@@ -300,9 +299,10 @@ class _AddFeedingRecordFormState extends ConsumerState<_AddFeedingRecordForm> {
     final availableQuantity = selectedFeed?.quantity ?? 0.0;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
       ),
       padding: EdgeInsets.only(
         left: 24,
@@ -490,9 +490,10 @@ class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> 
     final availableQuantity = currentQuantity + (widget.record.feedId == _selectedFeedId ? widget.record.quantity : 0.0);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
       ),
       padding: EdgeInsets.only(
         left: 24,

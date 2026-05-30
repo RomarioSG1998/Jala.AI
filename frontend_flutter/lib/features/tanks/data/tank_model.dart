@@ -24,9 +24,9 @@ class Tank {
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       fishSpecies: json['fishSpecies'] ?? '',
-      fishCapacity: json['fishCapacity'] ?? 0,
-      averageWeightG: json['averageWeightG'] ?? 0,
-      mortalityCount: json['mortalityCount'] ?? 0,
+      fishCapacity: (json['fishCapacity'] as num?)?.toInt() ?? 0,
+      averageWeightG: (json['averageWeightG'] as num?)?.toInt() ?? 0,
+      mortalityCount: (json['mortalityCount'] as num?)?.toInt() ?? 0,
       nextHarvestDate: json['nextHarvestDate'],
       status: json['status'] ?? 'ACTIVE',
     );

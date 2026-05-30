@@ -17,12 +17,12 @@ class InventoryItem {
 
   factory InventoryItem.fromJson(Map<String, dynamic> json) {
     return InventoryItem(
-      id: json['id'],
+      id: json['id'] ?? '',
       farmId: json['farmId'] ?? '',
-      itemName: json['itemName'],
-      quantity: (json['quantity'] as num).toDouble(),
-      unit: json['unit'],
-      type: json['type'],
+      itemName: json['itemName'] ?? '',
+      quantity: (json['quantity'] as num?)?.toDouble() ?? 0.0,
+      unit: json['unit'] ?? '',
+      type: json['type'] ?? '',
     );
   }
 

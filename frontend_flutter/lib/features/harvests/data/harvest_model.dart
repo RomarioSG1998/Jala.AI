@@ -17,12 +17,12 @@ class Harvest {
 
   factory Harvest.fromJson(Map<String, dynamic> json) {
     return Harvest(
-      id: json['id'],
+      id: json['id'] ?? '',
       farmId: json['farmId'] ?? '',
       tankId: json['tankId'] ?? '',
-      date: json['date'],
-      quantityKg: (json['quantityKg'] as num).toDouble(),
-      destination: json['destination'],
+      date: json['date'] ?? '',
+      quantityKg: (json['quantityKg'] as num?)?.toDouble() ?? 0.0,
+      destination: json['destination'] ?? '',
     );
   }
 

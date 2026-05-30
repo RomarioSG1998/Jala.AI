@@ -19,7 +19,6 @@ class TankCard extends ConsumerWidget {
     try {
       final parts = dateStr.split('-');
       if (parts.length == 3) {
-        // e.g. 2026-05-25 -> 25/05/2026
         return '${parts[2].split('T')[0]}/${parts[1]}/${parts[0]}';
       }
     } catch (_) {}
@@ -28,31 +27,33 @@ class TankCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Cores baseadas no estado
-    final textColor = isActive ? Colors.black87 : Colors.grey.shade500;
-    final subTextColor = isActive ? Colors.grey.shade600 : Colors.grey.shade400;
-    final iconColor = isActive ? Colors.grey.shade600 : Colors.grey.shade400;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    // Real values mapped from database
+    // Dynamic theme colors
+    final textColor = isActive 
+        ? (isDark ? Colors.white : Colors.black87)
+        : (isDark ? Colors.white38 : Colors.grey.shade500);
+    final subTextColor = isActive 
+        ? (isDark ? Colors.grey.shade300 : Colors.grey.shade600)
+        : (isDark ? Colors.white30 : Colors.grey.shade400);
+    final iconColor = isActive 
+        ? (isDark ? Colors.grey.shade300 : Colors.grey.shade600)
+        : (isDark ? Colors.white30 : Colors.grey.shade400);
+    
     final currentStock = tank.fishCapacity - tank.mortalityCount;
     final stock = isActive ? '$currentStock' : '--';
     final avgWeight = isActive ? '${tank.averageWeightG} g' : '--';
     
-    // Calculate biomass: (currentStock * avgWeightG) / 1000
     final calculatedBiomass = (currentStock * tank.averageWeightG) / 1000;
     final biomass = isActive ? '${calculatedBiomass.toInt()} kg' : '--';
     
-    // Growth target: 1kg (1000g) = 100%
     final growth = isActive ? (tank.averageWeightG / 1000.0).clamp(0.0, 1.0) : 0.0;
-    
-    // Mortality rate: deaths / capacity
     final mortality = isActive && tank.fishCapacity > 0
         ? (tank.mortalityCount / tank.fishCapacity).clamp(0.0, 1.0)
         : 0.0;
     
     final deaths = isActive ? '${tank.mortalityCount} peixes' : '--';
 
-    // Watch latest water quality reading for this tank
     final wqAsync = ref.watch(waterQualityByTankProvider(tank.id));
     final temp = wqAsync.maybeWhen(
       data: (wq) => wq != null ? '${wq.temperature.toStringAsFixed(1)} °C' : '--',
@@ -68,14 +69,16 @@ class TankCard extends ConsumerWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
+          border: isDark ? Border.all(color: const Color(0xFF334155), width: 1.0) : null,
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
+            if (!isDark)
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              )
           ],
         ),
         child: Column(
@@ -91,19 +94,20 @@ class TankCard extends ConsumerWidget {
                       bottomLeft: Radius.circular(16),
                     ),
                     child: Stack(
-                       children: [                         Container(
+                      children: [
+                        Container(
                           width: 90,
                           height: 140,
-                          color: Colors.blue.shade50,
+                          color: isDark ? const Color(0xFF0F172A) : Colors.blue.shade50,
                           child: isActive 
                               ? Image.network(
-                                  '/tank_piscicultura.png',
+                                  '/tank_piscultura.png',
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const Icon(Icons.water, color: Colors.blue, size: 40),
+                                  errorBuilder: (_, __, ___) => Icon(Icons.water, color: Colors.blue, size: 40),
                                 )
                               : Container(
-                                  color: Colors.grey.shade200,
-                                  child: const Icon(Icons.water, color: Colors.grey, size: 40),
+                                  color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
+                                  child: Icon(Icons.water, color: Colors.grey, size: 40),
                                 ),
                         ),
                         Positioned(
@@ -159,9 +163,9 @@ class TankCard extends ConsumerWidget {
                           
                           const SizedBox(height: 12),
                           // Barras de Status
-                          _progressBar('Crescimento', growth, const Color(0xFF13A538), isActive),
+                          _progressBar(context, 'Crescimento', growth, const Color(0xFF13A538), isActive),
                           const SizedBox(height: 6),
-                          _progressBar('Mortalidade', mortality, Colors.red, isActive),
+                          _progressBar(context, 'Mortalidade', mortality, Colors.red, isActive),
                         ],
                       ),
                     ),
@@ -218,12 +222,12 @@ class TankCard extends ConsumerWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade50,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(16),
                   bottomRight: Radius.circular(16),
                 ),
-                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                border: Border(top: BorderSide(color: isDark ? const Color(0xFF334155) : Colors.grey.shade200)),
               ),
               child: Text(
                 isActive && tank.nextHarvestDate != null
@@ -256,14 +260,20 @@ class TankCard extends ConsumerWidget {
     );
   }
 
-  Widget _progressBar(String label, double percent, Color color, bool isActive) {
+  Widget _progressBar(BuildContext context, String label, double percent, Color color, bool isActive) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         SizedBox(
           width: 58,
           child: Text(
             label,
-            style: TextStyle(fontSize: 10, color: isActive ? Colors.grey.shade600 : Colors.grey.shade400),
+            style: TextStyle(
+              fontSize: 10, 
+              color: isActive 
+                  ? (isDark ? Colors.grey.shade300 : Colors.grey.shade600) 
+                  : (isDark ? Colors.white30 : Colors.grey.shade400)
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -273,7 +283,7 @@ class TankCard extends ConsumerWidget {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: percent,
-              backgroundColor: Colors.grey.shade200,
+              backgroundColor: isDark ? const Color(0xFF334155) : Colors.grey.shade200,
               valueColor: AlwaysStoppedAnimation<Color>(isActive ? color : Colors.grey.shade400),
               minHeight: 4,
             ),

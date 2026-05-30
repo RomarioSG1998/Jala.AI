@@ -20,11 +20,9 @@ class SuppliersScreen extends ConsumerWidget {
     final searchQuery = ref.watch(globalSearchQueryProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: _kNavyBlue,
         title: const Text('Fornecedores B2B', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(supplierProvider.notifier).refreshSuppliers(),
@@ -42,20 +40,20 @@ class SuppliersScreen extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
               children: [
-                const Text(
+                Text(
                   'Catálogo de Fornecedores Nacionais',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   isAdmin 
                       ? 'Administre e aprove parceiros de insumos e equipamentos.' 
                       : 'Veja fornecedores homologados para ração, alevinos e equipamentos.',
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.black54),
                 ),
                 const SizedBox(height: 20),
                 if (filtered.isEmpty)
-                  _buildEmptyState(message: searchQuery.isNotEmpty ? 'Nenhum fornecedor encontrado para "$searchQuery"' : 'Nenhum fornecedor cadastrado')
+                  _buildEmptyState(context, message: searchQuery.isNotEmpty ? 'Nenhum fornecedor encontrado para "$searchQuery"' : 'Nenhum fornecedor cadastrado')
                 else
                   Column(
                     children: filtered
@@ -101,8 +99,9 @@ class SuppliersScreen extends ConsumerWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(14),
+          border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
           ],
@@ -116,26 +115,26 @@ class SuppliersScreen extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     s.companyName,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87),
                   ),
                 ),
-                _buildStatusPill(s.isApproved),
+                _buildStatusPill(context, s.isApproved),
               ],
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.business, size: 14, color: Colors.black38),
+                Icon(Icons.business, size: 14, color: Theme.of(context).brightness == Brightness.dark ? Colors.white30 : Colors.black38),
                 const SizedBox(width: 6),
-                Text('CNPJ: ${s.cnpj}', style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                Text('CNPJ: ${s.cnpj}', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.black54, fontSize: 12)),
               ],
             ),
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.shopping_bag_outlined, size: 14, color: Colors.black38),
+                Icon(Icons.shopping_bag_outlined, size: 14, color: Theme.of(context).brightness == Brightness.dark ? Colors.white30 : Colors.black38),
                 const SizedBox(width: 6),
-                Text('Categoria: ${s.supplyType}', style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                Text('Categoria: ${s.supplyType}', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.black54, fontSize: 12)),
               ],
             ),
             if (isAdmin && !s.isApproved) ...[
@@ -162,9 +161,9 @@ class SuppliersScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusPill(bool isApproved) {
-    final color = isApproved ? Colors.green : Colors.orange;
-    final bgColor = isApproved ? Colors.green.shade50 : Colors.orange.shade50;
+  Widget _buildStatusPill(BuildContext context, bool isApproved) {
+    final color = isApproved ? (Theme.of(context).brightness == Brightness.dark ? Colors.green.shade300 : Colors.green) : (Theme.of(context).brightness == Brightness.dark ? Colors.orange.shade300 : Colors.orange);
+    final bgColor = Theme.of(context).brightness == Brightness.dark ? (isApproved ? Colors.green.withOpacity(0.15) : Colors.orange.withOpacity(0.15)) : (isApproved ? Colors.green.shade50 : Colors.orange.shade50);
     final text = isApproved ? 'Homologado' : 'Pendente';
 
     return Container(
@@ -187,7 +186,7 @@ class SuppliersScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState({String message = 'Nenhum fornecedor cadastrado'}) {
+  Widget _buildEmptyState(BuildContext context, {String message = 'Nenhum fornecedor cadastrado'}) {
     return Container(
       padding: const EdgeInsets.all(40),
       alignment: Alignment.center,
@@ -197,7 +196,7 @@ class SuppliersScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600),
+            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.black54, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
           if (message == 'Nenhum fornecedor cadastrado') ...[

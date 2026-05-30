@@ -63,19 +63,23 @@ class EmployeesScreen extends ConsumerWidget {
             itemCount: filtered.length,
             itemBuilder: (context, index) {
               final emp = filtered[index];
+              final isDark = Theme.of(context).brightness == Brightness.dark;
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: isDark ? const BorderSide(color: Color(0xFF263350), width: 1.0) : BorderSide.none,
+                ),
                 elevation: 0,
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   leading: CircleAvatar(
-                    backgroundColor: const Color(0xFF003366).withOpacity(0.1),
-                    child: const Icon(Icons.person, color: Color(0xFF003366)),
+                    backgroundColor: isDark ? Colors.blue.withOpacity(0.2) : const Color(0xFF003366).withOpacity(0.1),
+                    child: Icon(Icons.person, color: isDark ? Colors.blue.shade300 : const Color(0xFF003366)),
                   ),
                   title: Text(emp.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  subtitle: Text(emp.email, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                  subtitle: Text(emp.email, style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600, fontSize: 12)),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -169,8 +173,8 @@ class EmployeePermissionsSheet extends ConsumerWidget {
     final permsAsync = ref.watch(employeePermissionsProvider(_key));
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
@@ -194,13 +198,17 @@ class EmployeePermissionsSheet extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Controle de Acesso',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF003366)),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF003366),
+                      ),
                     ),
                     Text(
                       employee.name,
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                      style: TextStyle(fontSize: 13, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade300 : Colors.grey.shade600),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -296,10 +304,10 @@ class _ModuleTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: isEnabled ? color.withOpacity(0.05) : Colors.grey.shade50,
+        color: isEnabled ? color.withOpacity(0.05) : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.grey.shade50),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isEnabled ? color.withOpacity(0.2) : Colors.grey.shade200,
+          color: isEnabled ? color.withOpacity(0.2) : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : Colors.grey.shade200),
         ),
       ),
       child: Row(
@@ -307,10 +315,10 @@ class _ModuleTile extends StatelessWidget {
           Container(
             width: 38, height: 38,
             decoration: BoxDecoration(
-              color: isEnabled ? color.withOpacity(0.12) : Colors.grey.shade100,
+              color: isEnabled ? color.withOpacity(0.12) : (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : Colors.grey.shade100),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: isEnabled ? color : Colors.grey.shade400, size: 20),
+            child: Icon(icon, color: isEnabled ? color : (Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade600 : Colors.grey.shade400), size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -321,7 +329,7 @@ class _ModuleTile extends StatelessWidget {
                   mod.label,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: isEnabled ? Colors.black87 : Colors.grey.shade400,
+                    color: isEnabled ? (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87) : Colors.grey.shade400,
                     fontSize: 14,
                   ),
                 ),

@@ -18,12 +18,13 @@ class SaasDashboardScreen extends ConsumerWidget {
     // Here we approximate from plan prices as a demonstration.
     final currencyFmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: embedded
           ? null
           : AppBar(
-              backgroundColor: const Color(0xFF161B22),
+              backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
               title: const Text('Dashboard SaaS',
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               iconTheme: const IconThemeData(color: Colors.white),
@@ -47,9 +48,9 @@ class SaasDashboardScreen extends ConsumerWidget {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Visão Geral',
+                        Text('Visão Geral',
                             style: TextStyle(
-                                color: Colors.white70,
+                                color: isDark ? Colors.white70 : Colors.black54,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
                                 letterSpacing: 1.2)),
@@ -58,6 +59,7 @@ class SaasDashboardScreen extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: _kpiCard(
+                                context,
                                 label: 'Tenants Ativos',
                                 value: '${tenants.length}',
                                 icon: Icons.business,
@@ -67,6 +69,7 @@ class SaasDashboardScreen extends ConsumerWidget {
                             const SizedBox(width: 12),
                             Expanded(
                               child: _kpiCard(
+                                context,
                                 label: 'Planos Oferecidos',
                                 value: '${plans.length}',
                                 icon: Icons.layers,
@@ -77,6 +80,7 @@ class SaasDashboardScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 12),
                         _kpiCard(
+                          context,
                           label: 'MRR Total (Catálogo de Planos)',
                           value: currencyFmt.format(totalMrr),
                           icon: Icons.trending_up,
@@ -101,15 +105,15 @@ class SaasDashboardScreen extends ConsumerWidget {
             const SizedBox(height: 28),
 
             // ── Plans Catalog ────────────────────────────────────────
-            const Text('Catálogo de Planos SaaS',
+            Text('Catálogo de Planos SaaS',
                 style: TextStyle(
-                    color: Colors.white,
+                    color: isDark ? Colors.white : Colors.black87,
                     fontSize: 16,
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             plansAsync.when(
               data: (plans) => Column(
-                children: plans.map((plan) => _planCard(plan, currencyFmt)).toList(),
+                children: plans.map((plan) => _planCard(context, plan, currencyFmt)).toList(),
               ),
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
@@ -120,23 +124,23 @@ class SaasDashboardScreen extends ConsumerWidget {
             const SizedBox(height: 28),
 
             // ── Tenant List ──────────────────────────────────────────
-            const Text('Clientes (Tenants) Registrados',
+            Text('Clientes (Tenants) Registrados',
                 style: TextStyle(
-                    color: Colors.white,
+                    color: isDark ? Colors.white : Colors.black87,
                     fontSize: 16,
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             tenantsAsync.when(
               data: (tenants) {
                 if (tenants.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text('Nenhum tenant encontrado.',
-                        style: TextStyle(color: Colors.white54)),
+                        style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : Colors.black54)),
                   );
                 }
                 return Column(
                   children:
-                      tenants.map((t) => _tenantCard(t)).toList(),
+                      tenants.map((t) => _tenantCard(context, t)).toList(),
                 );
               },
               loading: () =>
@@ -151,7 +155,8 @@ class SaasDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _kpiCard({
+  Widget _kpiCard(
+    BuildContext context, {
     required String label,
     required String value,
     required IconData icon,
@@ -162,9 +167,9 @@ class SaasDashboardScreen extends ConsumerWidget {
       width: wide ? double.infinity : null,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF263350) : color.withOpacity(0.3), width: 1),
       ),
       child: Row(
         children: [
@@ -181,8 +186,8 @@ class SaasDashboardScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
-                  style: const TextStyle(
-                      color: Colors.white54, fontSize: 12)),
+                  style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : Colors.black54, fontSize: 12)),
               const SizedBox(height: 4),
               Text(value,
                   style: TextStyle(
@@ -196,7 +201,7 @@ class SaasDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _planCard(plan, NumberFormat currencyFmt) {
+  Widget _planCard(BuildContext context, plan, NumberFormat currencyFmt) {
     final colors = [Colors.blue, Colors.purple, Colors.orange, Colors.green];
     final color = colors[plan.name.hashCode.abs() % colors.length];
 
@@ -204,9 +209,9 @@ class SaasDashboardScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF263350) : color.withOpacity(0.25)),
       ),
       child: Row(
         children: [
@@ -224,15 +229,15 @@ class SaasDashboardScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(plan.name,
-                    style: const TextStyle(
-                        color: Colors.white,
+                    style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
                         fontWeight: FontWeight.bold,
                         fontSize: 16)),
                 const SizedBox(height: 4),
                 Text(
                     '${plan.maxTanks} tanques · ${plan.maxUsers} usuários',
-                    style: const TextStyle(
-                        color: Colors.white54, fontSize: 12)),
+                    style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : Colors.black45, fontSize: 12)),
               ],
             ),
           ),
@@ -249,7 +254,7 @@ class SaasDashboardScreen extends ConsumerWidget {
   }
 
   // ignore: avoid_annotating_with_dynamic
-  Widget _tenantCard(dynamic tenant) {
+  Widget _tenantCard(BuildContext context, dynamic tenant) {
     String formatted = '';
     try {
       final dt = DateTime.parse(tenant.createdAt);
@@ -262,9 +267,9 @@ class SaasDashboardScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF161B22),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF263350) : Colors.black12),
       ),
       child: Row(
         children: [
@@ -279,15 +284,15 @@ class SaasDashboardScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(tenant.name,
-                    style: const TextStyle(
-                        color: Colors.white,
+                    style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
                         fontWeight: FontWeight.bold,
                         fontSize: 15)),
                 const SizedBox(height: 4),
                 if (tenant.cnpj.isNotEmpty)
                   Text('CNPJ: ${tenant.cnpj}',
-                      style: const TextStyle(
-                          color: Colors.white54, fontSize: 12)),
+                      style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : Colors.black45, fontSize: 12)),
               ],
             ),
           ),
@@ -310,8 +315,8 @@ class SaasDashboardScreen extends ConsumerWidget {
               const SizedBox(height: 4),
               if (formatted.isNotEmpty)
                 Text(formatted,
-                    style: const TextStyle(
-                        color: Colors.white38, fontSize: 11)),
+                    style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white38 : Colors.black38, fontSize: 11)),
             ],
           ),
         ],

@@ -18,8 +18,8 @@ class FinancialTransaction {
       id: json['id'] ?? '',
       farmId: json['farmId'] ?? '',
       type: json['type'] ?? 'Expense',
-      amount: (json['amount'] as num).toDouble(),
-      transactionDate: json['transactionDate'] ?? '',
+      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+      transactionDate: json['transactionDate'] ?? json['createdAt'] ?? '',
     );
   }
 

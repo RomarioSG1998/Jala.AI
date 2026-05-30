@@ -58,7 +58,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
     final searchQuery = ref.watch(globalSearchQueryProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA), // Fundo Gelo
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       
       body: SafeArea(
         child: RefreshIndicator(
@@ -186,22 +186,6 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
               ],
             ),
           ),
-          if (isOwner) ...[
-            const SizedBox(width: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF13A538),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: IconButton(
-                onPressed: () => TanksScreen.showAddTankModal(context),
-                icon: const Icon(Icons.add, color: Colors.white, size: 22),
-                tooltip: 'Novo tanque',
-                padding: const EdgeInsets.all(10),
-                constraints: const BoxConstraints(),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -217,16 +201,16 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           children: [
             summaryAsync.maybeWhen(
-              data: (summary) => _kpiCard(Icons.water, 'Tanques ativos', '${summary.activeTanks} de ${summary.totalTanks}', Colors.blue, summary.totalTanks > 0 ? (summary.activeTanks / summary.totalTanks) : 0.0),
-              orElse: () => _kpiCard(Icons.water, 'Tanques ativos', '${tanks.length} de --', Colors.blue, 0.5),
+              data: (summary) => _kpiCard(context, Icons.water, 'Tanques ativos', '${summary.activeTanks} de ${summary.totalTanks}', Colors.blue, summary.totalTanks > 0 ? (summary.activeTanks / summary.totalTanks) : 0.0),
+              orElse: () => _kpiCard(context, Icons.water, 'Tanques ativos', '${tanks.length} de --', Colors.blue, 0.5),
             ),
             summaryAsync.maybeWhen(
-              data: (summary) => _kpiCard(Icons.set_meal, 'Peixes totais', '${summary.totalFishCapacity}', Colors.green, null, subtitle: 'Capacidade total'),
-              orElse: () => _kpiCard(Icons.set_meal, 'Peixes totais', '--', Colors.green, null, subtitle: 'Capacidade total'),
+              data: (summary) => _kpiCard(context, Icons.set_meal, 'Peixes totais', '${summary.totalFishCapacity}', Colors.green, null, subtitle: 'Capacidade total'),
+              orElse: () => _kpiCard(context, Icons.set_meal, 'Peixes totais', '--', Colors.green, null, subtitle: 'Capacidade total'),
             ),
             summaryAsync.maybeWhen(
-              data: (summary) => _kpiCard(Icons.shopping_bag, 'Ração hoje', '${summary.feedingTodayKg.toStringAsFixed(1)} kg', Colors.orange, null, subtitle: 'Total alimentado'),
-              orElse: () => _kpiCard(Icons.shopping_bag, 'Ração hoje', '--', Colors.orange, null, subtitle: 'Total alimentado'),
+              data: (summary) => _kpiCard(context, Icons.shopping_bag, 'Ração hoje', '${summary.feedingTodayKg.toStringAsFixed(1)} kg', Colors.orange, null, subtitle: 'Total alimentado'),
+              orElse: () => _kpiCard(context, Icons.shopping_bag, 'Ração hoje', '--', Colors.orange, null, subtitle: 'Total alimentado'),
             ),
             () {
               double totalWeight = 0;
@@ -240,6 +224,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
               final avgWeight = count > 0 ? totalWeight / count : 0.0;
               final progress = (avgWeight / 1000.0).clamp(0.0, 1.0);
               return _kpiCard(
+                context,
                 Icons.show_chart,
                 'Crescimento',
                 count > 0 ? '${avgWeight.toInt()} g' : '--',
@@ -259,6 +244,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
               }
               final progress = totalCapacity > 0 ? (totalMortality / totalCapacity).clamp(0.0, 1.0) : 0.0;
               return _kpiCard(
+                context,
                 Icons.warning,
                 'Mortalidade',
                 '$totalMortality peixes',
@@ -273,16 +259,19 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
     );
   }
 
-  Widget _kpiCard(IconData icon, String title, String value, Color color, double? progress, {String? subtitle}) {
+  Widget _kpiCard(BuildContext context, IconData icon, String title, String value, Color color, double? progress, {String? subtitle}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: 140,
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
+        border: isDark ? Border.all(color: const Color(0xFF334155), width: 1.0) : null,
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4)),
+          if (!isDark)
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -292,11 +281,11 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
             children: [
               Icon(icon, size: 14, color: color),
               const SizedBox(width: 6),
-              Expanded(child: Text(title, style: TextStyle(fontSize: 10, color: Colors.grey.shade600), maxLines: 1, overflow: TextOverflow.ellipsis)),
+              Expanded(child: Text(title, style: TextStyle(fontSize: 10, color: isDark ? Colors.grey.shade300 : Colors.grey.shade600), maxLines: 1, overflow: TextOverflow.ellipsis)),
             ],
           ),
           const SizedBox(height: 6),
-          Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+          Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
           const Spacer(),
           if (progress != null)
             ClipRRect(
@@ -331,11 +320,12 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
           const SizedBox(width: 8),
           Container(
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF151D30) : Colors.grey.shade200,
+              border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
               borderRadius: BorderRadius.circular(20),
             ),
             child: IconButton(
-              icon: const Icon(Icons.filter_list, color: Colors.black54, size: 20),
+              icon: Icon(Icons.filter_list, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade300 : Colors.black54, size: 20),
               onPressed: () {},
               constraints: const BoxConstraints(),
               padding: const EdgeInsets.all(8),
@@ -347,6 +337,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
   }
 
   Widget _filterPill(String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isActive = _activeFilter == label;
     return GestureDetector(
       onTap: () => setState(() => _activeFilter = label),
@@ -354,13 +345,18 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF13A538) : Colors.grey.shade200,
+          color: isActive 
+              ? const Color(0xFF13A538) 
+              : (isDark ? const Color(0xFF151D30) : Colors.grey.shade200),
+          border: !isActive && isDark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isActive ? Colors.white : Colors.grey.shade700,
+            color: isActive 
+                ? Colors.white 
+                : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
             fontSize: 12,
             fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
           ),

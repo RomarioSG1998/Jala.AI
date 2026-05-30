@@ -230,9 +230,13 @@ class _AppShellState extends ConsumerState<AppShell> {
     showDialog(
       context: context,
       builder: (context) {
+        final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
         return Dialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: Theme.of(context).cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: isDarkTheme ? const BorderSide(color: Color(0xFF263350), width: 1.5) : BorderSide.none,
+          ),
           elevation: 10,
           child: Container(
             constraints: const BoxConstraints(maxWidth: 480),
@@ -347,6 +351,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                               .read(maintenanceProvider.notifier)
                               .updateTask(
                                 task.id,
+                                task.tankId,
                                 task.description,
                                 'COMPLETED',
                                 task.scheduledDate,
@@ -390,7 +395,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.notifications_active, color: Color(0xFF003366), size: 24),
+                            Icon(Icons.notifications_active, color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF38BDF8) : const Color(0xFF003366), size: 24),
                             const SizedBox(width: 8),
                             Text(
                               role == 'SAAS_ADMIN'
@@ -398,10 +403,10 @@ class _AppShellState extends ConsumerState<AppShell> {
                                   : role == 'FIELD_OPERATOR'
                                       ? 'Suas Tarefas Operacionais'
                                       : 'Notificações do Sistema',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF003366),
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : const Color(0xFF003366),
                               ),
                             ),
                           ],
@@ -429,7 +434,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.green.shade50,
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.green.withOpacity(0.15) : Colors.green.shade50,
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -439,12 +444,12 @@ class _AppShellState extends ConsumerState<AppShell> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            const Text(
+                            Text(
                               'Nenhuma notificação!',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -472,11 +477,11 @@ class _AppShellState extends ConsumerState<AppShell> {
                               final item = notifications[index];
                               return Card(
                                 margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                                color: Colors.grey.shade50,
+                                color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF151D30) : Colors.grey.shade50,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(color: Colors.grey.shade200),
+                                  side: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF263350) : Colors.grey.shade200),
                                 ),
                                 child: ListTile(
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -491,10 +496,10 @@ class _AppShellState extends ConsumerState<AppShell> {
                                   ),
                                   title: Text(
                                     item.title,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
-                                      color: Colors.black87,
+                                      color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
                                     ),
                                   ),
                                   subtitle: Column(
@@ -661,13 +666,12 @@ class _AppShellState extends ConsumerState<AppShell> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       extendBody: true,
       // ── AppBar permanente ────────────────────────────────────────────────
       appBar: isSearchVisible
           ? AppBar(
-              backgroundColor: _kNavyBlue,
-              elevation: 0,
+              
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () {
@@ -702,8 +706,7 @@ class _AppShellState extends ConsumerState<AppShell> {
               ],
             )
           : AppBar(
-              backgroundColor: _kNavyBlue,
-              elevation: 0,
+              
               leading: Builder(
                 builder: (context) => IconButton(
                   icon: const Icon(Icons.menu, color: Colors.white),
@@ -796,7 +799,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           margin: const EdgeInsets.only(left: 16, right: 16, bottom: 20, top: 10),
           height: 64,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -805,7 +808,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                 offset: const Offset(0, 8),
               ),
             ],
-            border: Border.all(color: Colors.grey.shade100, width: 1),
+            border: Border.all(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF263350) : Colors.grey.shade100, width: 1),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -916,6 +919,7 @@ class FarmDashboardBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final authState = ref.watch(authNotifierProvider);
     final role = authState.accountType ?? '';
 
@@ -967,23 +971,23 @@ class FarmDashboardBody extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // KPIs
-          const Text('VISÃO GERAL',
+          Text('VISÃO GERAL',
               style: TextStyle(
-                  color: Colors.black54,
+                  color: isDark ? Colors.grey.shade400 : Colors.black54,
                   fontSize: 12,
                   letterSpacing: 1.2,
                   fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           tanksAsync.when(
             data: (tanks) => Row(children: [
-              Expanded(child: _kpi('Tanques', '${tanks.length}', Icons.water, Colors.blue)),
+              Expanded(child: _kpi(context, 'Tanques', '${tanks.length}', Icons.water, Colors.blue)),
               const SizedBox(width: 12),
               wqAsync.when(
                 data: (recs) =>
-                    Expanded(child: _kpi('Leituras pH', '${recs.length}', Icons.science, Colors.teal)),
+                    Expanded(child: _kpi(context, 'Leituras pH', '${recs.length}', Icons.science, Colors.teal)),
                 loading: () =>
-                    Expanded(child: _kpi('Leituras pH', '…', Icons.science, Colors.teal)),
-                error: (_, __) => Expanded(child: _kpi('Erro', '!', Icons.science, Colors.red)),
+                    Expanded(child: _kpi(context, 'Leituras pH', '…', Icons.science, Colors.teal)),
+                error: (_, __) => Expanded(child: _kpi(context, 'Erro', '!', Icons.science, Colors.red)),
               ),
             ]),
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -994,8 +998,8 @@ class FarmDashboardBody extends ConsumerWidget {
 
           // Tanks preview
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('Tanques',
-                style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('Tanques',
+                style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
             TextButton(
               onPressed: () => context.go('/tanks'),
               child: const Text('Ver todos →',
@@ -1005,7 +1009,7 @@ class FarmDashboardBody extends ConsumerWidget {
           const SizedBox(height: 8),
           tanksAsync.when(
             data: (tanks) {
-              if (tanks.isEmpty) return _emptyHint('Nenhum tanque cadastrado.', Icons.water);
+              if (tanks.isEmpty) return _emptyHint(context, 'Nenhum tanque cadastrado.', Icons.water);
               return Column(
                 children: tanks
                     .take(3)
@@ -1015,29 +1019,31 @@ class FarmDashboardBody extends ConsumerWidget {
                             margin: const EdgeInsets.only(bottom: 10),
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(14),
+                              border: isDark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
                               boxShadow: [
-                                BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2)),
+                                if (!isDark)
+                                  BoxShadow(
+                                      color: Colors.black.withOpacity(0.04),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2)),
                               ],
                             ),
                             child: Row(children: [
                               CircleAvatar(
-                                backgroundColor: Colors.blue.shade50,
+                                backgroundColor: isDark ? const Color(0xFF263350) : Colors.blue.shade50,
                                 radius: 20,
-                                child: const Icon(Icons.water, color: Colors.blue, size: 18),
+                                child: Icon(Icons.water, color: isDark ? Colors.blue.shade300 : Colors.blue, size: 18),
                               ),
                               const SizedBox(width: 14),
                               Expanded(
                                   child: Text(tank.name,
-                                      style: const TextStyle(
-                                          color: Colors.black87, fontWeight: FontWeight.w600))),
+                                      style: TextStyle(
+                                          color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600))),
                               Text('${tank.fishCapacity} peixes',
-                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                              const Icon(Icons.chevron_right, color: Colors.black26, size: 18),
+                                  style: TextStyle(color: isDark ? Colors.grey.shade300 : Colors.grey.shade600, fontSize: 12)),
+                              Icon(Icons.chevron_right, color: isDark ? Colors.white30 : Colors.black26, size: 18),
                             ]),
                           ),
                         ))
@@ -1052,8 +1058,8 @@ class FarmDashboardBody extends ConsumerWidget {
 
           // Latest water quality
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('Última Leitura de Água',
-                style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('Última Leitura de Água',
+                style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
             TextButton(
               onPressed: () => context.go('/water-quality'),
               child: const Text('Ver todos →',
@@ -1063,7 +1069,7 @@ class FarmDashboardBody extends ConsumerWidget {
           const SizedBox(height: 8),
           wqAsync.when(
             data: (records) {
-              if (records.isEmpty) return _emptyHint('Nenhuma leitura registrada.', Icons.science);
+              if (records.isEmpty) return _emptyHint(context, 'Nenhuma leitura registrada.', Icons.science);
               final latest = records.last;
               Color phColor = latest.ph < 6.5 || latest.ph > 8.5
                   ? Colors.red
@@ -1071,19 +1077,21 @@ class FarmDashboardBody extends ConsumerWidget {
               return Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
+                  border: isDark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
                   boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2)),
+                    if (!isDark)
+                      BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2)),
                   ],
                 ),
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                  _metric('pH', latest.ph.toStringAsFixed(1), phColor),
-                  _metric('Temp', '${latest.temperature.toStringAsFixed(1)}°C', Colors.blue),
-                  _metric('O₂', '${latest.dissolvedOxygen.toStringAsFixed(1)} mg/L', Colors.lightBlue),
+                  _metric(context, 'pH', latest.ph.toStringAsFixed(1), phColor),
+                  _metric(context, 'Temp', '${latest.temperature.toStringAsFixed(1)}°C', Colors.blue),
+                  _metric(context, 'O₂', '${latest.dissolvedOxygen.toStringAsFixed(1)} mg/L', Colors.lightBlue),
                 ]),
               );
             },
@@ -1095,47 +1103,54 @@ class FarmDashboardBody extends ConsumerWidget {
     );
   }
 
-  Widget _kpi(String label, String value, IconData icon, Color color) {
+  Widget _kpi(BuildContext context, String label, String value, IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
+        border: isDark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
+          if (!isDark)
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Icon(icon, color: color, size: 22),
         const SizedBox(height: 8),
         Text(value, style: TextStyle(color: color, fontSize: 26, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(color: Colors.black54, fontSize: 12)),
+        Text(label, style: TextStyle(color: isDark ? Colors.grey.shade300 : Colors.black54, fontSize: 12)),
       ]),
     );
   }
 
-  Widget _metric(String label, String value, Color color) {
+  Widget _metric(BuildContext context, String label, String value, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(children: [
       Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
       const SizedBox(height: 2),
-      Text(label, style: const TextStyle(color: Colors.black54, fontSize: 11)),
+      Text(label, style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.black54, fontSize: 11)),
     ]);
   }
 
-  Widget _emptyHint(String text, IconData icon) {
+  Widget _emptyHint(BuildContext context, String text, IconData icon) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
+        border: isDark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          if (!isDark)
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Row(children: [
-        Icon(icon, color: Colors.grey.shade300, size: 28),
+        Icon(icon, color: isDark ? Colors.white30 : Colors.grey.shade300, size: 28),
         const SizedBox(width: 12),
-        Text(text, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+        Text(text, style: TextStyle(color: isDark ? Colors.grey.shade300 : Colors.grey.shade600, fontSize: 13)),
       ]),
     );
   }
@@ -1167,17 +1182,17 @@ class _SaasAdminBody extends ConsumerWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('VISÃO GERAL',
+                    Text('VISÃO GERAL',
                         style: TextStyle(
-                            color: Colors.black54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+                            color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.black54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
                     Row(children: [
-                      Expanded(child: _kpi('Tenants', '${tenants.length}', Icons.business, Colors.blue)),
+                      Expanded(child: _kpi(context, 'Tenants', '${tenants.length}', Icons.business, Colors.blue)),
                       const SizedBox(width: 12),
-                      Expanded(child: _kpi('Planos', '${plans.length}', Icons.layers, Colors.purple)),
+                      Expanded(child: _kpi(context, 'Planos', '${plans.length}', Icons.layers, Colors.purple)),
                     ]),
                     const SizedBox(height: 12),
-                    _kpi('MRR Total', currencyFmt.format(totalMrr), Icons.trending_up, Colors.green, wide: true),
+                    _kpi(context, 'MRR Total', currencyFmt.format(totalMrr), Icons.trending_up, Colors.green, wide: true),
                   ],
                 );
               },
@@ -1188,23 +1203,23 @@ class _SaasAdminBody extends ConsumerWidget {
             error: (e, _) => Text('$e', style: const TextStyle(color: Colors.red)),
           ),
           const SizedBox(height: 28),
-          const Text('Planos SaaS',
-              style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text('Planos SaaS',
+              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           plansAsync.when(
             data: (plans) =>
-                Column(children: plans.map((p) => _planCard(p, currencyFmt)).toList()),
+                Column(children: plans.map((p) => _planCard(context, p, currencyFmt)).toList()),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Text('$e', style: const TextStyle(color: Colors.red)),
           ),
           const SizedBox(height: 28),
-          const Text('Clientes Farm (Tenants)',
-              style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text('Clientes Farm (Tenants)',
+              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           tenantsAsync.when(
             data: (tenants) => tenants.isEmpty
-                ? const Text('Nenhum tenant.', style: TextStyle(color: Colors.black54))
-                : Column(children: tenants.map((t) => _tenantCard(t)).toList()),
+                ? Text('Nenhum tenant.', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : Colors.black54))
+                : Column(children: tenants.map((t) => _tenantCard(context, t)).toList()),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Text('$e', style: const TextStyle(color: Colors.red)),
           ),
@@ -1214,14 +1229,19 @@ class _SaasAdminBody extends ConsumerWidget {
     );
   }
 
-  Widget _kpi(String label, String value, IconData icon, Color color, {bool wide = false}) {
+  Widget _kpi(BuildContext context, String label, String value, IconData icon, Color color, {bool wide = false}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: wide ? double.infinity : null,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        border: isDark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))
+        ],
       ),
       child: Row(children: [
         Container(
@@ -1232,23 +1252,28 @@ class _SaasAdminBody extends ConsumerWidget {
         ),
         const SizedBox(width: 12),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: const TextStyle(color: Colors.black54, fontSize: 11)),
+          Text(label, style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.black54, fontSize: 11)),
           Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
         ]),
       ]),
     );
   }
 
-  Widget _planCard(SaasPlan plan, NumberFormat fmt) {
+  Widget _planCard(BuildContext context, SaasPlan plan, NumberFormat fmt) {
     final colors = [Colors.blue, Colors.purple, Colors.orange, Colors.green];
     final color = colors[plan.name.hashCode.abs() % colors.length];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
+        border: isDark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)
+        ],
       ),
       child: Row(children: [
         Container(
@@ -1260,9 +1285,9 @@ class _SaasAdminBody extends ConsumerWidget {
         Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(plan.name,
-              style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+              style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold)),
           Text('${plan.maxTanks} tanques · ${plan.maxUsers} usuários',
-              style: const TextStyle(color: Colors.black54, fontSize: 12)),
+              style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.black54, fontSize: 12)),
         ])),
         Text(fmt.format(plan.priceMonthly),
             style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 15)),
@@ -1270,46 +1295,52 @@ class _SaasAdminBody extends ConsumerWidget {
     );
   }
 
-  Widget _tenantCard(dynamic tenant) {
+  Widget _tenantCard(BuildContext context, dynamic tenant) {
     String formatted = '';
     try {
       formatted = DateFormat('dd/MM/yyyy').format(DateTime.parse(tenant.createdAt));
     } catch (_) {}
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
+        border: isDark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)
+        ],
       ),
       child: Row(children: [
         CircleAvatar(
-          backgroundColor: Colors.indigo.shade50,
-          child: const Icon(Icons.business, color: Colors.indigo, size: 20),
+          backgroundColor: isDark ? Colors.indigo.withOpacity(0.2) : Colors.indigo.shade50,
+          child: Icon(Icons.business, color: isDark ? Colors.indigo.shade300 : Colors.indigo, size: 20),
         ),
         const SizedBox(width: 14),
         Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(tenant.name,
-              style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+              style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold)),
           if ((tenant.cnpj as String).isNotEmpty)
             Text('CNPJ: ${tenant.cnpj}',
-                style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.black54, fontSize: 12)),
         ])),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withOpacity(0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Text('Ativo',
                 style: TextStyle(
                     color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold)),
           ),
+          const SizedBox(height: 4),
           if (formatted.isNotEmpty)
-            Text(formatted, style: const TextStyle(color: Colors.black38, fontSize: 11)),
+            Text(formatted, style: TextStyle(color: isDark ? Colors.white38 : Colors.black38, fontSize: 11)),
         ]),
       ]),
     );
@@ -1328,13 +1359,16 @@ class _AppDrawer extends ConsumerWidget {
     final authState = watchRef.watch(authNotifierProvider);
 
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       child: SafeArea(
         child: Column(children: [
           // Header
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(color: Color(0xFF003366)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF151D30) : const Color(0xFF003366),
+              border: Theme.of(context).brightness == Brightness.dark ? const Border(bottom: BorderSide(color: Color(0xFF263350), width: 1)) : null,
+            ),
             child: InkWell(
               onTap: () {
                 Navigator.pop(context);
@@ -1380,7 +1414,7 @@ class _AppDrawer extends ConsumerWidget {
                 }),
 
                 if (role == 'SAAS_ADMIN') ...[
-                  _section('Administrador'),
+                  _section(context, 'Administrador'),
                   _tile(context, Icons.business, 'Tenants', Colors.indigo, () {
                     Navigator.pop(context); context.go('/tenants');
                   }),
@@ -1390,7 +1424,7 @@ class _AppDrawer extends ConsumerWidget {
                 ],
 
                 if (role == 'FARM_OWNER' || role == 'CLIENT' || role == 'FIELD_OPERATOR') ...[                  
-                  _section('Operacional'),
+                  _section(context, 'Operacional'),
                   if (role != 'FIELD_OPERATOR') ...[
                     _tile(context, Icons.water, 'Tanques', Colors.blue, () {
                       Navigator.pop(context); context.go('/tanks');
@@ -1414,7 +1448,7 @@ class _AppDrawer extends ConsumerWidget {
                 ],
 
                 if (role == 'FARM_OWNER' || role == 'CLIENT') ...[
-                  _section('Gestão'),
+                  _section(context, 'Gestão'),
                   _tile(context, Icons.build, 'Manutenção', Colors.grey.shade700, () {
                     Navigator.pop(context); context.go('/maintenance');
                   }),
@@ -1429,7 +1463,7 @@ class _AppDrawer extends ConsumerWidget {
             ),
           ),
 
-          const Divider(color: Colors.black12),
+          Divider(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF334155) : Colors.black12),
           _tile(context, Icons.logout, 'Sair', Colors.red, () {
             Navigator.pop(context);
             watchRef.read(authNotifierProvider.notifier).logout();
@@ -1448,16 +1482,17 @@ class _AppDrawer extends ConsumerWidget {
         decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
         child: Icon(icon, color: color, size: 20),
       ),
-      title: Text(label, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
+      title: Text(label, style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87, fontWeight: FontWeight.w500)),
     );
   }
 
-  Widget _section(String title) {
+  Widget _section(BuildContext context, String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Text(title.toUpperCase(),
           style: TextStyle(
-              color: Colors.grey.shade500,
+              color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
               fontSize: 11,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.2)),
@@ -1508,7 +1543,7 @@ class _FieldOperatorDrawerItems extends ConsumerWidget {
                 decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
                 child: Icon(icon, color: color, size: 20),
               ),
-              title: Text(label, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
+              title: Text(label, style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87, fontWeight: FontWeight.w500)),
             );
           }).toList(),
         );
@@ -1528,7 +1563,7 @@ class _FieldOperatorDrawerItems extends ConsumerWidget {
                 decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
                 child: Icon(icon, color: color, size: 20),
               ),
-              title: Text(label, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
+              title: Text(label, style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87, fontWeight: FontWeight.w500)),
             );
           }).toList(),
         );

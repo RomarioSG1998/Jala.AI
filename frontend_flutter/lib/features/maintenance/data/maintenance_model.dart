@@ -17,12 +17,12 @@ class MaintenanceTask {
 
   factory MaintenanceTask.fromJson(Map<String, dynamic> json) {
     return MaintenanceTask(
-      id: json['id'],
+      id: json['id'] ?? '',
       farmId: json['farmId'] ?? '',
       tankId: json['tankId'] ?? '',
-      description: json['description'],
-      status: json['status'],
-      scheduledDate: json['scheduledDate'],
+      description: json['description'] ?? '',
+      status: json['status'] ?? 'PENDING',
+      scheduledDate: json['scheduledDate'] ?? '',
     );
   }
 

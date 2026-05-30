@@ -35,7 +35,7 @@ class HarvestsScreen extends ConsumerWidget {
     final searchQuery = ref.watch(globalSearchQueryProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
       body: harvestsAsync.when(
         data: (harvests) {
@@ -49,8 +49,8 @@ class HarvestsScreen extends ConsumerWidget {
 
           if (filtered.isEmpty) {
             return searchQuery.isNotEmpty
-                ? _buildEmptyState(message: 'Nenhuma despesca encontrada para "$searchQuery"')
-                : _buildEmptyState();
+                ? _buildEmptyState(context, message: 'Nenhuma despesca encontrada para "$searchQuery"')
+                : _buildEmptyState(context);
           }
           return RefreshIndicator(
             onRefresh: () =>
@@ -97,18 +97,19 @@ class HarvestsScreen extends ConsumerWidget {
                   child: Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     elevation: 0,
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF263350) : Colors.transparent, width: 1.0)),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 10),
                       leading: CircleAvatar(
                         backgroundColor:
-                            Colors.green.shade100,
+                            Theme.of(context).brightness == Brightness.dark ? const Color(0xFF263350) : Colors.green.shade100,
                         radius: 26,
                         child: Icon(Icons.agriculture,
-                            color: Colors.green.shade700, size: 26),
+                            color: Theme.of(context).brightness == Brightness.dark ? Colors.green.shade300 : Colors.green.shade700, size: 26),
                       ),
                       trailing: const Icon(Icons.edit_outlined),
                       onTap: () {
@@ -132,7 +133,7 @@ class HarvestsScreen extends ConsumerWidget {
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 20,
-                            color: Colors.green.shade800),
+                            color: Theme.of(context).brightness == Brightness.dark ? Colors.green.shade300 : Colors.green.shade800),
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,7 +190,7 @@ class HarvestsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState({String message = 'Nenhuma despesca registrada ainda.'}) {
+  Widget _buildEmptyState(BuildContext context, {String message = 'Nenhuma despesca registrada ainda.'}) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -198,7 +199,7 @@ class HarvestsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           Text(message,
               style:
-                  TextStyle(fontSize: 18, color: Colors.grey.shade600),
+                  TextStyle(fontSize: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.grey.shade600),
               textAlign: TextAlign.center,),
           const SizedBox(height: 8),
           if (message == 'Nenhuma despesca registrada ainda.')

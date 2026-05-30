@@ -49,7 +49,7 @@ class InventoryScreen extends ConsumerWidget {
     final searchQuery = ref.watch(globalSearchQueryProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
       body: inventoryAsync.when(
         data: (items) {
@@ -62,8 +62,8 @@ class InventoryScreen extends ConsumerWidget {
 
           if (filtered.isEmpty) {
             return searchQuery.isNotEmpty
-                ? _buildEmptyState(message: 'Nenhum item encontrado para "$searchQuery"')
-                : _buildEmptyState();
+                ? _buildEmptyState(context, message: 'Nenhum item encontrado para "$searchQuery"')
+                : _buildEmptyState(context);
           }
           return RefreshIndicator(
             onRefresh: () => ref.read(inventoryProvider.notifier).refreshItems(),
@@ -98,9 +98,10 @@ class InventoryScreen extends ConsumerWidget {
                   child: Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     elevation: 0,
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF263350) : Colors.transparent, width: 1.0)),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
@@ -183,7 +184,7 @@ class InventoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState({String message = 'Nenhum item encontrado no estoque.'}) {
+  Widget _buildEmptyState(BuildContext context, {String message = 'Nenhum item encontrado no estoque.'}) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -191,7 +192,7 @@ class InventoryScreen extends ConsumerWidget {
           Icon(Icons.inventory, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(message,
-              style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+              style: TextStyle(fontSize: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.grey.shade600),
               textAlign: TextAlign.center,),
           const SizedBox(height: 8),
           if (message == 'Nenhum item encontrado no estoque.')

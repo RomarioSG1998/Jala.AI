@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/employees/providers/employees_provider.dart';
 import 'package:frontend_flutter/features/employees/providers/employee_permissions_provider.dart';
+import 'package:frontend_flutter/core/theme/theme_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -91,11 +92,13 @@ class ProfileScreen extends ConsumerWidget {
     final roleLabel = _formatRole(authState.accountType);
     final roleColor = _getRoleColor(authState.accountType);
 
+    final themeMode = ref.watch(themeNotifierProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Meu Perfil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: _kNavyBlue,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -192,13 +195,14 @@ class ProfileScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Info Cards
-                  _buildSectionTitle('Informações da Conta'),
-                  _buildInfoCard([
-                    _buildInfoTile(Icons.email_outlined, 'E-mail', authState.email ?? 'Não informado'),
-                    _buildDivider(),
-                    _buildInfoTile(Icons.vpn_key_outlined, 'ID de Usuário', authState.userId ?? 'Não informado'),
-                    _buildDivider(),
+                  _buildSectionTitle(context, 'Informações da Conta'),
+                  _buildInfoCard(context, [
+                    _buildInfoTile(context, Icons.email_outlined, 'E-mail', authState.email ?? 'Não informado'),
+                    _buildDivider(context),
+                    _buildInfoTile(context, Icons.vpn_key_outlined, 'ID de Usuário', authState.userId ?? 'Não informado'),
+                    _buildDivider(context),
                     _buildInfoTile(
+                      context,
                       Icons.check_circle_outline,
                       'Status da Conta',
                       'Ativo',
@@ -217,30 +221,42 @@ class ProfileScreen extends ConsumerWidget {
 
                   // Display operator permissions if they are a FIELD_OPERATOR
                   if (authState.accountType == 'FIELD_OPERATOR' && authState.userId != null) ...[
-                    _buildSectionTitle('Minhas Permissões de Módulo'),
+                    _buildSectionTitle(context, 'Minhas Permissões de Módulo'),
                     ref.watch(currentUserPermissionsProvider('${authState.userId}:$_kFarmId')).when(
-                      loading: () => const Center(
+                      loading: () => Center(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20),
-                          child: CircularProgressIndicator(color: _kNavyBlue),
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: CircularProgressIndicator(color: isDark ? Colors.blue : _kNavyBlue),
                         ),
                       ),
-                      error: (err, _) => _buildInfoCard([
+                      error: (err, _) => _buildInfoCard(context, [
                         ListTile(
                           leading: const Icon(Icons.error_outline, color: Colors.red),
-                          title: const Text('Erro ao carregar permissões', style: TextStyle(fontSize: 14)),
+                          title: Text(
+                            'Erro ao carregar permissões',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
                         )
                       ]),
                       data: (perms) {
                         if (perms.isEmpty) {
-                          return _buildInfoCard([
-                            const ListTile(
-                              leading: Icon(Icons.info_outline, color: Colors.grey),
-                              title: Text('Nenhuma permissão configurada', style: TextStyle(fontSize: 14)),
+                          return _buildInfoCard(context, [
+                            ListTile(
+                              leading: const Icon(Icons.info_outline, color: Colors.grey),
+                              title: Text(
+                                'Nenhuma permissão configurada',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                              ),
                             )
                           ]);
                         }
-                        return _buildInfoCard(
+                        return _buildInfoCard(context,
                           perms.map<Widget>((p) {
                             final idx = perms.indexOf(p);
                             final isLast = idx == perms.length - 1;
@@ -253,7 +269,11 @@ class ProfileScreen extends ConsumerWidget {
                                   ),
                                   title: Text(
                                     _formatModuleName(p.moduleName),
-                                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14,
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
                                   ),
                                   trailing: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -271,7 +291,7 @@ class ProfileScreen extends ConsumerWidget {
                                     ),
                                   ),
                                 ),
-                                if (!isLast) _buildDivider(),
+                                if (!isLast) _buildDivider(context),
                               ],
                             );
                           }).toList(),
@@ -281,8 +301,41 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
                   ],
 
+                  // Settings Section
+                  _buildSectionTitle(context, 'Configurações'),
+                  _buildInfoCard(context, [
+                    ListTile(
+                      leading: Icon(
+                        themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
+                        color: isDark ? Colors.blue.shade300 : _kNavyBlue.withOpacity(0.7),
+                      ),
+                      title: Text(
+                        'Tema Escuro',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      subtitle: Text(
+                        themeMode == ThemeMode.dark ? 'Ativado' : 'Desativado',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.white70 : Colors.grey,
+                        ),
+                      ),
+                      trailing: Switch(
+                        value: themeMode == ThemeMode.dark,
+                        activeColor: _kGreen,
+                        onChanged: (val) {
+                          ref.read(themeNotifierProvider.notifier).toggleTheme();
+                        },
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 24),
+
                   // Actions Section
-                  _buildSectionTitle('Ações'),
+                  _buildSectionTitle(context, 'Ações'),
                   InkWell(
                     onTap: () {
                       ref.read(authNotifierProvider.notifier).logout();
@@ -292,12 +345,12 @@ class ProfileScreen extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.red.shade100, width: 1.5),
+                        border: Border.all(color: isDark ? Colors.red.shade900.withOpacity(0.5) : Colors.red.shade100, width: 1.5),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.red.shade50.withOpacity(0.5),
+                            color: isDark ? Colors.transparent : Colors.red.shade50.withOpacity(0.5),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -330,44 +383,49 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.bold,
-          color: Colors.black54,
+          color: isDark ? Colors.white70 : Colors.black54,
           letterSpacing: 0.5,
         ),
       ),
     );
   }
 
-  Widget _buildInfoCard(List<Widget> children) {
+  Widget _buildInfoCard(BuildContext context, List<Widget> children) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
+        border: isDark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
         ],
       ),
       child: Column(children: children),
     );
   }
 
-  Widget _buildInfoTile(IconData icon, String label, String value, {Widget? trailing}) {
+  Widget _buildInfoTile(BuildContext context, IconData icon, String label, String value, {Widget? trailing}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
         children: [
-          Icon(icon, color: _kNavyBlue.withOpacity(0.7), size: 22),
+          Icon(icon, color: isDark ? Colors.blue.shade200 : _kNavyBlue.withOpacity(0.7), size: 22),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -380,7 +438,11 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -391,7 +453,8 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDivider() {
-    return const Divider(height: 1, thickness: 1, color: Color(0xFFF1F3F6));
+  Widget _buildDivider(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Divider(height: 1, thickness: 1, color: isDark ? const Color(0xFF263350) : const Color(0xFFF1F3F6));
   }
 }

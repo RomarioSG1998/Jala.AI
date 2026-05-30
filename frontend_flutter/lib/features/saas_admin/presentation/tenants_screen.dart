@@ -14,13 +14,12 @@ class TenantsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tenantsAsync = ref.watch(tenantsProvider);
     final searchQuery = ref.watch(globalSearchQueryProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: _kNavyBlue,
         title: const Text('Clientes / Tenants', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(tenantsProvider.notifier).refresh(),
@@ -37,18 +36,18 @@ class TenantsScreen extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
               children: [
-                const Text(
+                Text(
                   'Farms & Clientes SaaS',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Gerencie as fazendas e clientes integrados ao ecossistema AquaSertão.',
-                  style: TextStyle(fontSize: 12, color: Colors.black54),
+                  style: TextStyle(fontSize: 12, color: isDark ? Colors.grey.shade400 : Colors.black54),
                 ),
                 const SizedBox(height: 20),
                 if (filtered.isEmpty)
-                  _buildEmptyState(message: searchQuery.isNotEmpty ? 'Nenhum tenant encontrado para "$searchQuery"' : 'Nenhum tenant cadastrado')
+                  _buildEmptyState(context, message: searchQuery.isNotEmpty ? 'Nenhum tenant encontrado para "$searchQuery"' : 'Nenhum tenant cadastrado')
                 else
                   Column(
                     children: filtered
@@ -79,7 +78,8 @@ class TenantsScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
+        border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
@@ -102,12 +102,12 @@ class TenantsScreen extends ConsumerWidget {
                   children: [
                     Text(
                       t.name,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'CNPJ: ${t.cnpj}',
-                      style: const TextStyle(color: Colors.black54, fontSize: 12),
+                      style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.black54, fontSize: 12),
                     ),
                   ],
                 ),
@@ -135,7 +135,7 @@ class TenantsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState({String message = 'Nenhum tenant cadastrado'}) {
+  Widget _buildEmptyState(BuildContext context, {String message = 'Nenhum tenant cadastrado'}) {
     return Container(
       padding: const EdgeInsets.all(40),
       alignment: Alignment.center,
@@ -145,7 +145,7 @@ class TenantsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600),
+            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.black54, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
           if (message == 'Nenhum tenant cadastrado') ...[

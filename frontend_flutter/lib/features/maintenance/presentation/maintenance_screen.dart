@@ -58,11 +58,12 @@ class MaintenanceScreen extends ConsumerWidget {
     final tasksAsync = ref.watch(maintenanceProvider);
     final authState = ref.watch(authNotifierProvider);
     final isOwner = authState.accountType == 'FARM_OWNER' || authState.accountType == 'CLIENT';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final searchQuery = ref.watch(globalSearchQueryProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       floatingActionButton: null,
       body: tasksAsync.when(
         data: (tasks) {
@@ -77,8 +78,8 @@ class MaintenanceScreen extends ConsumerWidget {
 
           if (filtered.isEmpty) {
             return searchQuery.isNotEmpty
-                ? _buildEmptyState(message: 'Nenhuma tarefa encontrada para "$searchQuery"')
-                : _buildEmptyState();
+                ? _buildEmptyState(context, message: 'Nenhuma tarefa encontrada para "$searchQuery"')
+                : _buildEmptyState(context);
           }
           return RefreshIndicator(
             onRefresh: () =>
@@ -126,9 +127,10 @@ class MaintenanceScreen extends ConsumerWidget {
                   child: Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     elevation: 0,
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF263350) : Colors.transparent, width: 1.0)),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 10),
@@ -169,12 +171,12 @@ class MaintenanceScreen extends ConsumerWidget {
                               const Icon(Icons.calendar_today,
                                   size: 13, color: Colors.grey),
                               const SizedBox(width: 4),
-                              Text(formattedDate,
+                               Text(formattedDate,
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: isPast
                                         ? Colors.red
-                                        : Colors.black87,
+                                        : (isDark ? Colors.white70 : Colors.black87),
                                     fontWeight: isPast
                                         ? FontWeight.bold
                                         : FontWeight.normal,
@@ -235,7 +237,7 @@ class MaintenanceScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState({String message = 'Nenhuma tarefa de manutenção encontrada.'}) {
+  Widget _buildEmptyState(BuildContext context, {String message = 'Nenhuma tarefa de manutenção encontrada.'}) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -244,7 +246,7 @@ class MaintenanceScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           Text(message,
               style:
-                  TextStyle(fontSize: 18, color: Colors.grey.shade600),
+                  TextStyle(fontSize: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.grey.shade600),
               textAlign: TextAlign.center,),
           const SizedBox(height: 8),
           if (message == 'Nenhuma tarefa de manutenção encontrada.')
@@ -488,6 +490,7 @@ class _EditMaintenanceTaskFormState
     final success =
         await ref.read(maintenanceProvider.notifier).updateTask(
               widget.task.id,
+              widget.task.tankId,
               _descriptionController.text.trim(),
               _selectedStatus,
               dateStr,

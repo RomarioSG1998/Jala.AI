@@ -28,6 +28,7 @@ class WaterQualityScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final wqAsyncValue = ref.watch(waterQualityProvider);
     final tanksAsync = ref.watch(tanksProvider);
     final tankMap = tanksAsync.maybeWhen(
@@ -40,7 +41,7 @@ class WaterQualityScreen extends ConsumerWidget {
     final searchQuery = ref.watch(globalSearchQueryProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
       body: wqAsyncValue.when(
         data: (records) {
@@ -56,8 +57,8 @@ class WaterQualityScreen extends ConsumerWidget {
 
           if (filtered.isEmpty) {
             return searchQuery.isNotEmpty
-                ? _buildEmptyState(message: 'Nenhum registro encontrado para "$searchQuery"')
-                : _buildEmptyState();
+                ? _buildEmptyState(context, message: 'Nenhum registro encontrado para "$searchQuery"')
+                : _buildEmptyState(context);
           }
           return RefreshIndicator(
             onRefresh: () => ref.read(waterQualityProvider.notifier).refreshRecords(),
@@ -99,8 +100,11 @@ class WaterQualityScreen extends ConsumerWidget {
                   child: Card(
                     margin: const EdgeInsets.only(bottom: 16),
                     elevation: 0,
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    color: Theme.of(context).cardColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: isDark ? const Color(0xFF334155) : Colors.transparent, width: 1.0),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -111,7 +115,7 @@ class WaterQualityScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 tankMap[record.tankId] ?? 'Tanque Desconhecido',
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF003366), fontSize: 16),
+                                style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.blue.shade300 : const Color(0xFF003366), fontSize: 16),
                               ),
                               Row(
                                 children: [
@@ -133,7 +137,7 @@ class WaterQualityScreen extends ConsumerWidget {
                                         child: EditWaterQualityForm(record: record),
                                       ),
                                     ),
-                                    child: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF003366)),
+                                    child: Icon(Icons.edit_outlined, size: 18, color: isDark ? Colors.blue.shade300 : const Color(0xFF003366)),
                                   ),
                                 ],
                               ),
@@ -143,9 +147,9 @@ class WaterQualityScreen extends ConsumerWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _buildMetric('pH', record.ph.toStringAsFixed(1), phColor),
-                              _buildMetric('Temp', '${record.temperature.toStringAsFixed(1)}°C', Colors.blue),
-                              _buildMetric('Oxigênio', '${record.dissolvedOxygen.toStringAsFixed(1)} mg/L', Colors.lightBlue),
+                              _buildMetric(context, 'pH', record.ph.toStringAsFixed(1), phColor),
+                              _buildMetric(context, 'Temp', '${record.temperature.toStringAsFixed(1)}°C', Colors.blue),
+                              _buildMetric(context, 'Oxigênio', '${record.dissolvedOxygen.toStringAsFixed(1)} mg/L', Colors.lightBlue),
                             ],
                           ),
                         ],
@@ -181,7 +185,8 @@ class WaterQualityScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMetric(String label, String value, Color color) {
+  Widget _buildMetric(BuildContext context, String label, String value, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         Text(
@@ -191,13 +196,13 @@ class WaterQualityScreen extends ConsumerWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Colors.black54),
+          style: TextStyle(fontSize: 12, color: isDark ? Colors.grey.shade400 : Colors.black54),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState({String message = 'Nenhum registro de qualidade da água encontrado.'}) {
+  Widget _buildEmptyState(BuildContext context, {String message = 'Nenhum registro de qualidade da água encontrado.'}) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -206,7 +211,7 @@ class WaterQualityScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           Text(
             message,
-            style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.grey.shade600),
             textAlign: TextAlign.center,
           ),
         ],

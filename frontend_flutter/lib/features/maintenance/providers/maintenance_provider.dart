@@ -38,9 +38,10 @@ class MaintenanceNotifier extends AsyncNotifier<List<MaintenanceTask>> {
     }
   }
 
-  Future<bool> updateTask(String id, String description, String status, String scheduledDate) async {
+  Future<bool> updateTask(String id, String tankId, String description, String status, String scheduledDate) async {
     try {
       final updated = await _repository.updateTask(id, {
+        'tankId': tankId,
         'description': description,
         'status': status,
         'scheduledDate': scheduledDate,

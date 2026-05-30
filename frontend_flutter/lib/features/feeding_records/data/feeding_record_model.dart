@@ -24,7 +24,7 @@ class FeedingRecord {
       tankId: json['tankId'] ?? '',
       userId: json['userId'] ?? '',
       feedId: json['feedId'] ?? '',
-      quantity: (json['quantity'] as num).toDouble(),
+      quantity: (json['quantity'] as num?)?.toDouble() ?? 0.0,
       feedingTime: json['feedingTime'] ?? '',
     );
   }
