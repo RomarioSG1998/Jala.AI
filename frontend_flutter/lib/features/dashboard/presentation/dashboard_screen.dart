@@ -1404,6 +1404,9 @@ class _AppDrawer extends ConsumerWidget {
                   _tile(context, Icons.local_shipping, 'Fornecedores', Colors.brown, () {
                     Navigator.pop(context); context.go('/suppliers');
                   }),
+                  _tile(context, Icons.layers_rounded, 'Planos & Assinaturas', Colors.purple, () {
+                    Navigator.pop(context); context.go('/plans');
+                  }),
                 ],
 
                 if (role == 'FARM_OWNER' || role == 'CLIENT' || role == 'FIELD_OPERATOR') ...[                  

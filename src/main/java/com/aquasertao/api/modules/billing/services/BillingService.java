@@ -1,5 +1,6 @@
 package com.aquasertao.api.modules.billing.services;
 
+import com.aquasertao.api.modules.billing.dtos.PlanDetailsDTO;
 import com.aquasertao.api.modules.billing.dtos.SubscriptionRequestDTO;
 import com.aquasertao.api.modules.billing.dtos.SubscriptionResponseDTO;
 import com.aquasertao.api.modules.billing.models.Invoice;
@@ -13,6 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +28,7 @@ public class BillingService {
 
     @Transactional
     public SubscriptionResponseDTO subscribeFarm(SubscriptionRequestDTO requestDTO) {
-        
+
         // 1. Validate Plan
         SaaSPlan plan = saasPlanRepository.findById(requestDTO.getPlanId())
                 .orElseThrow(() -> new IllegalArgumentException("SaaS Plan not found"));
@@ -43,7 +47,7 @@ public class BillingService {
                 .endDate(LocalDate.now().plusMonths(1))
                 .status("ACTIVE")
                 .build();
-        
+
         Subscription savedSubscription = subscriptionRepository.save(subscription);
 
         // 4. Generate Initial Invoice
@@ -53,16 +57,46 @@ public class BillingService {
                 .dueDate(LocalDate.now().plusDays(7))
                 .status("PENDING")
                 .build();
-                
+
         invoiceRepository.save(invoice);
 
+        return toResponseDTO(savedSubscription);
+    }
+
+    public List<SubscriptionResponseDTO> getSubscriptionsByPlan(UUID planId) {
+        return subscriptionRepository.findByPlanId(planId)
+                .stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<PlanDetailsDTO> getAllPlansWithDetails() {
+        return saasPlanRepository.findAll()
+                .stream()
+                .map(plan -> PlanDetailsDTO.builder()
+                        .id(plan.getId())
+                        .name(plan.getName())
+                        .maxTanks(plan.getMaxTanks())
+                        .maxUsers(plan.getMaxUsers())
+                        .priceMonthly(plan.getPriceMonthly())
+                        .activeSubscribers(subscriptionRepository.countByPlanIdAndStatus(plan.getId(), "ACTIVE"))
+                        .totalSubscribers(subscriptionRepository.findByPlanId(plan.getId()).size())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    public long getTotalActiveSubscriptions() {
+        return subscriptionRepository.countByStatus("ACTIVE");
+    }
+
+    private SubscriptionResponseDTO toResponseDTO(Subscription s) {
         return SubscriptionResponseDTO.builder()
-                .id(savedSubscription.getId())
-                .farmId(savedSubscription.getFarmId())
-                .planId(savedSubscription.getPlanId())
-                .startDate(savedSubscription.getStartDate())
-                .endDate(savedSubscription.getEndDate())
-                .status(savedSubscription.getStatus())
+                .id(s.getId())
+                .farmId(s.getFarmId())
+                .planId(s.getPlanId())
+                .startDate(s.getStartDate())
+                .endDate(s.getEndDate())
+                .status(s.getStatus())
                 .build();
     }
 }

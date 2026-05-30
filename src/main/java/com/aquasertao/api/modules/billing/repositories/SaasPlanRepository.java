@@ -8,4 +8,5 @@ import java.util.UUID;
 
 @Repository
 public interface SaasPlanRepository extends JpaRepository<SaaSPlan, UUID> {
+    boolean existsByNameIgnoreCase(String name);
 }
