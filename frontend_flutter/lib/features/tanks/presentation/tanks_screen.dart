@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/tanks/presentation/widgets/tank_card.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
@@ -464,20 +464,23 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
 
   Future<void> _pickImage() async {
     try {
-      final picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 600,
-        maxHeight: 600,
-        imageQuality: 85,
+      debugPrint('AddTankForm: Início de _pickImage via FilePicker...');
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
       );
-      if (image != null) {
-        final bytes = await image.readAsBytes();
+      if (result != null && result.files.single.bytes != null) {
+        final bytes = result.files.single.bytes!;
+        debugPrint('AddTankForm: Imagem selecionada com sucesso: ${bytes.length} bytes');
         setState(() {
           _customImageBase64 = base64Encode(bytes);
         });
+      } else {
+        debugPrint('AddTankForm: Seleção cancelada pelo usuário.');
       }
-    } catch (_) {}
+    } catch (e, stack) {
+      debugPrint('AddTankForm: Erro ao selecionar imagem: $e\n$stack');
+    }
   }
 
   Future<void> _submit() async {
@@ -666,21 +669,24 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
 
   Future<void> _pickImage() async {
     try {
-      final picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 600,
-        maxHeight: 600,
-        imageQuality: 85,
+      debugPrint('EditTankForm: Início de _pickImage via FilePicker...');
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
       );
-      if (image != null) {
-        final bytes = await image.readAsBytes();
+      if (result != null && result.files.single.bytes != null) {
+        final bytes = result.files.single.bytes!;
+        debugPrint('EditTankForm: Imagem selecionada com sucesso: ${bytes.length} bytes');
         setState(() {
           _customImageBase64 = base64Encode(bytes);
           _clearImage = false;
         });
+      } else {
+        debugPrint('EditTankForm: Seleção cancelada pelo usuário.');
       }
-    } catch (_) {}
+    } catch (e, stack) {
+      debugPrint('EditTankForm: Erro ao selecionar imagem: $e\n$stack');
+    }
   }
 
   Future<void> _selectDate() async {

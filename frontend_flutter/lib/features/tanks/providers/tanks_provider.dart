@@ -27,6 +27,7 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
 
   Future<bool> createTank(String name, String species, int capacity, [String? customImage]) async {
     try {
+      print('TanksNotifier.createTank: customImage length = ${customImage?.length}');
       final newTank = await _repository.createTank({
         'name': name,
         'fishSpecies': species,
@@ -38,7 +39,8 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
         state = AsyncValue.data([...state.value!, newTank]);
       }
       return true;
-    } catch (e) {
+    } catch (e, stack) {
+      print('TanksNotifier.createTank: Error: $e\n$stack');
       return false;
     }
   }
@@ -56,6 +58,8 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
     bool clearImage = false,
   ]) async {
     try {
+      final imgVal = clearImage ? "" : customImage;
+      print('TanksNotifier.updateTank: customImage length = ${imgVal?.length}, clearImage = $clearImage');
       final updatedTank = await _repository.updateTank(id, {
         'name': name,
         'fishSpecies': species,
@@ -64,7 +68,7 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
         'mortalityCount': mortalityCount,
         'nextHarvestDate': nextHarvestDate,
         'status': status,
-        'customImage': clearImage ? "" : customImage,
+        'customImage': imgVal,
       });
       if (state.hasValue) {
         state = AsyncValue.data(
@@ -72,7 +76,8 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
         );
       }
       return true;
-    } catch (e) {
+    } catch (e, stack) {
+      print('TanksNotifier.updateTank: Error: $e\n$stack');
       return false;
     }
   }

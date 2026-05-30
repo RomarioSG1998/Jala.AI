@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileImageNotifier extends Notifier<String?> {
@@ -55,15 +55,12 @@ class ProfileImageNotifier extends Notifier<String?> {
 
   Future<void> pickAndSetImage() async {
     try {
-      final picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 400,
-        maxHeight: 400,
-        imageQuality: 85,
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
       );
-      if (image != null) {
-        final bytes = await image.readAsBytes();
+      if (result != null && result.files.single.bytes != null) {
+        final bytes = result.files.single.bytes!;
         final base64String = base64Encode(bytes);
         
         // Save to local cache
@@ -77,8 +74,8 @@ class ProfileImageNotifier extends Notifier<String?> {
           data: {'profileImage': base64String},
         );
       }
-    } catch (_) {
-      // Ignore pick or network exceptions
+    } catch (e, stack) {
+      print('ProfileImageNotifier.pickAndSetImage error: $e\n$stack');
     }
   }
 
