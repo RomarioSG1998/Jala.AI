@@ -1,129 +1,178 @@
 # Diagrama ER (Entidade-Relacionamento)
 
-Abaixo está o modelo conceitual atualizado para a versão 2.0 da arquitetura SaaS, incluindo Módulo Nacional de Fornecedores, Notificações e Sistema de Aprovação (Workflows).
+Abaixo está o modelo físico/conceitual exato do banco de dados atualizado para a versão 2.0 da arquitetura SaaS, baseado nas migrações reais do Flyway (`V1` até `V4`), incluindo imagens customizadas, permissões de operador de campo, faturas e colheitas.
 
 ```mermaid
 erDiagram
     %% ==========================================
-    %% MÓDULO: NÚCLEO SaaS (GLOBAL E MARKETPLACE)
+    %% MÓDULO: NÚCLEO SaaS (GLOBAL & MARKETPLACE)
     %% ==========================================
     
-    USUARIO_GLOBAL {
+    global_user {
         uuid id PK
-        string nome
-        string email
-        string senha
-        string tipo_conta "SAAS_ADMIN ou CLIENTE"
-        datetime data_cadastro
+        varchar name
+        varchar email UK
+        varchar password
+        varchar account_type "SAAS_ADMIN, CLIENT"
+        timestamp created_at
+        text profile_image
     }
 
-    FORNECEDOR_NACIONAL {
+    national_supplier {
         uuid id PK
-        string nome_empresa
-        string cnpj
-        string tipo_insumo "Ração, Alevino, Equipamento"
-        boolean homologado
+        varchar company_name
+        varchar cnpj UK
+        varchar supply_type "Ração, Alevinos, etc."
+        boolean is_approved
     }
 
     %% ==========================================
-    %% MÓDULO: INQUILINOS (O ESPAÇO DE CADA CLIENTE)
+    %% MÓDULO: INQUILINOS (TENANTS)
     %% ==========================================
     
-    TENANT_FAZENDA {
+    farm_tenant {
         uuid id PK
-        uuid usuario_dono_id FK
-        string nome_fazenda
-        string localizacao
+        varchar name
+        varchar cnpj UK
+        uuid owner_id FK
+        timestamp created_at
     }
 
-    VINCULO_USUARIO_FAZENDA {
-        uuid usuario_id FK
-        uuid fazenda_id FK
-        string papel_acesso "DONO_FAZENDA, GERENTE, FUNCIONARIO_CAMPO"
+    user_farm_link {
+        uuid user_id PK, FK
+        uuid farm_id PK, FK
+        varchar access_role "FARM_OWNER, MANAGER, FIELD_WORKER"
     }
 
     %% ==========================================
     %% MÓDULO: ASSINATURAS E FATURAMENTO (BILLING)
     %% ==========================================
 
-    PLANO_SAAS {
+    saas_plan {
         uuid id PK
-        string nome
-        float preco_mensal
+        varchar name UK
+        integer max_tanks
+        integer max_users
+        numeric price_monthly
     }
 
-    ASSINATURA {
+    subscription {
         uuid id PK
-        uuid fazenda_id FK
-        uuid plano_id FK
-        string status
+        uuid farm_id UK, FK
+        uuid plan_id FK
+        date start_date
+        date end_date
+        varchar status "ACTIVE, EXPIRED, CANCELLED"
     }
 
-    %% ==========================================
-    %% MÓDULO: OPERACIONAL (ACESSO: DONO E FUNCIONÁRIO)
-    %% ==========================================
-    TANQUE {
+    invoice {
         uuid id PK
-        uuid fazenda_id FK
-        string nome
-        string especie
-    }
-
-    ALIMENTACAO {
-        uuid id PK
-        uuid tanque_id FK
-        datetime data_hora
-        float quantidade_kg
-    }
-
-    MEDICAO_AGUA {
-        uuid id PK
-        uuid tanque_id FK
-        datetime data_hora
-        float ph
-        float temperatura
-    }
-
-    ESTOQUE {
-        uuid id PK
-        uuid fazenda_id FK
-        string item
-        float quantidade
-        uuid fornecedor_nacional_id FK
+        uuid subscription_id FK
+        numeric amount
+        date due_date
+        date paid_date
+        varchar status "PENDING, PAID, OVERDUE"
     }
 
     %% ==========================================
-    %% MÓDULO: EXCLUSIVO DO DONO E WORKFLOWS
+    %% MÓDULO: OPERACIONAL (TANQUES E DADOS DIÁRIOS)
     %% ==========================================
 
-    TRANSACAO_FINANCEIRA {
+    tank {
         uuid id PK
-        uuid fazenda_id FK
-        string tipo "Receita, Despesa"
-        float valor
+        uuid farm_id FK
+        varchar name
+        varchar fish_species
+        integer fish_capacity
+        integer average_weight_g
+        integer mortality_count
+        date next_harvest_date
+        varchar status "ACTIVE, INACTIVE"
+        text custom_image
     }
 
-    MANUTENCAO {
+    inventory {
         uuid id PK
-        uuid fazenda_id FK
-        string equipamento
-        string status
+        uuid farm_id FK
+        varchar item_name
+        numeric quantity
+        varchar unit "kg, unidade, etc."
+        varchar type "Alimento, Medicamento, etc."
     }
 
-    SOLICITACAO_APROVACAO {
+    feeding_record {
         uuid id PK
-        uuid fazenda_id FK
-        uuid solicitante_id FK
-        string acao_requisitada "Ex: Baixa de 1000kg de ração"
-        string status "Pendente, Aprovada, Recusada"
+        uuid farm_id FK
+        uuid tank_id FK
+        uuid user_id FK
+        uuid feed_id FK "inventory.id"
+        numeric quantity
+        timestamp feeding_time
     }
 
-    NOTIFICACAO {
+    water_quality {
         uuid id PK
-        uuid usuario_destino_id FK
-        string tipo "Alerta IoT, Fatura, Tarefa"
-        string mensagem
-        boolean lida
+        uuid farm_id FK
+        uuid tank_id FK
+        numeric ph
+        numeric temperature
+        numeric dissolved_oxygen
+        timestamp measurement_time
+    }
+
+    harvest {
+        uuid id PK
+        uuid farm_id FK
+        uuid tank_id FK
+        date date
+        numeric quantity_kg
+        varchar destination
+    }
+
+    maintenance {
+        uuid id PK
+        uuid farm_id FK
+        uuid tank_id FK
+        text description
+        varchar status "PENDING, COMPLETED"
+        date scheduled_date
+    }
+
+    %% ==========================================
+    %% MÓDULO: EXCLUSIVO DO DONO & WORKFLOWS
+    %% ==========================================
+
+    financial_transaction {
+        uuid id PK
+        uuid farm_id FK
+        varchar type "Income, Expense"
+        numeric amount
+        timestamp transaction_date
+    }
+
+    approval_request {
+        uuid id PK
+        uuid farm_id FK
+        uuid requester_id FK
+        text requested_action
+        varchar status "Pending, Approved, Rejected"
+        timestamp request_date
+    }
+
+    notification {
+        uuid id PK
+        uuid target_user_id FK
+        varchar type
+        text message
+        boolean is_read
+        timestamp created_at
+    }
+
+    employee_module_permission {
+        uuid employee_id PK, FK
+        uuid farm_id PK, FK
+        varchar module_name PK
+        boolean is_enabled
     }
 
     %% ==========================================
@@ -131,25 +180,35 @@ erDiagram
     %% ==========================================
 
     %% Acessos
-    USUARIO_GLOBAL ||--o{ TENANT_FAZENDA : "é dono de"
-    USUARIO_GLOBAL ||--o{ VINCULO_USUARIO_FAZENDA : "logado possui"
-    TENANT_FAZENDA ||--o{ VINCULO_USUARIO_FAZENDA : "concede acesso via"
+    global_user ||--o{ farm_tenant : "é dono de"
+    global_user ||--o{ user_farm_link : "possui"
+    farm_tenant ||--o{ user_farm_link : "concede acesso via"
     
     %% Faturamento
-    PLANO_SAAS ||--o{ ASSINATURA : "define regras"
-    TENANT_FAZENDA ||--|| ASSINATURA : "paga"
+    saas_plan ||--o{ subscription : "define"
+    farm_tenant ||--|| subscription : "assina"
+    subscription ||--o{ invoice : "gera"
 
-    %% Dados Isolados do Tenant
-    TENANT_FAZENDA ||--o{ TANQUE : "possui"
-    TENANT_FAZENDA ||--o{ TRANSACAO_FINANCEIRA : "registra"
-    TENANT_FAZENDA ||--o{ ESTOQUE : "mantem"
-    TENANT_FAZENDA ||--o{ MANUTENCAO : "programa"
-    TENANT_FAZENDA ||--o{ SOLICITACAO_APROVACAO : "gera"
+    %% Dados Isolados do Tenant (Multitenancy)
+    farm_tenant ||--o{ tank : "possui"
+    farm_tenant ||--o{ financial_transaction : "registra"
+    farm_tenant ||--o{ inventory : "mantém"
+    farm_tenant ||--o{ feeding_record : "gerencia"
+    farm_tenant ||--o{ water_quality : "monitora"
+    farm_tenant ||--o{ harvest : "registra"
+    farm_tenant ||--o{ maintenance : "programa"
+    farm_tenant ||--o{ approval_request : "recebe"
+    farm_tenant ||--o{ employee_module_permission : "configura"
     
     %% Relacionamentos do Operacional
-    TANQUE ||--o{ ALIMENTACAO : "recebe"
-    TANQUE ||--o{ MEDICAO_AGUA : "monitora"
-    FORNECEDOR_NACIONAL ||--o{ ESTOQUE : "abastece"
-    USUARIO_GLOBAL ||--o{ NOTIFICACAO : "recebe"
-    USUARIO_GLOBAL ||--o{ SOLICITACAO_APROVACAO : "cria"
+    tank ||--o{ feeding_record : "recebe"
+    tank ||--o{ water_quality : "monitora"
+    tank ||--o{ harvest : "retira"
+    tank ||--o{ maintenance : "sofre"
+    
+    %% Notificações, Permissões e Aprovações de Usuário
+    global_user ||--o{ notification : "recebe"
+    global_user ||--o{ approval_request : "solicita"
+    global_user ||--o{ feeding_record : "registra"
+    global_user ||--o{ employee_module_permission : "recebe"
 ```
