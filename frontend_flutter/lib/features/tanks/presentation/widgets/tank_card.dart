@@ -89,59 +89,61 @@ class TankCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Esquerda: Imagem com Tag
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      bottomLeft: Radius.circular(16),
-                    ),
-                    child: Stack(
-                      children: [
-                        Container(
-                          width: 90,
-                          height: 140,
-                          color: isDark ? const Color(0xFF0F172A) : Colors.blue.shade50,
-                          child: isActive 
-                              ? (tank.customImage != null && tank.customImage!.isNotEmpty
-                                  ? Image.memory(
-                                      base64Decode(tank.customImage!),
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Icon(Icons.water, color: Colors.blue, size: 40),
-                                    )
-                                  : Image.network(
-                                      '/tank_piscicultura.png',
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Icon(Icons.water, color: Colors.blue, size: 40),
-                                    ))
-                              : (tank.customImage != null && tank.customImage!.isNotEmpty
-                                  ? Opacity(
-                                      opacity: 0.5,
-                                      child: Image.memory(
+                  SizedBox(
+                    width: 100,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        bottomLeft: Radius.circular(16),
+                      ),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Container(
+                            color: isDark ? const Color(0xFF0F172A) : Colors.blue.shade50,
+                            child: isActive 
+                                ? (tank.customImage != null && tank.customImage!.isNotEmpty
+                                    ? Image.memory(
                                         base64Decode(tank.customImage!),
                                         fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Icon(Icons.water, color: Colors.grey, size: 40),
-                                      ),
-                                    )
-                                  : Container(
-                                      color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
-                                      child: Icon(Icons.water, color: Colors.grey, size: 40),
-                                    )),
-                        ),
-                        Positioned(
-                          top: 8,
-                          left: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: isActive ? const Color(0xFF13A538) : Colors.grey.shade600,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              isActive ? 'Ativo' : 'Inativo',
-                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                        errorBuilder: (_, __, ___) => const Icon(Icons.water, color: Colors.blue, size: 40),
+                                      )
+                                    : Image.network(
+                                        '/tank_piscicultura.png',
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => const Icon(Icons.water, color: Colors.blue, size: 40),
+                                      ))
+                                : (tank.customImage != null && tank.customImage!.isNotEmpty
+                                    ? Opacity(
+                                        opacity: 0.5,
+                                        child: Image.memory(
+                                          base64Decode(tank.customImage!),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => const Icon(Icons.water, color: Colors.grey, size: 40),
+                                        ),
+                                      )
+                                    : Container(
+                                        color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade200,
+                                        child: const Icon(Icons.water, color: Colors.grey, size: 40),
+                                      )),
+                          ),
+                          Positioned(
+                            top: 8,
+                            left: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isActive ? const Color(0xFF13A538) : Colors.grey.shade600,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                isActive ? 'Ativo' : 'Inativo',
+                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   
