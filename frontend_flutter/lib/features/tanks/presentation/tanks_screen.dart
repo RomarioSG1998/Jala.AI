@@ -264,7 +264,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
     return Container(
       width: 140,
       margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
