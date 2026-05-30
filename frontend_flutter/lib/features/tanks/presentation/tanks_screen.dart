@@ -502,91 +502,114 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text('Adicionar Novo Tanque', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-              const SizedBox(height: 24),
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  height: 140,
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E293B) : Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Theme.of(context).primaryColor.withOpacity(0.3),
-                      width: 1.5,
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const SizedBox(width: 48),
+                    const Text('Adicionar Novo Tanque', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
-                  ),
-                  child: _customImageBase64 != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Image.memory(
-                                base64Decode(_customImageBase64!),
-                                fit: BoxFit.cover,
-                              ),
-                              Positioned(
-                                top: 8,
-                                right: 8,
-                                child: CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: Colors.black54,
-                                  child: IconButton(
-                                    icon: const Icon(Icons.close, size: 16, color: Colors.white),
-                                    onPressed: () {
-                                      setState(() {
-                                        _customImageBase64 = null;
-                                      });
-                                    },
+                  ],
+                ),
+                const SizedBox(height: 24),
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: Container(
+                    height: 140,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Theme.of(context).primaryColor.withOpacity(0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: _customImageBase64 != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Image.memory(
+                                  base64Decode(_customImageBase64!),
+                                  fit: BoxFit.cover,
+                                ),
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: Colors.black54,
+                                    child: IconButton(
+                                      icon: const Icon(Icons.close, size: 16, color: Colors.white),
+                                      onPressed: () {
+                                        setState(() {
+                                          _customImageBase64 = null;
+                                        });
+                                      },
+                                    ),
                                   ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_photo_alternate_outlined,
+                                size: 40,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Adicionar Foto do Tanque (Opcional)',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
                           ),
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_photo_alternate_outlined,
-                              size: 40,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Adicionar Foto do Tanque (Opcional)',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              TextFormField(controller: _nameController, decoration: const InputDecoration(labelText: 'Nome do Tanque', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
-              const SizedBox(height: 16),
-              TextFormField(controller: _speciesController, decoration: const InputDecoration(labelText: 'Espécie de Peixe', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
-              const SizedBox(height: 16),
-              TextFormField(controller: _capacityController, decoration: const InputDecoration(labelText: 'Capacidade', border: OutlineInputBorder()), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null)),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF13A538), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16)),
-                child: _isLoading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Criar Tanque'),
-              ),
-            ],
+                const SizedBox(height: 24),
+                TextFormField(controller: _nameController, decoration: const InputDecoration(labelText: 'Nome do Tanque', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
+                const SizedBox(height: 16),
+                TextFormField(controller: _speciesController, decoration: const InputDecoration(labelText: 'Espécie de Peixe', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
+                const SizedBox(height: 16),
+                TextFormField(controller: _capacityController, decoration: const InputDecoration(labelText: 'Capacidade', border: OutlineInputBorder()), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null)),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _submit,
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF13A538), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16)),
+                  child: _isLoading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Criar Tanque'),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text('Cancelar', style: TextStyle(fontSize: 16)),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -741,170 +764,190 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
     final authState = ref.watch(authNotifierProvider);
     final isOwner = authState.accountType == 'FARM_OWNER' || authState.accountType == 'CLIENT';
 
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Editar Tanque', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  if (isOwner)
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: _isLoading ? null : _delete,
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Editar Tanque', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    Row(
+                      children: [
+                        if (isOwner)
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            onPressed: _isLoading ? null : _delete,
+                          ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
                     ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  height: 140,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF1E293B)
-                        : Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Theme.of(context).primaryColor.withOpacity(0.3),
-                      width: 1.5,
+                  ],
+                ),
+                const SizedBox(height: 24),
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: Container(
+                    height: 140,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF1E293B)
+                          : Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Theme.of(context).primaryColor.withOpacity(0.3),
+                        width: 1.5,
+                      ),
                     ),
-                  ),
-                  child: _customImageBase64 != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Image.memory(
-                                base64Decode(_customImageBase64!),
-                                fit: BoxFit.cover,
-                              ),
-                              Positioned(
-                                top: 8,
-                                right: 8,
-                                child: CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: Colors.black54,
-                                  child: IconButton(
-                                    icon: const Icon(Icons.close, size: 16, color: Colors.white),
-                                    onPressed: () {
-                                      setState(() {
-                                        _customImageBase64 = null;
-                                        _clearImage = true;
-                                      });
-                                    },
+                    child: _customImageBase64 != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Image.memory(
+                                  base64Decode(_customImageBase64!),
+                                  fit: BoxFit.cover,
+                                ),
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: Colors.black54,
+                                    child: IconButton(
+                                      icon: const Icon(Icons.close, size: 16, color: Colors.white),
+                                      onPressed: () {
+                                        setState(() {
+                                          _customImageBase64 = null;
+                                          _clearImage = true;
+                                        });
+                                      },
+                                    ),
                                   ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_photo_alternate_outlined,
+                                size: 40,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Alterar Foto do Tanque (Opcional)',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
                           ),
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_photo_alternate_outlined,
-                              size: 40,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Alterar Foto do Tanque (Opcional)',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Nome do Tanque', border: OutlineInputBorder()),
-                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _speciesController,
-                decoration: const InputDecoration(labelText: 'Espécie de Peixe', border: OutlineInputBorder()),
-                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _capacityController,
-                decoration: const InputDecoration(labelText: 'Capacidade', border: OutlineInputBorder()),
-                keyboardType: TextInputType.number,
-                validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _weightController,
-                decoration: const InputDecoration(labelText: 'Peso Médio (g)', border: OutlineInputBorder()),
-                keyboardType: TextInputType.number,
-                validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _mortalityController,
-                decoration: const InputDecoration(labelText: 'Mortalidade', border: OutlineInputBorder()),
-                keyboardType: TextInputType.number,
-                validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _harvestDateController,
-                      readOnly: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Data de Despesca',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.calendar_today),
-                      ),
-                      onTap: _selectDate,
-                    ),
                   ),
-                  if (_harvestDateController.text.isNotEmpty)
-                    IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () => setState(() => _harvestDateController.clear()),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _status,
-                decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
-                items: const [
-                  DropdownMenuItem(value: 'ACTIVE', child: Text('Ativo')),
-                  DropdownMenuItem(value: 'INACTIVE', child: Text('Inativo')),
-                ],
-                onChanged: (val) => setState(() => _status = val!),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF13A538),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: _isLoading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Salvar Alterações'),
-              ),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Nome do Tanque', border: OutlineInputBorder()),
+                  validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _speciesController,
+                  decoration: const InputDecoration(labelText: 'Espécie de Peixe', border: OutlineInputBorder()),
+                  validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _capacityController,
+                  decoration: const InputDecoration(labelText: 'Capacidade', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _weightController,
+                  decoration: const InputDecoration(labelText: 'Peso Médio (g)', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _mortalityController,
+                  decoration: const InputDecoration(labelText: 'Mortalidade', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _harvestDateController,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Data de Despesca',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.calendar_today),
+                        ),
+                        onTap: _selectDate,
+                      ),
+                    ),
+                    if (_harvestDateController.text.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () => setState(() => _harvestDateController.clear()),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _status,
+                  decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
+                  items: const [
+                    DropdownMenuItem(value: 'ACTIVE', child: Text('Ativo')),
+                    DropdownMenuItem(value: 'INACTIVE', child: Text('Inativo')),
+                  ],
+                  onChanged: (val) => setState(() => _status = val!),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF13A538),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text('Salvar Alterações'),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text('Cancelar', style: TextStyle(fontSize: 16)),
+                ),
+              ],
+            ),
           ),
         ),
       ),
