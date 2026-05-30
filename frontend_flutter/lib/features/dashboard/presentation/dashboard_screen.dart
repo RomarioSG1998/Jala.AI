@@ -781,12 +781,9 @@ class _AppShellState extends ConsumerState<AppShell> {
       // ── Bottom Navigation permanente ─────────────────────────────────────
       bottomNavigationBar: _buildBottomNav(context, currentIndex, role),
       // ── Corpo dinâmico ───────────────────────────────────────────────────
-      body: Padding(
-        padding: const EdgeInsets.only(bottom: 90),
-        child: role == 'SAAS_ADMIN' && currentIndex == 0
-            ? const _SaasAdminBody()
-            : widget.navigationShell,
-      ),
+      body: role == 'SAAS_ADMIN' && currentIndex == 0
+          ? const _SaasAdminBody()
+          : widget.navigationShell,
     );
   }
 
@@ -934,7 +931,7 @@ class FarmDashboardBody extends ConsumerWidget {
         ref.invalidate(waterQualityProvider);
       },
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
         children: [
           // Welcome banner
           Container(
@@ -1173,7 +1170,7 @@ class _SaasAdminBody extends ConsumerWidget {
         ref.invalidate(tenantsProvider);
       },
       child: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
         children: [
           tenantsAsync.when(
             data: (tenants) => plansAsync.when(

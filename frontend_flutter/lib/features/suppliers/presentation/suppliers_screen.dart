@@ -38,7 +38,7 @@ class SuppliersScreen extends ConsumerWidget {
             }).toList();
 
             return ListView(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 110),
               children: [
                 Text(
                   'Catálogo de Fornecedores Nacionais',

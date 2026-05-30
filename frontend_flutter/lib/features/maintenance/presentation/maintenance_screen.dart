@@ -85,7 +85,7 @@ class MaintenanceScreen extends ConsumerWidget {
             onRefresh: () =>
                 ref.read(maintenanceProvider.notifier).refreshTasks(),
             child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
               itemCount: filtered.length,
               itemBuilder: (context, index) {
                 final task = filtered[index];

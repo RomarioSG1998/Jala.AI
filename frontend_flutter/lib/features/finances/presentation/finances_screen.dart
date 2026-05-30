@@ -52,7 +52,7 @@ class FinancesScreen extends ConsumerWidget {
             final netBalance = totalIncome - totalExpense;
 
             return ListView(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 110),
               children: [
                 // Summary Cards
                 _buildSummaryCards(context, totalIncome, totalExpense, netBalance, currencyFmt),

@@ -63,7 +63,7 @@ class WaterQualityScreen extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () => ref.read(waterQualityProvider.notifier).refreshRecords(),
             child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
               itemCount: filtered.length,
               itemBuilder: (context, index) {
                 final record = filtered[index];

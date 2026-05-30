@@ -69,7 +69,7 @@ class FeedingRecordsScreen extends ConsumerWidget {
               ..sort((a, b) => b.feedingTime.compareTo(a.feedingTime));
 
             return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
               itemCount: sortedRecords.length,
               itemBuilder: (context, index) {
                 final record = sortedRecords[index];

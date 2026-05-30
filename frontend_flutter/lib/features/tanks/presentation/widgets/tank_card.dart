@@ -101,7 +101,7 @@ class TankCard extends ConsumerWidget {
                           color: isDark ? const Color(0xFF0F172A) : Colors.blue.shade50,
                           child: isActive 
                               ? Image.network(
-                                  '/tank_piscultura.png',
+                                  '/tank_piscicultura.png',
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => Icon(Icons.water, color: Colors.blue, size: 40),
                                 )

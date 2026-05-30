@@ -61,6 +61,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       
       body: SafeArea(
+        bottom: false,
         child: RefreshIndicator(
           onRefresh: _refreshData,
           child: CustomScrollView(
@@ -159,7 +160,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
                 ),
               ),
               
-              const SliverToBoxAdapter(child: SizedBox(height: 120)), // Espaço para FAB central
+              const SliverToBoxAdapter(child: SizedBox(height: 110)), // Espaço para FAB central
             ],
           ),
         ),
@@ -274,38 +275,46 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
             BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4)),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: SizedBox(
+          width: 120,
+          height: 89,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 6),
-              Expanded(child: Text(title, style: TextStyle(fontSize: 10, color: isDark ? Colors.grey.shade300 : Colors.grey.shade600), maxLines: 1, overflow: TextOverflow.ellipsis)),
+              Row(
+                children: [
+                  Icon(icon, size: 14, color: color),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(title, style: TextStyle(fontSize: 10, color: isDark ? Colors.grey.shade300 : Colors.grey.shade600), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              if (progress != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(value: progress, backgroundColor: color.withOpacity(0.2), valueColor: AlwaysStoppedAnimation<Color>(color), minHeight: 4),
+                )
+              else if (subtitle != null)
+                Text(subtitle, style: TextStyle(fontSize: 9, color: color, fontWeight: FontWeight.w600)),
             ],
           ),
-          const SizedBox(height: 6),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
-            ),
-          ),
-          const Spacer(),
-          if (progress != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(value: progress, backgroundColor: color.withOpacity(0.2), valueColor: AlwaysStoppedAnimation<Color>(color), minHeight: 4),
-            )
-          else if (subtitle != null)
-            Text(subtitle, style: TextStyle(fontSize: 9, color: color, fontWeight: FontWeight.w600)),
-        ],
+        ),
       ),
     );
   }
