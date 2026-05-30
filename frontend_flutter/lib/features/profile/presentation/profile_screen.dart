@@ -5,6 +5,8 @@ import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/employees/providers/employees_provider.dart';
 import 'package:frontend_flutter/features/employees/providers/employee_permissions_provider.dart';
 import 'package:frontend_flutter/core/theme/theme_provider.dart';
+import 'dart:convert';
+import 'package:frontend_flutter/features/profile/providers/profile_image_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -67,6 +69,9 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
     final employeesAsync = ref.watch(employeesProvider);
+    final profileImage = authState.userId != null
+        ? ref.watch(profileImageProvider(authState.userId!))
+        : null;
 
     // Try to find full name from the employee list
     String displayName = authState.email?.split('@').first ?? 'Usuário';
@@ -131,32 +136,69 @@ class ProfileScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
               child: Column(
                 children: [
-                  // Profile Photo
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.8), width: 4),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8),
+                   // Profile Photo
+                  Stack(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withOpacity(0.8), width: 4),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 16,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: CircleAvatar(
-                      radius: 54,
-                      backgroundColor: Colors.white.withOpacity(0.2),
-                      child: Text(
-                        initials,
-                        style: const TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 1.5,
+                        child: CircleAvatar(
+                          radius: 54,
+                          backgroundColor: Colors.white.withOpacity(0.2),
+                          backgroundImage: profileImage != null
+                              ? MemoryImage(base64Decode(profileImage))
+                              : null,
+                          child: profileImage == null
+                              ? Text(
+                                  initials,
+                                  style: const TextStyle(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 1.5,
+                                  ),
+                                )
+                              : null,
                         ),
                       ),
-                    ),
+                      if (authState.userId != null)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: InkWell(
+                            onTap: () => _showImageOptions(context, ref, authState.userId!, profileImage != null),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: _kGreen,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.camera_alt,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 18),
                   Text(
@@ -454,5 +496,60 @@ class ProfileScreen extends ConsumerWidget {
   Widget _buildDivider(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Divider(height: 1, thickness: 1, color: isDark ? const Color(0xFF263350) : const Color(0xFFF1F3F6));
+  }
+
+  void _showImageOptions(BuildContext context, WidgetRef ref, String userId, bool hasImage) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Icon(Icons.photo_library, color: isDark ? Colors.blue.shade300 : _kNavyBlue),
+                title: Text(
+                  'Escolher da Galeria',
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  ref.read(profileImageProvider(userId).notifier).pickAndSetImage();
+                },
+              ),
+              if (hasImage) ...[
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text(
+                    'Remover Foto',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    ref.read(profileImageProvider(userId).notifier).clearImage();
+                  },
+                ),
+              ],
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

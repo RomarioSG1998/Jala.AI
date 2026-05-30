@@ -7,6 +7,8 @@ import 'package:frontend_flutter/features/saas_admin/data/saas_models.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import 'package:frontend_flutter/features/water_quality/providers/water_quality_provider.dart';
 import 'package:frontend_flutter/features/dashboard/providers/farm_summary_provider.dart';
+import 'dart:convert';
+import 'package:frontend_flutter/features/profile/providers/profile_image_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend_flutter/features/tanks/presentation/tanks_screen.dart';
 import 'package:frontend_flutter/features/water_quality/presentation/water_quality_screen.dart';
@@ -1354,6 +1356,9 @@ class _AppDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef watchRef) {
     final authState = watchRef.watch(authNotifierProvider);
+    final profileImage = authState.userId != null
+        ? watchRef.watch(profileImageProvider(authState.userId!))
+        : null;
 
     return Drawer(
       backgroundColor: Theme.of(context).cardColor,
@@ -1375,7 +1380,12 @@ class _AppDrawer extends ConsumerWidget {
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: Colors.white12,
-                  child: const Icon(Icons.person, color: Colors.white, size: 26),
+                  backgroundImage: profileImage != null
+                      ? MemoryImage(base64Decode(profileImage))
+                      : null,
+                  child: profileImage == null
+                      ? const Icon(Icons.person, color: Colors.white, size: 26)
+                      : null,
                 ),
                 const SizedBox(width: 14),
                 Expanded(
