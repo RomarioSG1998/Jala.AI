@@ -14,9 +14,17 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
   flyway:
     enabled: true
     baseline-on-migrate: true
 
 server:
   port: 8081
+  max-http-request-header-size: 10MB
+  tomcat:
+    max-http-form-post-size: 50MB
+    max-swallow-size: 50MB

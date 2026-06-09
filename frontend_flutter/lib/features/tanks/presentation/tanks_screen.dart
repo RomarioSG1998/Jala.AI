@@ -468,6 +468,7 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
       final result = await FilePicker.pickFiles(
         type: FileType.image,
         allowMultiple: false,
+        withData: true,
       );
       if (result != null && result.files.single.bytes != null) {
         final bytes = result.files.single.bytes!;
@@ -673,6 +674,7 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
       final result = await FilePicker.pickFiles(
         type: FileType.image,
         allowMultiple: false,
+        withData: true,
       );
       if (result != null && result.files.single.bytes != null) {
         final bytes = result.files.single.bytes!;
