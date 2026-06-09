@@ -465,7 +465,7 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
   Future<void> _pickImage() async {
     try {
       debugPrint('AddTankForm: Início de _pickImage via FilePicker...');
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.image,
         allowMultiple: false,
       );
@@ -670,7 +670,7 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
   Future<void> _pickImage() async {
     try {
       debugPrint('EditTankForm: Início de _pickImage via FilePicker...');
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.image,
         allowMultiple: false,
       );
