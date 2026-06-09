@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/tanks/presentation/widgets/tank_card.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
@@ -464,14 +464,16 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
 
   Future<void> _pickImage() async {
     try {
-      debugPrint('AddTankForm: Início de _pickImage via FilePicker...');
-      final result = await FilePicker.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
-        withData: true,
+      debugPrint('AddTankForm: Início de _pickImage via ImagePicker...');
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
       );
-      if (result != null && result.files.single.bytes != null) {
-        final bytes = result.files.single.bytes!;
+      if (image != null) {
+        final bytes = await image.readAsBytes();
         debugPrint('AddTankForm: Imagem selecionada com sucesso: ${bytes.length} bytes');
         setState(() {
           _customImageBase64 = base64Encode(bytes);
@@ -670,14 +672,16 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
 
   Future<void> _pickImage() async {
     try {
-      debugPrint('EditTankForm: Início de _pickImage via FilePicker...');
-      final result = await FilePicker.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
-        withData: true,
+      debugPrint('EditTankForm: Início de _pickImage via ImagePicker...');
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
       );
-      if (result != null && result.files.single.bytes != null) {
-        final bytes = result.files.single.bytes!;
+      if (image != null) {
+        final bytes = await image.readAsBytes();
         debugPrint('EditTankForm: Imagem selecionada com sucesso: ${bytes.length} bytes');
         setState(() {
           _customImageBase64 = base64Encode(bytes);

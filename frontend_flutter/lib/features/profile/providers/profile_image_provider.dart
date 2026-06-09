@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileImageNotifier extends Notifier<String?> {
@@ -55,13 +55,15 @@ class ProfileImageNotifier extends Notifier<String?> {
 
   Future<void> pickAndSetImage() async {
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
-        withData: true,
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
       );
-      if (result != null && result.files.single.bytes != null) {
-        final bytes = result.files.single.bytes!;
+      if (image != null) {
+        final bytes = await image.readAsBytes();
         final base64String = base64Encode(bytes);
         
         // Save to local cache
