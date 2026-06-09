@@ -58,8 +58,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: SizedBox(
                         height: 160,
                         width: 160,
-                        child: Image.network(
-                          '/logo_emblem.png',
+                        child: Image.asset(
+                          'web/logo_emblem.png',
                           fit: BoxFit.contain,
                           errorBuilder: (_, __, ___) => Container(
                             decoration: BoxDecoration(

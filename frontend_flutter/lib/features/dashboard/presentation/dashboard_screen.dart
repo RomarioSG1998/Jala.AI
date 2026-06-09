@@ -735,8 +735,8 @@ class _AppShellState extends ConsumerState<AppShell> {
                     SizedBox(
                       height: 50,
                       width: 50,
-                      child: Image.network(
-                        '/logo_emblem.png',
+                      child: Image.asset(
+                        'web/logo_emblem.png',
                         fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) =>
                             const Icon(Icons.water, color: Colors.white, size: 36),

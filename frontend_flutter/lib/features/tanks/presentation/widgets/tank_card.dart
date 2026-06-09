@@ -108,8 +108,8 @@ class TankCard extends ConsumerWidget {
                                         fit: BoxFit.cover,
                                         errorBuilder: (_, __, ___) => const Icon(Icons.water, color: Colors.blue, size: 40),
                                       )
-                                    : Image.network(
-                                        '/tank_piscicultura.png',
+                                    : Image.asset(
+                                        'web/tank_piscicultura.png',
                                         fit: BoxFit.cover,
                                         errorBuilder: (_, __, ___) => const Icon(Icons.water, color: Colors.blue, size: 40),
                                       ))
