@@ -6,7 +6,7 @@ import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(
     BaseOptions(
-      baseUrl: 'http://localhost:8081',
+      baseUrl: 'https://aquagestor.onrender.com',
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
       contentType: 'application/json',
