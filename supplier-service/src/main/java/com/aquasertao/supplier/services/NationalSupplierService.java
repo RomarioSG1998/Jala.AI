@@ -1,10 +1,13 @@
-package com.aquasertao.api.modules.supplier.services;
+package com.aquasertao.supplier.services;
 
-import com.aquasertao.api.modules.supplier.dtos.SupplierRequestDTO;
-import com.aquasertao.api.modules.supplier.dtos.SupplierResponseDTO;
-import com.aquasertao.api.modules.supplier.models.NationalSupplier;
-import com.aquasertao.api.modules.supplier.repositories.NationalSupplierRepository;
+import com.aquasertao.supplier.config.RabbitMQConfig;
+import com.aquasertao.supplier.dtos.SupplierRequestDTO;
+import com.aquasertao.supplier.dtos.SupplierResponseDTO;
+import com.aquasertao.supplier.events.SupplierApprovedEvent;
+import com.aquasertao.supplier.models.NationalSupplier;
+import com.aquasertao.supplier.repositories.NationalSupplierRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,6 +19,7 @@ import java.util.stream.Collectors;
 public class NationalSupplierService {
 
     private final NationalSupplierRepository nationalSupplierRepository;
+    private final RabbitTemplate rabbitTemplate;
 
     public SupplierResponseDTO createSupplier(SupplierRequestDTO requestDTO) {
         NationalSupplier supplier = NationalSupplier.builder()
@@ -40,6 +44,16 @@ public class NationalSupplierService {
                 .orElseThrow(() -> new IllegalArgumentException("Supplier not found"));
         supplier.setIsApproved(true);
         NationalSupplier saved = nationalSupplierRepository.save(supplier);
+
+        // Publish event to RabbitMQ
+        SupplierApprovedEvent event = SupplierApprovedEvent.builder()
+                .supplierId(saved.getId())
+                .companyName(saved.getCompanyName())
+                .cnpj(saved.getCnpj())
+                .supplyType(saved.getSupplyType())
+                .build();
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY, event);
+
         return mapToDTO(saved);
     }
 

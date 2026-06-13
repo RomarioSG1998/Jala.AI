@@ -1,6 +1,6 @@
-package com.aquasertao.api.modules.supplier.repositories;
+package com.aquasertao.supplier.repositories;
 
-import com.aquasertao.api.modules.supplier.models.NationalSupplier;
+import com.aquasertao.supplier.models.NationalSupplier;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

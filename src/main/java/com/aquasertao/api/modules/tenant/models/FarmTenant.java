@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "farm_tenant")
+@Table(name = "farm_tenant", schema = "auth_schema")
 @Data
 @Builder
 @NoArgsConstructor

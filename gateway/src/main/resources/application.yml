@@ -1,0 +1,28 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: aquasertao-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+      routes:
+        - id: supplier_route
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/suppliers/**
+          filters:
+            - JwtAuthenticationFilter
+        - id: monolith_route
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/**

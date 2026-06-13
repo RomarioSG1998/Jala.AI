@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "inventory")
+@Table(name = "inventory", schema = "ops_schema")
 @Data
 @Builder
 @NoArgsConstructor

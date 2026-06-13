@@ -1,8 +1,8 @@
-package com.aquasertao.api.modules.supplier.controllers;
+package com.aquasertao.supplier.controllers;
 
-import com.aquasertao.api.modules.supplier.dtos.SupplierRequestDTO;
-import com.aquasertao.api.modules.supplier.dtos.SupplierResponseDTO;
-import com.aquasertao.api.modules.supplier.services.NationalSupplierService;
+import com.aquasertao.supplier.dtos.SupplierRequestDTO;
+import com.aquasertao.supplier.dtos.SupplierResponseDTO;
+import com.aquasertao.supplier.services.NationalSupplierService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

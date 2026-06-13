@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "water_quality")
+@Table(name = "water_quality", schema = "ops_schema")
 @Data
 @Builder
 @NoArgsConstructor

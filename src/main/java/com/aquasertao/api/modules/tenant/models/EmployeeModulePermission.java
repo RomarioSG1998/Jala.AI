@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.UUID;
 
 @Entity
-@Table(name = "employee_module_permission")
+@Table(name = "employee_module_permission", schema = "auth_schema")
 @IdClass(EmployeeModulePermission.PermissionId.class)
 @Data
 @Builder

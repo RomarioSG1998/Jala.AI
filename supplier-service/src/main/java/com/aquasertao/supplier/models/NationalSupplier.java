@@ -1,4 +1,4 @@
-package com.aquasertao.api.modules.supplier.models;
+package com.aquasertao.supplier.models;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -9,7 +9,7 @@ import lombok.Builder;
 import java.util.UUID;
 
 @Entity
-@Table(name = "national_supplier")
+@Table(name = "national_supplier", schema = "supplier_schema")
 @Data
 @Builder
 @NoArgsConstructor

@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "subscription")
+@Table(name = "subscription", schema = "billing_schema")
 @Data
 @Builder
 @NoArgsConstructor

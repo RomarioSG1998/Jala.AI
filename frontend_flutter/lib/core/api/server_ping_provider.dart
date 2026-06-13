@@ -22,10 +22,14 @@ class ServerPingNotifier extends Notifier<ServerStatus> {
         connectTimeout: const Duration(seconds: 3),
         receiveTimeout: const Duration(seconds: 3),
       ));
-      await tempDio.get('/api/auth/profile-image/00000000-0000-0000-0000-000000000000');
+      await tempDio.get('/api/auth/health');
       state = ServerStatus.awake;
       return;
     } catch (e) {
+      if (e is DioException && e.response != null) {
+        state = ServerStatus.awake;
+        return;
+      }
       // If it fails or times out, the server is likely sleeping
       state = ServerStatus.sleeping;
     }
@@ -44,10 +48,14 @@ class ServerPingNotifier extends Notifier<ServerStatus> {
           connectTimeout: const Duration(seconds: 60),
           receiveTimeout: const Duration(seconds: 60),
         ));
-        await tempDio.get('/api/auth/profile-image/00000000-0000-0000-0000-000000000000');
+        await tempDio.get('/api/auth/health');
         state = ServerStatus.awake;
         break;
       } catch (e) {
+        if (e is DioException && e.response != null) {
+          state = ServerStatus.awake;
+          break;
+        }
         if (attempts >= 3) {
           state = ServerStatus.error;
         } else {

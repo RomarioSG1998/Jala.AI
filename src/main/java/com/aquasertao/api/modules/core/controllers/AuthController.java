@@ -31,6 +31,11 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("OK");
+    }
+
     @GetMapping("/profile-image/{userId}")
     public ResponseEntity<ProfileImageDTO> getProfileImage(
             @PathVariable UUID userId

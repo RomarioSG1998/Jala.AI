@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "harvest")
+@Table(name = "harvest", schema = "ops_schema")
 @Data
 @Builder
 @NoArgsConstructor
