@@ -21,5 +21,35 @@ services:
       - "15672:15672"
     restart: unless-stopped
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aquasertao_api
+    network_mode: host
+    restart: unless-stopped
+    depends_on:
+      - rabbitmq
+
+  supplier-service:
+    build:
+      context: ./supplier-service
+      dockerfile: Dockerfile
+    container_name: aquasertao_supplier
+    network_mode: host
+    restart: unless-stopped
+    depends_on:
+      - rabbitmq
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: aquasertao_gateway
+    network_mode: host
+    restart: unless-stopped
+    depends_on:
+      - rabbitmq
+
 volumes:
   postgres_data:

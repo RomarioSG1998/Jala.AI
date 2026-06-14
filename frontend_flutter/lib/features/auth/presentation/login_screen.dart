@@ -14,25 +14,52 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isLoginMode = true;
+
+  final _nameFocusNode = FocusNode();
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
+  final _confirmPasswordFocusNode = FocusNode();
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _nameController.dispose();
+    _confirmPasswordController.dispose();
+    _nameFocusNode.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _confirmPasswordFocusNode.dispose();
     super.dispose();
   }
 
-  Future<void> _submitLogin() async {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     
     // Hide keyboard
     FocusScope.of(context).unfocus();
 
-    await ref.read(authNotifierProvider.notifier).login(
-      _emailController.text.trim(),
-      _passwordController.text,
-    );
+    if (_isLoginMode) {
+      await ref.read(authNotifierProvider.notifier).login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+    } else {
+      if (_passwordController.text != _confirmPasswordController.text) {
+        ref.read(authNotifierProvider.notifier).state =
+            ref.read(authNotifierProvider.notifier).state.copyWith(error: 'As senhas não coincidem!');
+        return;
+      }
+      await ref.read(authNotifierProvider.notifier).register(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+    }
   }
 
   @override
@@ -190,11 +217,51 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
 
+                    // Name Field (Register only)
+                    if (!_isLoginMode) ...[
+                      TextFormField(
+                        controller: _nameController,
+                        focusNode: _nameFocusNode,
+                        onTap: () => _nameFocusNode.requestFocus(),
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                        autofillHints: const [AutofillHints.name],
+                        decoration: InputDecoration(
+                          labelText: 'Nome Completo',
+                          labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                          prefixIcon: Icon(Icons.person, color: isDark ? Colors.white70 : Colors.black54),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: isDark ? Colors.white30 : Colors.black26),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF003366), 
+                              width: 2,
+                            ),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Por favor, digite seu nome completo';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
                     // Email Field
                     TextFormField(
                       controller: _emailController,
+                      focusNode: _emailFocusNode,
+                      onTap: () => _emailFocusNode.requestFocus(),
                       keyboardType: TextInputType.emailAddress,
                       style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                      autofillHints: const [AutofillHints.email],
                       decoration: InputDecoration(
                         labelText: 'Email',
                         labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
@@ -226,8 +293,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     // Password Field
                     TextFormField(
                       controller: _passwordController,
+                      focusNode: _passwordFocusNode,
+                      onTap: () => _passwordFocusNode.requestFocus(),
                       obscureText: true,
                       style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                      autofillHints: const [AutofillHints.password],
                       decoration: InputDecoration(
                         labelText: 'Senha',
                         labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
@@ -251,14 +321,55 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Por favor, digite sua senha';
                         }
+                        if (!_isLoginMode && value.length < 6) {
+                          return 'A senha deve ter pelo menos 6 caracteres';
+                        }
                         return null;
                       },
                     ),
+
+                    // Confirm Password Field (Register only)
+                    if (!_isLoginMode) ...[
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        focusNode: _confirmPasswordFocusNode,
+                        onTap: () => _confirmPasswordFocusNode.requestFocus(),
+                        obscureText: true,
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                        autofillHints: const [AutofillHints.password],
+                        decoration: InputDecoration(
+                          labelText: 'Confirmar Senha',
+                          labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                          prefixIcon: Icon(Icons.lock_outline, color: isDark ? Colors.white70 : Colors.black54),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: isDark ? Colors.white30 : Colors.black26),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF003366), 
+                              width: 2,
+                            ),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor, confirme sua senha';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
                     const SizedBox(height: 32),
 
-                    // Login Button
+                    // Submit Button
                     ElevatedButton(
-                      onPressed: authState.isLoading ? null : _submitLogin,
+                      onPressed: authState.isLoading ? null : _submit,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         backgroundColor: isDark ? const Color(0xFF00FF66) : const Color(0xFF13A538),
@@ -275,10 +386,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 color: isDark ? const Color(0xFF030D1B) : Colors.white,
                               ),
                             )
-                          : const Text(
-                              'ENTRAR',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                          : Text(
+                              _isLoginMode ? 'ENTRAR' : 'CADASTRAR',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2),
                             ),
+                    ),
+
+                    // Toggle Link
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _isLoginMode ? 'Não tem uma conta?' : 'Já tem uma conta?',
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _isLoginMode = !_isLoginMode;
+                              // Clear errors when toggling
+                              ref.read(authNotifierProvider.notifier).clearError();
+                            });
+                          },
+                          child: Text(
+                            _isLoginMode ? 'Cadastre-se' : 'Entrar',
+                            style: TextStyle(
+                              color: isDark ? const Color(0xFF00FF66) : const Color(0xFF13A538),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

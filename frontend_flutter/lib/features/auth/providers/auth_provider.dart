@@ -159,10 +159,59 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  Future<bool> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+    
+    try {
+      final response = await _repository.register(
+        name: name,
+        email: email,
+        password: password,
+      );
+      
+      final token = response['token'];
+      final resEmail = response['email'];
+      final resAccountType = response['accountType'];
+
+      if (token != null) {
+        await _tokenStorage.clearAll();
+        await _tokenStorage.saveToken(token);
+        await _tokenStorage.saveUserDetails(
+          resEmail ?? email,
+          resAccountType ?? 'CLIENT',
+          userId: response['userId']?.toString(),
+        );
+
+        state = state.copyWith(
+          isLoading: false,
+          isAuthenticated: true,
+          email: resEmail ?? email,
+          accountType: resAccountType ?? 'CLIENT',
+          userId: response['userId']?.toString(),
+        );
+        return true;
+      } else {
+        state = state.copyWith(isLoading: false, error: 'Invalid response from server.');
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     await _tokenStorage.clearAll();
     // Reset state entirely
     state = AuthState();
+  }
+
+  void clearError() {
+    state = state.copyWith(error: null);
   }
 }
 

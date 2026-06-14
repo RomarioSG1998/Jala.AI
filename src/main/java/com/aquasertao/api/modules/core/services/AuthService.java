@@ -6,6 +6,8 @@ import com.aquasertao.api.modules.core.dtos.RegisterRequestDTO;
 import com.aquasertao.api.modules.core.models.GlobalUser;
 import com.aquasertao.api.modules.core.repositories.GlobalUserRepository;
 import com.aquasertao.api.modules.core.security.JwtService;
+import com.aquasertao.api.modules.tenant.models.UserFarmLink;
+import com.aquasertao.api.modules.tenant.repositories.UserFarmLinkRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,6 +26,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final UserFarmLinkRepository userFarmLinkRepository;
 
     public AuthResponseDTO register(RegisterRequestDTO request) {
         if (repository.findByEmail(request.getEmail()).isPresent()) {
@@ -34,18 +37,28 @@ public class AuthService {
                 .name(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .accountType(request.getAccountType())
+                .accountType("CLIENT")
                 .createdAt(LocalDateTime.now())
                 .build();
         
-        repository.save(user);
-        var jwtToken = jwtService.generateToken(user);
+        GlobalUser savedUser = repository.save(user);
+
+        // Link user to default farm tenant
+        UUID defaultFarmId = UUID.fromString("55555555-5555-5555-5555-555555555555");
+        UserFarmLink link = UserFarmLink.builder()
+                .userId(savedUser.getId())
+                .farmId(defaultFarmId)
+                .accessRole("FARM_OWNER")
+                .build();
+        userFarmLinkRepository.save(link);
+
+        var jwtToken = jwtService.generateToken(savedUser);
         
         return AuthResponseDTO.builder()
                 .token(jwtToken)
-                .email(user.getEmail())
-                .accountType(user.getAccountType())
-                .userId(user.getId())
+                .email(savedUser.getEmail())
+                .accountType(savedUser.getAccountType())
+                .userId(savedUser.getId())
                 .build();
     }
 

@@ -26,6 +26,30 @@ class AuthRepository {
       throw Exception('Network error. Please try again later.');
     }
   }
+
+  Future<Map<String, dynamic>> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/api/auth/register',
+        data: {
+          'name': name,
+          'email': email,
+          'password': password,
+          'accountType': 'CLIENT',
+        },
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(e.response?.data['message'] ?? 'Registration failed.');
+      }
+      throw Exception('Network error. Please try again later.');
+    }
+  }
 }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {

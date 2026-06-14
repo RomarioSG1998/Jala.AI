@@ -1,0 +1,8 @@
+# Ignore build targets and dependency folders
+target/
+.git/
+.mvn/
+.codex/
+
+# Ignore Flutter frontend files from backend builds
+frontend_flutter/
