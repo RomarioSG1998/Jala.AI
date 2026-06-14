@@ -9,7 +9,10 @@ String _getEffectiveBaseUrl() {
   if (envUrl.isNotEmpty) {
     return envUrl;
   }
-  return 'http://localhost:8085';
+  if (kIsWeb) {
+    return 'http://localhost:8085';
+  }
+  return 'https://jala-ai.onrender.com';
 }
 
 final dioProvider = Provider<Dio>((ref) {
