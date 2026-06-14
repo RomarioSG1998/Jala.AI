@@ -72,7 +72,7 @@ flutter:
   assets:
     - web/logo_emblem.png
     - web/tank_piscicultura.png
-    - web/google_logo.png
+    - web/google_logo_colored.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
