@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/core/theme/theme_provider.dart';
 import 'package:frontend_flutter/core/api/server_ping_provider.dart';
+import 'package:frontend_flutter/core/api/secure_storage.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -19,11 +20,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoginMode = true;
   String _selectedAccountType = 'CLIENT';
+  bool _rememberMe = false;
 
   final _nameFocusNode = FocusNode();
   final _emailFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
   final _confirmPasswordFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberedCredentials();
+  }
+
+  Future<void> _loadRememberedCredentials() async {
+    final storage = ref.read(tokenStorageProvider);
+    final isEnabled = await storage.isRememberMeEnabled();
+    if (isEnabled) {
+      final creds = await storage.getRememberMeCredentials();
+      if (creds != null && mounted) {
+        setState(() {
+          _emailController.text = creds['email'] ?? '';
+          _passwordController.text = creds['password'] ?? '';
+          _rememberMe = true;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -45,10 +68,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     FocusScope.of(context).unfocus();
 
     if (_isLoginMode) {
-      await ref.read(authNotifierProvider.notifier).login(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      final storage = ref.read(tokenStorageProvider);
+      if (_rememberMe) {
+        await storage.saveRememberMeCredentials(email, password);
+      } else {
+        await storage.clearRememberMeCredentials();
+      }
+
+      await ref.read(authNotifierProvider.notifier).login(email, password);
     } else {
       if (_passwordController.text != _confirmPasswordController.text) {
         ref.read(authNotifierProvider.notifier).state =
@@ -426,6 +456,48 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         return null;
                       },
                     ),
+
+                    // Lembrar-me Checkbox (apenas no modo Login)
+                    if (_isLoginMode) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: Checkbox(
+                              value: _rememberMe,
+                              onChanged: (val) {
+                                setState(() {
+                                  _rememberMe = val ?? false;
+                                });
+                              },
+                              activeColor: isDark ? const Color(0xFF00FF66) : const Color(0xFF13A538),
+                              checkColor: isDark ? const Color(0xFF030D1B) : Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _rememberMe = !_rememberMe;
+                              });
+                            },
+                            child: Text(
+                              'Lembrar credenciais',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark ? Colors.white70 : Colors.black87,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
 
                     // Confirm Password Field (Register only)
                     if (!_isLoginMode) ...[

@@ -48,6 +48,33 @@ class TokenStorage {
     return await _storage.read(key: 'user_id');
   }
 
+  Future<void> saveRememberMeCredentials(String email, String password) async {
+    await _storage.write(key: 'remember_email', value: email);
+    await _storage.write(key: 'remember_password', value: password);
+    await _storage.write(key: 'remember_me_enabled', value: 'true');
+  }
+
+  Future<void> clearRememberMeCredentials() async {
+    await _storage.delete(key: 'remember_email');
+    await _storage.delete(key: 'remember_password');
+    await _storage.write(key: 'remember_me_enabled', value: 'false');
+  }
+
+  Future<Map<String, String>?> getRememberMeCredentials() async {
+    final email = await _storage.read(key: 'remember_email');
+    final password = await _storage.read(key: 'remember_password');
+    final enabled = await _storage.read(key: 'remember_me_enabled');
+    if (enabled == 'true' && email != null && password != null) {
+      return {'email': email, 'password': password};
+    }
+    return null;
+  }
+
+  Future<bool> isRememberMeEnabled() async {
+    final enabled = await _storage.read(key: 'remember_me_enabled');
+    return enabled == 'true';
+  }
+
   Future<void> clearAll() async {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: 'user_email');
