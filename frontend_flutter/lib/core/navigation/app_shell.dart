@@ -851,7 +851,11 @@ class _AppShellState extends ConsumerState<AppShell> {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
-          widget.navigationShell.goBranch(index);
+          if (index == 3 && widget.currentLocation != '/more') {
+            context.go('/more');
+          } else {
+            widget.navigationShell.goBranch(index);
+          }
         },
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
