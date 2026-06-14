@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_repository.dart';
@@ -39,8 +40,12 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
         state = AsyncValue.data([...state.value!, newTank]);
       }
       return true;
-    } catch (e, stack) {
-      print('TanksNotifier.createTank: Error: $e\n$stack');
+    } catch (e) {
+      if (e is DioException) {
+        print('TanksNotifier.createTank: Error: ${e.message} (status: ${e.response?.statusCode})');
+      } else {
+        print('TanksNotifier.createTank: Error: $e');
+      }
       return false;
     }
   }
@@ -76,8 +81,12 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
         );
       }
       return true;
-    } catch (e, stack) {
-      print('TanksNotifier.updateTank: Error: $e\n$stack');
+    } catch (e) {
+      if (e is DioException) {
+        print('TanksNotifier.updateTank: Error: ${e.message} (status: ${e.response?.statusCode})');
+      } else {
+        print('TanksNotifier.updateTank: Error: $e');
+      }
       return false;
     }
   }

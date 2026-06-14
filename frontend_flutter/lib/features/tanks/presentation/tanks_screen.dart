@@ -468,9 +468,9 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
       final picker = ImagePicker();
       final image = await picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
+        maxWidth: 600,
+        maxHeight: 600,
+        imageQuality: 75,
       );
       if (image != null) {
         final bytes = await image.readAsBytes();
@@ -676,9 +676,9 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
       final picker = ImagePicker();
       final image = await picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
+        maxWidth: 600,
+        maxHeight: 600,
+        imageQuality: 75,
       );
       if (image != null) {
         final bytes = await image.readAsBytes();

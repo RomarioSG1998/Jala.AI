@@ -7,6 +7,9 @@ import 'package:frontend_flutter/features/employees/providers/employee_permissio
 import 'package:frontend_flutter/core/theme/theme_provider.dart';
 import 'dart:convert';
 import 'package:frontend_flutter/features/profile/providers/profile_image_provider.dart';
+import 'package:intl/intl.dart';
+import 'package:frontend_flutter/features/saas_admin/providers/saas_providers.dart';
+import 'package:frontend_flutter/features/saas_admin/data/saas_models.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -341,6 +344,36 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
                   ],
 
+                  // Subscription Section
+                  if (authState.accountType != null) ...[
+                    _buildSectionTitle(context, 'Assinatura'),
+                    _buildInfoCard(context, [
+                      ListTile(
+                        leading: Icon(
+                          Icons.workspace_premium_rounded,
+                          color: isDark ? Colors.amber.shade300 : Colors.amber.shade700,
+                        ),
+                        title: Text(
+                          'Meu Plano',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        subtitle: const Text(
+                          'Plano Profissional · Ativo',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                        onTap: () => _showPlansSelectionBottomSheet(context, ref),
+                      ),
+                    ]),
+                    const SizedBox(height: 24),
+                  ],
+
                   // Settings Section
                   _buildSectionTitle(context, 'Configurações'),
                   _buildInfoCard(context, [
@@ -548,6 +581,398 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: 12),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  void _showPlansSelectionBottomSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return DraggableScrollableSheet(
+          initialChildSize: 0.75,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: isDark ? Border.all(color: const Color(0xFF263350), width: 1.5) : null,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Center(
+                    child: Container(
+                      width: 48,
+                      height: 5,
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2.5),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Escolha o seu Plano',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : const Color(0xFF003366),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Selecione um plano ideal para gerenciar sua piscicultura.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 20),
+                  Expanded(
+                    child: Consumer(
+                      builder: (context, ref, child) {
+                        final plansAsync = ref.watch(plansProvider);
+                        return plansAsync.when(
+                          loading: () => const Center(
+                            child: CircularProgressIndicator(color: _kGreen),
+                          ),
+                          error: (err, stack) => Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Erro ao carregar planos',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    err.toString(),
+                                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          data: (plans) {
+                            if (plans.isEmpty) {
+                              return Center(
+                                child: Text(
+                                  'Nenhum plano disponível no momento.',
+                                  style: TextStyle(
+                                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                  ),
+                                ),
+                              );
+                            }
+
+                            final currencyFmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+
+                            return ListView.builder(
+                              controller: scrollController,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              itemCount: plans.length,
+                              itemBuilder: (context, index) {
+                                final plan = plans[index];
+                                final isCurrent = plan.name.toLowerCase() == 'professional' || plan.name.toLowerCase() == 'profissional';
+
+                                return _buildPlanOptionCard(context, plan, isCurrent, isDark, currencyFmt);
+                              },
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPlanOptionCard(
+    BuildContext context,
+    SaasPlan plan,
+    bool isCurrent,
+    bool isDark,
+    NumberFormat fmt,
+  ) {
+    final colors = [const Color(0xFF3B82F6), _kGreen, const Color(0xFF8B5CF6), const Color(0xFFE11D48)];
+    final gradientColors = [
+      [const Color(0xFF1D4ED8), const Color(0xFF3B82F6)],
+      [const Color(0xFF003366), _kGreen],
+      [const Color(0xFF5B21B6), const Color(0xFF8B5CF6)],
+      [const Color(0xFF9F1239), const Color(0xFFE11D48)],
+    ];
+
+    final planIndex = plan.name.toLowerCase().contains('free') || plan.name.toLowerCase().contains('gratuito')
+        ? 0
+        : plan.name.toLowerCase().contains('basic') || plan.name.toLowerCase().contains('básico')
+            ? 1
+            : plan.name.toLowerCase().contains('professional') || plan.name.toLowerCase().contains('profissional')
+                ? 2
+                : 3;
+
+    final accentColor = colors[planIndex % colors.length];
+    final planGradients = gradientColors[planIndex % gradientColors.length];
+    final isFree = plan.priceMonthly == 0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isCurrent
+              ? _kGreen
+              : isDark
+                  ? const Color(0xFF263350)
+                  : accentColor.withOpacity(0.2),
+          width: isCurrent ? 2 : 1
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isCurrent
+                ? _kGreen.withOpacity(0.08)
+                : accentColor.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4)
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: planGradients,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isCurrent)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        margin: const EdgeInsets.only(bottom: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.white60, width: 1),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white, size: 12),
+                            SizedBox(width: 4),
+                            Text(
+                              'PLANO ATUAL',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    Text(
+                      plan.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  isFree ? 'Grátis' : '${fmt.format(plan.priceMonthly)}/mês',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildLimitBadge(
+                      context,
+                      Icons.water_drop_rounded,
+                      '${plan.maxTanks} tanques',
+                      accentColor,
+                      isDark
+                    ),
+                    const SizedBox(width: 12),
+                    _buildLimitBadge(
+                      context,
+                      Icons.people_alt_rounded,
+                      '${plan.maxUsers} usuários',
+                      accentColor,
+                      isDark
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isCurrent
+                        ? null
+                        : () {
+                            _showImplementationAlert(context, plan.name);
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: accentColor,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: isDark ? const Color(0xFF334155) : Colors.grey.shade200,
+                      disabledForegroundColor: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      isCurrent ? 'Seu Plano Ativo' : 'Adquirir Plano',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLimitBadge(
+    BuildContext context,
+    IconData icon,
+    String label,
+    Color color,
+    bool isDark,
+  ) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(isDark ? 0.12 : 0.06),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black87,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showImplementationAlert(BuildContext context, String planName) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: Theme.of(context).cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.info_rounded, color: Colors.blue.shade600, size: 28),
+              const SizedBox(width: 10),
+              Text(
+                'Ainda em Implementação',
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF003366),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'A funcionalidade de contratação de plano ($planName) está em desenvolvimento. Em breve você poderá gerenciar sua assinatura diretamente por aqui.',
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Entendi',
+                style: TextStyle(
+                  color: _kGreen,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         );
       },
     );

@@ -60,54 +60,7 @@ class FarmDashboardBody extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
         children: [
-          Consumer(
-            builder: (context, ref, child) {
-              final serverStatus = ref.watch(serverPingProvider);
-              if (serverStatus == ServerStatus.sleeping) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: isDark 
-                        ? const Color(0xFF1E293B) 
-                        : Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDark 
-                          ? Colors.orange.shade800.withOpacity(0.5) 
-                          : Colors.orange.shade300,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            isDark ? const Color(0xFF00FF66) : const Color(0xFF13A538)
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'Acordando servidor no Render... Por favor, aguarde os dados carregarem.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.orange,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
+
           // Welcome banner
           Container(
             padding: const EdgeInsets.all(20),
