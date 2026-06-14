@@ -163,6 +163,7 @@ class AuthNotifier extends Notifier<AuthState> {
     required String name,
     required String email,
     required String password,
+    String accountType = 'CLIENT',
   }) async {
     state = state.copyWith(isLoading: true, error: null);
     
@@ -171,6 +172,7 @@ class AuthNotifier extends Notifier<AuthState> {
         name: name,
         email: email,
         password: password,
+        accountType: accountType,
       );
       
       final token = response['token'];
@@ -182,7 +184,7 @@ class AuthNotifier extends Notifier<AuthState> {
         await _tokenStorage.saveToken(token);
         await _tokenStorage.saveUserDetails(
           resEmail ?? email,
-          resAccountType ?? 'CLIENT',
+          resAccountType ?? accountType,
           userId: response['userId']?.toString(),
         );
 
@@ -190,7 +192,7 @@ class AuthNotifier extends Notifier<AuthState> {
           isLoading: false,
           isAuthenticated: true,
           email: resEmail ?? email,
-          accountType: resAccountType ?? 'CLIENT',
+          accountType: resAccountType ?? accountType,
           userId: response['userId']?.toString(),
         );
         return true;

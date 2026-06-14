@@ -18,6 +18,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoginMode = true;
+  String _selectedAccountType = 'CLIENT';
 
   final _nameFocusNode = FocusNode();
   final _emailFocusNode = FocusNode();
@@ -58,6 +59,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        accountType: _selectedAccountType,
       );
     }
   }
@@ -219,6 +221,103 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     // Name Field (Register only)
                     if (!_isLoginMode) ...[
+                      // Account Type Selector
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _selectedAccountType = 'CLIENT';
+                                });
+                              },
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: _selectedAccountType == 'CLIENT'
+                                    ? (isDark ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0))
+                                    : Colors.transparent,
+                                side: BorderSide(
+                                  color: _selectedAccountType == 'CLIENT'
+                                      ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF003366))
+                                      : (isDark ? Colors.white30 : Colors.black26),
+                                  width: _selectedAccountType == 'CLIENT' ? 2 : 1,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.agriculture,
+                                    color: _selectedAccountType == 'CLIENT'
+                                        ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF003366))
+                                        : (isDark ? Colors.white70 : Colors.black54),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Produtor',
+                                    style: TextStyle(
+                                      fontWeight: _selectedAccountType == 'CLIENT' ? FontWeight.bold : FontWeight.normal,
+                                      color: _selectedAccountType == 'CLIENT'
+                                          ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF003366))
+                                          : (isDark ? Colors.white70 : Colors.black54),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _selectedAccountType = 'SUPPLIER';
+                                });
+                              },
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: _selectedAccountType == 'SUPPLIER'
+                                    ? (isDark ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0))
+                                    : Colors.transparent,
+                                side: BorderSide(
+                                  color: _selectedAccountType == 'SUPPLIER'
+                                      ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF003366))
+                                      : (isDark ? Colors.white30 : Colors.black26),
+                                  width: _selectedAccountType == 'SUPPLIER' ? 2 : 1,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.local_shipping,
+                                    color: _selectedAccountType == 'SUPPLIER'
+                                        ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF003366))
+                                        : (isDark ? Colors.white70 : Colors.black54),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Fornecedor',
+                                    style: TextStyle(
+                                      fontWeight: _selectedAccountType == 'SUPPLIER' ? FontWeight.bold : FontWeight.normal,
+                                      color: _selectedAccountType == 'SUPPLIER'
+                                          ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF003366))
+                                          : (isDark ? Colors.white70 : Colors.black54),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
                       TextFormField(
                         controller: _nameController,
                         focusNode: _nameFocusNode,

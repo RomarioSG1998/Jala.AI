@@ -33,24 +33,28 @@ public class AuthService {
             throw new IllegalArgumentException("Email already registered.");
         }
 
+        String accountType = "SUPPLIER".equalsIgnoreCase(request.getAccountType()) ? "SUPPLIER" : "CLIENT";
+
         var user = GlobalUser.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .accountType("CLIENT")
+                .accountType(accountType)
                 .createdAt(LocalDateTime.now())
                 .build();
         
         GlobalUser savedUser = repository.save(user);
 
-        // Link user to default farm tenant
-        UUID defaultFarmId = UUID.fromString("55555555-5555-5555-5555-555555555555");
-        UserFarmLink link = UserFarmLink.builder()
-                .userId(savedUser.getId())
-                .farmId(defaultFarmId)
-                .accessRole("FARM_OWNER")
-                .build();
-        userFarmLinkRepository.save(link);
+        // Link user to default farm tenant only if accountType is CLIENT
+        if ("CLIENT".equals(accountType)) {
+            UUID defaultFarmId = UUID.fromString("55555555-5555-5555-5555-555555555555");
+            UserFarmLink link = UserFarmLink.builder()
+                    .userId(savedUser.getId())
+                    .farmId(defaultFarmId)
+                    .accessRole("FARM_OWNER")
+                    .build();
+            userFarmLinkRepository.save(link);
+        }
 
         var jwtToken = jwtService.generateToken(savedUser);
         

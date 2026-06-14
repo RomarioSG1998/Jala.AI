@@ -31,6 +31,7 @@ class AuthRepository {
     required String name,
     required String email,
     required String password,
+    String accountType = 'CLIENT',
   }) async {
     try {
       final response = await _dio.post(
@@ -39,7 +40,7 @@ class AuthRepository {
           'name': name,
           'email': email,
           'password': password,
-          'accountType': 'CLIENT',
+          'accountType': accountType,
         },
       );
       return response.data as Map<String, dynamic>;

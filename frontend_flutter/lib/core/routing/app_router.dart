@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/auth/presentation/login_screen.dart';
+import 'package:frontend_flutter/features/auth/presentation/supplier_dev_screen.dart';
 import 'package:frontend_flutter/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:frontend_flutter/features/tanks/presentation/tanks_screen.dart';
 import 'package:frontend_flutter/features/water_quality/presentation/water_quality_screen.dart';
@@ -49,10 +50,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       final authState = ref.read(authNotifierProvider);
       final isGoingToLogin = state.matchedLocation == '/login';
       if (!authState.isAuthenticated && !isGoingToLogin) return '/login';
-      if (authState.isAuthenticated && isGoingToLogin) return '/dashboard';
 
       if (authState.isAuthenticated) {
         final role = authState.accountType;
+
+        // Supplier-specific redirection
+        if (role == 'SUPPLIER') {
+          if (state.matchedLocation != '/supplier-dev') {
+            return '/supplier-dev';
+          }
+          return null;
+        }
+
+        if (isGoingToLogin) return '/dashboard';
+
         final location = state.matchedLocation;
 
         // SaaS Admin exclusive routes
@@ -69,6 +80,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/supplier-dev',
+        builder: (context, state) => const SupplierDevScreen(),
       ),
       GoRoute(
         path: '/profile',
