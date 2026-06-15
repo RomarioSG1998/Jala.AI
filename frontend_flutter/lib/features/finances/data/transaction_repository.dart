@@ -35,7 +35,15 @@ class TransactionRepository {
     }
   }
 
-  Future<FinancialTransaction> createTransaction(String type, double amount) async {
+  Future<FinancialTransaction> createTransaction({
+    required String type,
+    required double amount,
+    String? category,
+    String? clientName,
+    String? fishSpecies,
+    double? quantityKg,
+    String? transactionDate,
+  }) async {
     try {
       final response = await _dio.post(
         '/api/finances',
@@ -43,6 +51,11 @@ class TransactionRepository {
           'farmId': _farmId,
           'type': type,
           'amount': amount,
+          'category': category,
+          'clientName': clientName,
+          'fishSpecies': fishSpecies,
+          'quantityKg': quantityKg,
+          'transactionDate': transactionDate,
         },
       );
       return FinancialTransaction.fromJson(response.data);
@@ -51,7 +64,16 @@ class TransactionRepository {
     }
   }
 
-  Future<FinancialTransaction> updateTransaction(String id, String type, double amount) async {
+  Future<FinancialTransaction> updateTransaction({
+    required String id,
+    required String type,
+    required double amount,
+    String? category,
+    String? clientName,
+    String? fishSpecies,
+    double? quantityKg,
+    String? transactionDate,
+  }) async {
     try {
       final response = await _dio.put(
         '/api/finances/$id',
@@ -59,6 +81,11 @@ class TransactionRepository {
           'farmId': _farmId,
           'type': type,
           'amount': amount,
+          'category': category,
+          'clientName': clientName,
+          'fishSpecies': fishSpecies,
+          'quantityKg': quantityKg,
+          'transactionDate': transactionDate,
         },
       );
       return FinancialTransaction.fromJson(response.data);

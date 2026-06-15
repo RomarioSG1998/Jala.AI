@@ -20,4 +20,8 @@ public class FinancialTransactionResponseDTO {
     private String type; // Income, Expense
     private BigDecimal amount;
     private LocalDateTime transactionDate;
+    private String category;
+    private String clientName;
+    private String fishSpecies;
+    private BigDecimal quantityKg;
 }

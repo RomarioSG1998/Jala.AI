@@ -22,6 +22,11 @@ public class FinancialTransactionService {
                 .farmId(requestDTO.getFarmId())
                 .type(requestDTO.getType())
                 .amount(requestDTO.getAmount())
+                .category(requestDTO.getCategory())
+                .clientName(requestDTO.getClientName())
+                .fishSpecies(requestDTO.getFishSpecies())
+                .quantityKg(requestDTO.getQuantityKg())
+                .transactionDate(requestDTO.getTransactionDate())
                 .build();
 
         FinancialTransaction saved = financialTransactionRepository.save(transaction);
@@ -39,6 +44,13 @@ public class FinancialTransactionService {
 
         transaction.setType(requestDTO.getType());
         transaction.setAmount(requestDTO.getAmount());
+        transaction.setCategory(requestDTO.getCategory());
+        transaction.setClientName(requestDTO.getClientName());
+        transaction.setFishSpecies(requestDTO.getFishSpecies());
+        transaction.setQuantityKg(requestDTO.getQuantityKg());
+        if (requestDTO.getTransactionDate() != null) {
+            transaction.setTransactionDate(requestDTO.getTransactionDate());
+        }
 
         FinancialTransaction saved = financialTransactionRepository.save(transaction);
         return mapToDTO(saved);
@@ -58,6 +70,10 @@ public class FinancialTransactionService {
                 .type(transaction.getType())
                 .amount(transaction.getAmount())
                 .transactionDate(transaction.getTransactionDate())
+                .category(transaction.getCategory())
+                .clientName(transaction.getClientName())
+                .fishSpecies(transaction.getFishSpecies())
+                .quantityKg(transaction.getQuantityKg())
                 .build();
     }
 }

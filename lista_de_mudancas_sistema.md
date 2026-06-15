@@ -1,13 +1,13 @@
 # 📋 Lista de Tarefas: Atualizações do App/Sistema de Piscicultura
 
 ## 💰 Receitas e Despesas
-- [ ] **Aba de Receitas**: Alterar a nomenclatura para "Receita / Entrada".
-- [ ] **Categorias de Receita**: Incluir opções específicas do segmento, como "Venda de Alevino", "Venda de Tilápia", etc.
-- [ ] **Registro de Clientes**: Criar um campo aberto para digitar o nome do comprador ou permitir a escolha em uma lista suspensa.
-- [ ] **Detalhes da Venda**: Inserir campos para registrar a espécie do peixe, a quantidade vendida (em kg) e o valor.
-- [ ] **Lista de Espécies**: Disponibilizar uma lista pronta com as espécies de peixes do Brasil para seleção (mantendo a opção do produtor digitar manualmente).
-- [ ] **Categorias de Despesa**: Padronizar opções focadas na piscicultura (ex: Compra de Alevinos, Medicamentos, Trabalhador, Combustível, Outros).
-- [ ] **Registro de Datas**: Garantir que o sistema grave a data exata de cada transação (receita ou despesa).
+- [x] **Aba de Receitas**: Alterar a nomenclatura para "Receita / Entrada".
+- [x] **Categorias de Receita**: Incluir opções específicas do segmento, como "Venda de Alevino", "Venda de Tilápia", etc.
+- [x] **Registro de Clientes**: Criar um campo aberto para digitar o nome do comprador ou permitir a escolha em uma lista suspensa.
+- [x] **Detalhes da Venda**: Inserir campos para registrar a espécie do peixe, a quantidade vendida (em kg) e o valor.
+- [x] **Lista de Espécies**: Disponibilizar uma lista pronta com as espécies de peixes do Brasil para seleção (mantendo a opção do produtor digitar manualmente).
+- [x] **Categorias de Despesa**: Padronizar opções focadas na piscicultura (ex: Compra de Alevinos, Medicamentos, Trabalhador, Combustível, Outros).
+- [x] **Registro de Datas**: Garantir que o sistema grave a data exata de cada transação (receita ou despesa).
 
 ## 🐟 Biometria e Povoamento
 - [ ] **Nomenclatura de Peso**: Adicionar o termo "Biometria" junto ao campo de "Peso Médio" (com a unidade em gramas).

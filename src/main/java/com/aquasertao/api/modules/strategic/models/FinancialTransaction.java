@@ -34,6 +34,18 @@ public class FinancialTransaction {
     @Column(name = "transaction_date", nullable = false)
     private LocalDateTime transactionDate;
 
+    @Column(length = 100)
+    private String category;
+
+    @Column(name = "client_name", length = 255)
+    private String clientName;
+
+    @Column(name = "fish_species", length = 100)
+    private String fishSpecies;
+
+    @Column(name = "quantity_kg", precision = 10, scale = 2)
+    private BigDecimal quantityKg;
+
     @PrePersist
     public void prePersist() {
         if (transactionDate == null) {
