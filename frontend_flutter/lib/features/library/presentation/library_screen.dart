@@ -771,8 +771,10 @@ class _CheckoutModalState extends ConsumerState<_CheckoutModal> {
               Expanded(
                 child: TextFormField(
                   controller: _expiryController,
-                  hintText: 'MM/AA',
-                  decoration: const InputDecoration(labelText: 'Validade'),
+                  decoration: const InputDecoration(
+                    labelText: 'Validade',
+                    hintText: 'MM/AA',
+                  ),
                   validator: (v) => (v == null || !v.contains('/')) ? 'Inválido' : null,
                 ),
               ),
