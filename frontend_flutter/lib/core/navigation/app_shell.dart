@@ -1025,19 +1025,12 @@ class AppDrawer extends ConsumerWidget {
                 Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(
-                    authState.email?.split('@').first ?? 'Usuário',
+                    (authState.name != null && authState.name!.trim().isNotEmpty)
+                        ? authState.name!
+                        : (authState.email?.split('@').first ?? 'Usuário'),
                     style: const TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                     overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                        color: Colors.white12, borderRadius: BorderRadius.circular(8)),
-                    child: Text(role,
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                   ),
                 ])),
               ]),
