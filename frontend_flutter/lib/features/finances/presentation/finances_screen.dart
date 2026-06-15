@@ -106,7 +106,7 @@ class FinancesScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Saldo Líquido', style: TextStyle(color: Colors.white70, fontSize: 13)),
+              const Text('Saldo Líquido / Lucro Estimado', style: TextStyle(color: Colors.white70, fontSize: 13)),
               const SizedBox(height: 4),
               Text(
                 fmt.format(balance),
@@ -358,10 +358,11 @@ class _AddTransactionFormState extends ConsumerState<_AddTransactionForm> {
 
   final List<String> _expenseCategories = [
     'Compra de Alevinos',
+    'Gastos com ração',
+    'Energia',
+    'Mão de obra',
     'Medicamentos',
-    'Trabalhador',
     'Combustível',
-    'Ração',
     'Outros'
   ];
 
@@ -689,10 +690,11 @@ class _EditTransactionFormState extends ConsumerState<_EditTransactionForm> {
 
   final List<String> _expenseCategories = [
     'Compra de Alevinos',
+    'Gastos com ração',
+    'Energia',
+    'Mão de obra',
     'Medicamentos',
-    'Trabalhador',
     'Combustível',
-    'Ração',
     'Outros'
   ];
 

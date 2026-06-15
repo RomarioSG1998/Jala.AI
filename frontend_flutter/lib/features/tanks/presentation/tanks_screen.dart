@@ -11,6 +11,8 @@ import 'package:frontend_flutter/features/tanks/providers/biometrics_provider.da
 import 'package:frontend_flutter/features/dashboard/providers/farm_summary_provider.dart';
 import 'package:frontend_flutter/features/dashboard/data/farm_summary_model.dart';
 import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
+import 'package:go_router/go_router.dart';
+import 'package:frontend_flutter/features/profile/providers/subscription_provider.dart';
 
 class TanksScreen extends ConsumerStatefulWidget {
   const TanksScreen({super.key});
@@ -518,6 +520,49 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Verificar limite do plano
+    final tanks = ref.read(tanksProvider).value ?? [];
+    final currentPlan = ref.read(userSubscriptionProvider);
+    if (currentPlan == UserSubscriptionPlan.free && tanks.isNotEmpty) {
+      Navigator.of(context).pop();
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.workspace_premium, color: Colors.amber, size: 28),
+              SizedBox(width: 8),
+              Text('Limite do Plano Atingido', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: const Text(
+            'Você está no Plano Gratuito, que permite gerenciar apenas 1 tanque.\n\n'
+            'Atualize para o Plano Pro por apenas R\$ 19,90/mês para cadastrar tanques ilimitados!',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF13A538),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                Navigator.pop(ctx);
+                GoRouter.of(context).push('/profile');
+              },
+              child: const Text('Upgrade por R\$ 19,90', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     final success = await ref.read(tanksProvider.notifier).createTank(
           _nameController.text.trim(),

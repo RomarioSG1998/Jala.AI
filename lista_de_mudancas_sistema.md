@@ -55,56 +55,56 @@
   - [x] Peso médio dos peixes
   - [x] Crescimento semanal
   - [x] Conversão alimentar
-- [ ] **Controle financeiro**
-  - [ ] Gastos com ração
-  - [ ] Energia
-  - [ ] Mão de obra
-  - [ ] Medicamentos
-  - [ ] Lucro estimado
-- [ ] **Relatórios**
-  - [ ] Crescimento dos peixes
-  - [ ] Mortalidade
-  - [ ] Consumo de ração
-  - [ ] Previsão de despesca
-- [ ] **Alertas**
-  - [ ] Hora de alimentar
-  - [ ] Fazer biometria
-  - [ ] Renovação de água
-  - [ ] Despesca prevista
+- [x] **Controle financeiro**
+  - [x] Gastos com ração
+  - [x] Energia
+  - [x] Mão de obra
+  - [x] Medicamentos
+  - [x] Lucro estimado
+- [x] **Relatórios**
+  - [x] Crescimento dos peixes
+  - [x] Mortalidade
+  - [x] Consumo de ração
+  - [x] Previsão de despesca
+- [x] **Alertas**
+  - [x] Hora de alimentar
+  - [x] Fazer biometria
+  - [x] Renovação de água
+  - [x] Despesca prevista
 
 ## 🚀 Diferenciais para se destacar
-- [ ] **Calculadora automática**
-  - [ ] Entrada do produtor:
-    - [ ] Quantidade de peixes
-    - [ ] Peso médio
-  - [ ] Cálculo do app:
-    - [ ] Quantidade diária de ração
-    - [ ] Biomassa total
-    - [ ] Previsão de abate
-- [ ] **Clima**
-  - [ ] Mostrar previsão do tempo para a região do produtor.
-- [ ] **Mercado local**
-  - [ ] Área para compra e venda de:
-    - [ ] Alevinos
-    - [ ] Ração
-    - [ ] Equipamentos
-- [ ] **Biblioteca**
-  - [ ] Manejo da tilápia
-  - [ ] Qualidade da água
-  - [ ] Doenças comuns
+- [x] **Calculadora automática**
+  - [x] Entrada do produtor:
+    - [x] Quantidade de peixes
+    - [x] Peso médio
+  - [x] Cálculo do app:
+    - [x] Quantidade diária de ração
+    - [x] Biomassa total
+    - [x] Previsão de abate
+- [x] **Clima**
+  - [x] Mostrar previsão do tempo para a região do produtor.
+- [x] **Mercado local**
+  - [x] Área para compra e venda de:
+    - [x] Alevinos
+    - [x] Ração
+    - [x] Equipamentos
+- [x] **Biblioteca**
+  - [x] Manejo da tilápia
+  - [x] Qualidade da água
+  - [x] Doenças comuns
 
 ## 💵 Monetização (Como ganhar dinheiro com o app)
-- [ ] Plano gratuito (até 1 tanque)
-- [ ] Plano Pro R$ 19,90/mês
-- [ ] Anúncios de lojas agropecuárias
-- [ ] Venda de cursos e e-books
+- [x] Plano gratuito (até 1 tanque)
+- [x] Plano Pro R$ 19,90/mês
+- [x] Anúncios de lojas agropecuárias
+- [x] Venda de cursos e e-books
 
 ## 📱 Tela Inicial do App
-- [ ] Dashboard
-- [ ] Tanques
-- [ ] Alimentação
-- [ ] Mortalidade
-- [ ] Financeiro
-- [ ] Relatórios
-- [ ] Marketplace
-- [ ] Config
+- [x] Dashboard
+- [x] Tanques
+- [x] Alimentação
+- [x] Mortalidade
+- [x] Financeiro
+- [x] Relatórios
+- [x] Marketplace
+- [x] Config

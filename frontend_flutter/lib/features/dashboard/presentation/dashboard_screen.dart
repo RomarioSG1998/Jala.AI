@@ -9,6 +9,7 @@ import 'package:frontend_flutter/features/saas_admin/data/saas_models.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import 'package:frontend_flutter/features/water_quality/providers/water_quality_provider.dart';
 import 'package:frontend_flutter/features/dashboard/providers/farm_summary_provider.dart';
+import 'package:frontend_flutter/features/dashboard/providers/weather_provider.dart';
 import 'dart:convert';
 import 'package:frontend_flutter/features/profile/providers/profile_image_provider.dart';
 import 'package:intl/intl.dart';
@@ -56,6 +57,7 @@ class FarmDashboardBody extends ConsumerWidget {
       onRefresh: () async {
         ref.invalidate(tanksProvider);
         ref.invalidate(waterQualityProvider);
+        ref.invalidate(weatherProvider);
       },
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
@@ -92,6 +94,15 @@ class FarmDashboardBody extends ConsumerWidget {
               const Icon(Icons.water, color: Colors.white24, size: 52),
             ]),
           ),
+
+          const SizedBox(height: 24),
+
+          // Weather Widget
+          _buildWeatherWidget(context, ref),
+
+          const SizedBox(height: 16),
+
+          _buildAdBanner(context),
 
           const SizedBox(height: 24),
 
@@ -277,6 +288,148 @@ class FarmDashboardBody extends ConsumerWidget {
         const SizedBox(width: 12),
         Text(text, style: TextStyle(color: isDark ? Colors.grey.shade300 : Colors.grey.shade600, fontSize: 13)),
       ]),
+    );
+  }
+
+  Widget _buildAdBanner(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.amber.shade500.withOpacity(0.3), width: 1.5),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.amber.shade100.withOpacity(0.4),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade600,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.star, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade700,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'PROMOÇÃO',
+                        style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'AgroShop Nordeste',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Compre rações com 15% de desconto! Use cupom AQUA15.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? Colors.grey.shade300 : Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF003366),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              context.go('/marketplace');
+            },
+            child: const Text('Ver', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeatherWidget(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final weatherAsync = ref.watch(weatherProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark 
+            ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+            : [Colors.blue.shade50, Colors.blue.shade100],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: isDark ? Border.all(color: const Color(0xFF334155), width: 1) : null,
+      ),
+      child: weatherAsync.when(
+        data: (weather) => Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Clima em ${weather.cityName}', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.blue.shade800, fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(weather.weatherDescription, style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 2),
+                Text('Vento: ${weather.windSpeed} km/h', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.black54, fontSize: 11)),
+              ],
+            ),
+            Row(
+              children: [
+                Text('${weather.temperature.round()}°C', style: TextStyle(color: isDark ? Colors.orange.shade300 : Colors.orange.shade800, fontSize: 32, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 8),
+                Icon(
+                  weather.weatherCode <= 3 ? Icons.wb_sunny : Icons.cloud,
+                  color: weather.weatherCode <= 3 ? Colors.orange.shade400 : Colors.blueGrey,
+                  size: 36,
+                ),
+              ],
+            ),
+          ],
+        ),
+        loading: () => const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator())),
+        error: (err, stack) => Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red.shade300),
+            const SizedBox(width: 8),
+            const Expanded(child: Text('Erro ao carregar clima.', style: TextStyle(fontSize: 12))),
+          ],
+        ),
+      ),
     );
   }
 }

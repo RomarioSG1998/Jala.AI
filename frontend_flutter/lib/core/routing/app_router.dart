@@ -24,6 +24,11 @@ import 'package:frontend_flutter/core/navigation/app_shell.dart';
 import 'package:frontend_flutter/core/navigation/more_menu_body.dart';
 import 'package:frontend_flutter/features/mortality/presentation/mortality_screen.dart';
 import 'package:frontend_flutter/features/tanks/presentation/biometrics_screen.dart';
+import 'package:frontend_flutter/features/reports/presentation/reports_screen.dart';
+import 'package:frontend_flutter/features/reports/presentation/reports_screen.dart';
+import 'package:frontend_flutter/features/calculator/presentation/calculator_screen.dart';
+import 'package:frontend_flutter/features/marketplace/presentation/marketplace_screen.dart';
+import 'package:frontend_flutter/features/library/presentation/library_screen.dart';
 
 // ─── RouterNotifier: Listenable wrapper for Riverpod Auth State ──────────────
 class RouterNotifier extends ChangeNotifier {
@@ -200,6 +205,22 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/plans',
                 builder: (context, state) => const PlansScreen(),
+              ),
+              GoRoute(
+                path: '/reports',
+                builder: (context, state) => const ReportsScreen(),
+              ),
+              GoRoute(
+                path: '/calculator',
+                builder: (context, state) => const CalculatorScreen(),
+              ),
+              GoRoute(
+                path: '/marketplace',
+                builder: (context, state) => const MarketplaceScreen(),
+              ),
+              GoRoute(
+                path: '/library',
+                builder: (context, state) => const LibraryScreen(),
               ),
             ],
           ),

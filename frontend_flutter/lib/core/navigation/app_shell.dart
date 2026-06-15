@@ -402,6 +402,25 @@ class _AppShellState extends ConsumerState<AppShell> {
                   }
                 }
 
+                if (role != 'SAAS_ADMIN') {
+                  final activeTanks = tanksAsync.maybeWhen(data: (list) => list.where((t) => t.status == 'ACTIVE').toList(), orElse: () => <Tank>[]);
+                  if (activeTanks.isNotEmpty) {
+                    final tank = activeTanks.first;
+                    if (!dismissed.contains('alert_feed')) {
+                      notifications.add(AppNotification(id: 'alert_feed', title: 'Hora de Alimentar', description: 'Tanque ${tank.name} necessita de arraçoamento.', time: 'Agora', icon: Icons.restaurant, iconColor: Colors.orange));
+                    }
+                    if (!dismissed.contains('alert_biometrics')) {
+                      notifications.add(AppNotification(id: 'alert_biometrics', title: 'Fazer Biometria', description: 'A biometria do tanque ${tank.name} está pendente.', time: 'Hoje', icon: Icons.monitor_weight_outlined, iconColor: Colors.teal));
+                    }
+                    if (!dismissed.contains('alert_water')) {
+                      notifications.add(AppNotification(id: 'alert_water', title: 'Renovação de Água', description: 'Agendamento de TPA para o tanque ${tank.name}.', time: 'Em 2 dias', icon: Icons.water_drop, iconColor: Colors.blue));
+                    }
+                    if (!dismissed.contains('alert_harvest')) {
+                      notifications.add(AppNotification(id: 'alert_harvest', title: 'Despesca Prevista', description: 'Tanque ${tank.name} se aproxima do peso de abate.', time: 'Próxima semana', icon: Icons.agriculture, iconColor: Colors.green));
+                    }
+                  }
+                }
+
                 if (notifications.isNotEmpty) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (context.mounted) {
@@ -618,6 +637,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     final currentIndex = widget.navigationShell.currentIndex;
     final tasksAsync = ref.watch(maintenanceProvider);
     final tenantsAsync = ref.watch(tenantsProvider);
+    final tanksAsync = ref.watch(tanksProvider);
     final dismissed = ref.watch(dismissedNotificationsProvider);
     final seen = ref.watch(seenNotificationsProvider);
 
@@ -643,6 +663,16 @@ class _AppShellState extends ConsumerState<AppShell> {
       final tasks = tasksAsync.maybeWhen(data: (list) => list, orElse: () => <MaintenanceTask>[]);
       final active = tasks.where((t) => t.status.toUpperCase() == 'PENDING' || t.status.toUpperCase() == 'IN_PROGRESS').toList();
       notificationCount = active.where((t) => !dismissed.contains('pending_${t.id}') && !seen.contains('pending_${t.id}')).length;
+    }
+
+    if (role != 'SAAS_ADMIN') {
+      final activeTanks = tanksAsync.maybeWhen(data: (list) => list.where((t) => t.status == 'ACTIVE').toList(), orElse: () => <Tank>[]);
+      if (activeTanks.isNotEmpty) {
+        if (!dismissed.contains('alert_feed') && !seen.contains('alert_feed')) notificationCount++;
+        if (!dismissed.contains('alert_biometrics') && !seen.contains('alert_biometrics')) notificationCount++;
+        if (!dismissed.contains('alert_water') && !seen.contains('alert_water')) notificationCount++;
+        if (!dismissed.contains('alert_harvest') && !seen.contains('alert_harvest')) notificationCount++;
+      }
     }
 
     final isSearchVisible = ref.watch(searchBarVisibleProvider);

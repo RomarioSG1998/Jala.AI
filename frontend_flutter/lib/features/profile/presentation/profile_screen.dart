@@ -10,6 +10,7 @@ import 'package:frontend_flutter/features/profile/providers/profile_image_provid
 import 'package:intl/intl.dart';
 import 'package:frontend_flutter/features/saas_admin/providers/saas_providers.dart';
 import 'package:frontend_flutter/features/saas_admin/data/saas_models.dart';
+import 'package:frontend_flutter/features/profile/providers/subscription_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -75,6 +76,7 @@ class ProfileScreen extends ConsumerWidget {
     final profileImage = authState.userId != null
         ? ref.watch(profileImageProvider(authState.userId!))
         : null;
+    final currentPlan = ref.watch(userSubscriptionProvider);
 
     // Try to find full name from authState, then employee list, then email
     String displayName = authState.name ?? authState.email?.split('@').first ?? 'Usuário';
@@ -394,9 +396,11 @@ class ProfileScreen extends ConsumerWidget {
                             color: isDark ? Colors.white : Colors.black87,
                           ),
                         ),
-                        subtitle: const Text(
-                          'Plano Profissional · Ativo',
-                          style: TextStyle(
+                        subtitle: Text(
+                          currentPlan == UserSubscriptionPlan.pro
+                              ? 'Plano Profissional (R\$ 19,90) · Ativo'
+                              : 'Plano Gratuito (até 1 tanque) · Ativo',
+                          style: const TextStyle(
                             fontSize: 12,
                             color: Colors.grey,
                           ),
@@ -731,15 +735,18 @@ class ProfileScreen extends ConsumerWidget {
 
                             final currencyFmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
+                            final currentPlan = ref.read(userSubscriptionProvider);
                             return ListView.builder(
                               controller: scrollController,
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                               itemCount: plans.length,
                               itemBuilder: (context, index) {
                                 final plan = plans[index];
-                                final isCurrent = plan.name.toLowerCase() == 'professional' || plan.name.toLowerCase() == 'profissional';
+                                final isCurrent = plan.priceMonthly > 0
+                                    ? currentPlan == UserSubscriptionPlan.pro
+                                    : currentPlan == UserSubscriptionPlan.free;
 
-                                return _buildPlanOptionCard(context, plan, isCurrent, isDark, currencyFmt);
+                                return _buildPlanOptionCard(context, ref, plan, isCurrent, isDark, currencyFmt);
                               },
                             );
                           },
@@ -758,6 +765,7 @@ class ProfileScreen extends ConsumerWidget {
 
   Widget _buildPlanOptionCard(
     BuildContext context,
+    WidgetRef ref,
     SaasPlan plan,
     bool isCurrent,
     bool isDark,
@@ -903,7 +911,15 @@ class ProfileScreen extends ConsumerWidget {
                     onPressed: isCurrent
                         ? null
                         : () {
-                            _showImplementationAlert(context, plan.name);
+                            final newPlan = plan.priceMonthly > 0 ? UserSubscriptionPlan.pro : UserSubscriptionPlan.free;
+                            ref.read(userSubscriptionProvider.notifier).selectPlan(newPlan);
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Plano alterado para ${plan.name}!'),
+                                backgroundColor: _kGreen,
+                              ),
+                            );
                           },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: accentColor,
@@ -966,51 +982,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  void _showImplementationAlert(BuildContext context, String planName) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return AlertDialog(
-          backgroundColor: Theme.of(context).cardColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.info_rounded, color: Colors.blue.shade600, size: 28),
-              const SizedBox(width: 10),
-              Text(
-                'Ainda em Implementação',
-                style: TextStyle(
-                  color: isDark ? Colors.white : const Color(0xFF003366),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            'A funcionalidade de contratação de plano ($planName) está em desenvolvimento. Em breve você poderá gerenciar sua assinatura diretamente por aqui.',
-            style: TextStyle(
-              color: isDark ? Colors.white70 : Colors.black87,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Entendi',
-                style: TextStyle(
-                  color: _kGreen,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
+
 
   void _showEditProfileBottomSheet(BuildContext context, WidgetRef ref, String currentName, String currentEmail) {
     final nameController = TextEditingController(text: currentName);
