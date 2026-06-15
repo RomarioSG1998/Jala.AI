@@ -51,10 +51,10 @@
   - [x] Registro diário de mortes
   - [x] Causa provável
   - [x] Taxa de mortalidade por lote
-- [ ] **Controle de biometria**
-  - [ ] Peso médio dos peixes
-  - [ ] Crescimento semanal
-  - [ ] Conversão alimentar
+- [x] **Controle de biometria**
+  - [x] Peso médio dos peixes
+  - [x] Crescimento semanal
+  - [x] Conversão alimentar
 - [ ] **Controle financeiro**
   - [ ] Gastos com ração
   - [ ] Energia

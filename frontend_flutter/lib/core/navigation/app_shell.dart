@@ -30,6 +30,7 @@ import 'package:frontend_flutter/features/saas_admin/presentation/tenants_screen
 import 'package:frontend_flutter/features/feeding_records/presentation/feeding_records_screen.dart';
 import 'package:frontend_flutter/features/employees/presentation/employees_screen.dart';
 import 'package:frontend_flutter/features/mortality/presentation/mortality_screen.dart';
+import 'package:frontend_flutter/features/tanks/presentation/biometrics_screen.dart';
 
 // Dashboard Screen containing SaasAdminBody
 import 'package:frontend_flutter/features/dashboard/presentation/dashboard_screen.dart';
@@ -223,6 +224,17 @@ class _AppShellState extends ConsumerState<AppShell> {
         break;
       case '/mortality':
         MortalityScreen.showAddMortalityModal(context, ref);
+        break;
+      case '/biometrics':
+        final tanks = ref.read(tanksProvider).value ?? [];
+        final activeTanks = tanks.where((t) => t.status == 'ACTIVE').toList();
+        if (activeTanks.isNotEmpty) {
+          BiometricsScreen.showAddBiometricsModal(context, activeTanks.first.id);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Nenhum tanque ativo disponível.')),
+          );
+        }
         break;
       case '/saas-dashboard':
         TenantsScreen.showAddTenantModal(context, ref);
@@ -682,6 +694,9 @@ class _AppShellState extends ConsumerState<AppShell> {
       case '/mortality':
         searchHint = 'Buscar registros de mortalidade...';
         break;
+      case '/biometrics':
+        searchHint = 'Buscar registros de biometria...';
+        break;
     }
 
     return Scaffold(
@@ -1042,6 +1057,9 @@ class AppDrawer extends ConsumerWidget {
                     _tile(context, Icons.warning_amber_rounded, 'Mortalidade', Colors.red, () {
                       Navigator.pop(context); context.go('/mortality');
                     }),
+                    _tile(context, Icons.monitor_weight_outlined, 'Biometria', Colors.teal.shade700, () {
+                      Navigator.pop(context); context.go('/biometrics');
+                    }),
                   ],
                   if (role == 'FIELD_OPERATOR') ...[
                     FieldOperatorDrawerItems(userId: authState.userId ?? '', context: context),
@@ -1119,6 +1137,7 @@ class FieldOperatorDrawerItems extends ConsumerWidget {
     'inventory':       ('/inventory',       Icons.inventory,             'Estoque',           Colors.orange),
     'harvests':        ('/harvests',        Icons.agriculture,           'Colheitas',         Colors.green),
     'mortality':       ('/mortality',       Icons.warning_amber_rounded, 'Mortalidade',       Colors.red),
+    'biometrics':      ('/biometrics',      Icons.monitor_weight_outlined, 'Biometria',        Colors.teal),
     'maintenance':     ('/maintenance',     Icons.build,                 'Manutenção',        Colors.grey),
   };
 

@@ -26,6 +26,7 @@ class MoreMenuBody extends ConsumerWidget {
           _menuTile(context, Icons.inventory, 'Estoque', 'Controle de ração e insumos', Colors.orange, '/inventory'),
           _menuTile(context, Icons.agriculture, 'Colheitas', 'Registre e acompanhe despescas', Colors.green, '/harvests'),
           _menuTile(context, Icons.warning_amber_rounded, 'Mortalidade', 'Controle e taxa de mortalidade', Colors.red, '/mortality'),
+          _menuTile(context, Icons.monitor_weight_outlined, 'Biometria', 'Acompanhe o crescimento e conversão alimentar', Colors.teal.shade700, '/biometrics'),
         ],
         if (role == 'FARM_OWNER' || role == 'CLIENT') ...[
           _menuTile(context, Icons.people, 'Funcionários', 'Gerenciar equipe', Colors.indigo, '/employees'),

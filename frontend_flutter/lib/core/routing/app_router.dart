@@ -23,6 +23,7 @@ import 'package:frontend_flutter/features/approvals/presentation/approvals_scree
 import 'package:frontend_flutter/core/navigation/app_shell.dart';
 import 'package:frontend_flutter/core/navigation/more_menu_body.dart';
 import 'package:frontend_flutter/features/mortality/presentation/mortality_screen.dart';
+import 'package:frontend_flutter/features/tanks/presentation/biometrics_screen.dart';
 
 // ─── RouterNotifier: Listenable wrapper for Riverpod Auth State ──────────────
 class RouterNotifier extends ChangeNotifier {
@@ -184,6 +185,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/mortality',
                 builder: (context, state) => const MortalityScreen(),
+              ),
+              GoRoute(
+                path: '/biometrics',
+                builder: (context, state) {
+                  final tankId = state.uri.queryParameters['tankId'];
+                  return BiometricsScreen(initialTankId: tankId);
+                },
               ),
               GoRoute(
                 path: '/approvals',
