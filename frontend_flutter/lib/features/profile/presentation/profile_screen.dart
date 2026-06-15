@@ -109,8 +109,7 @@ class ProfileScreen extends ConsumerWidget {
         ? displayName.split(' ').map((s) => s.isNotEmpty ? s[0] : '').take(2).join().toUpperCase()
         : 'U';
 
-    final roleLabel = _formatRole(authState.accountType);
-    final roleColor = _getRoleColor(authState.accountType);
+
 
     final themeMode = ref.watch(themeNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -231,23 +230,6 @@ class ProfileScreen extends ConsumerWidget {
                       color: Colors.white,
                     ),
                     textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: roleColor.withOpacity(0.2),
-                      border: Border.all(color: roleColor.withOpacity(0.5), width: 1.5),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      roleLabel,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
                   ),
                 ],
               ),
