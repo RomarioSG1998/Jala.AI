@@ -6,6 +6,7 @@ class FeedingRecord {
   final String feedId;
   final double quantity;
   final String feedingTime;
+  final double? unitCost;
 
   FeedingRecord({
     required this.id,
@@ -15,6 +16,7 @@ class FeedingRecord {
     required this.feedId,
     required this.quantity,
     required this.feedingTime,
+    this.unitCost,
   });
 
   factory FeedingRecord.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class FeedingRecord {
       feedId: json['feedId'] ?? '',
       quantity: (json['quantity'] as num?)?.toDouble() ?? 0.0,
       feedingTime: json['feedingTime'] ?? '',
+      unitCost: (json['unitCost'] as num?)?.toDouble(),
     );
   }
 
@@ -38,6 +41,7 @@ class FeedingRecord {
       'feedId': feedId,
       'quantity': quantity,
       'feedingTime': feedingTime,
+      if (unitCost != null) 'unitCost': unitCost,
     };
   }
 }

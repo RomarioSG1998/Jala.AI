@@ -24,6 +24,8 @@ public class InventoryService {
                 .quantity(requestDTO.getQuantity())
                 .unit(requestDTO.getUnit())
                 .type(requestDTO.getType())
+                .power(requestDTO.getPower())
+                .unitCost(requestDTO.getUnitCost())
                 .build();
 
         Inventory savedInventory = inventoryRepository.save(inventory);
@@ -50,6 +52,8 @@ public class InventoryService {
         existingInventory.setQuantity(requestDTO.getQuantity());
         existingInventory.setUnit(requestDTO.getUnit());
         existingInventory.setType(requestDTO.getType());
+        existingInventory.setPower(requestDTO.getPower());
+        existingInventory.setUnitCost(requestDTO.getUnitCost());
 
         Inventory updatedInventory = inventoryRepository.save(existingInventory);
         return mapToDTO(updatedInventory);
@@ -70,6 +74,8 @@ public class InventoryService {
                 .quantity(inventory.getQuantity())
                 .unit(inventory.getUnit())
                 .type(inventory.getType())
+                .power(inventory.getPower())
+                .unitCost(inventory.getUnitCost())
                 .build();
     }
 }

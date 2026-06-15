@@ -36,4 +36,10 @@ public class Inventory {
 
     @Column(length = 100)
     private String type; // e.g., FEED, MEDICINE, EQUIPMENT
+
+    @Column(length = 100)
+    private String power;
+
+    @Column(name = "unit_cost", precision = 10, scale = 2)
+    private BigDecimal unitCost;
 }

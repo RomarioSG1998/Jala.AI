@@ -45,6 +45,19 @@ public class Tank {
     @Column(name = "next_harvest_date")
     private LocalDate nextHarvestDate;
 
+    /** Data de entrada/povoamento dos alevinos no tanque */
+    @Column(name = "stocking_date")
+    private LocalDate stockingDate;
+
+    @Column(name = "initial_stocking_qty")
+    private Integer initialStockingQty;
+
+    @Column(name = "initial_average_weight_g")
+    private Integer initialAverageWeightG;
+
+    @Column(name = "supplier", length = 150)
+    private String supplier;
+
     /** Status operacional: ACTIVE ou INACTIVE */
     @Column(name = "status", length = 20)
     @Builder.Default

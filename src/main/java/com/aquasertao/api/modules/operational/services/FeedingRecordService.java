@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -44,13 +45,25 @@ public class FeedingRecordService {
         inventoryRepository.save(inventory);
 
         // 5. Create and save the Feeding Record
+        LocalDateTime feedingTime = LocalDateTime.now();
+        if (requestDTO.getFeedingTime() != null && !requestDTO.getFeedingTime().isEmpty()) {
+            try {
+                feedingTime = LocalDateTime.parse(requestDTO.getFeedingTime());
+            } catch (Exception e) {
+                // Ignore or log
+            }
+        }
+
+        BigDecimal unitCost = requestDTO.getUnitCost() != null ? requestDTO.getUnitCost() : inventory.getUnitCost();
+
         FeedingRecord feedingRecord = FeedingRecord.builder()
                 .farmId(requestDTO.getFarmId())
                 .tankId(requestDTO.getTankId())
                 .userId(requestDTO.getUserId())
                 .feedId(requestDTO.getFeedId())
                 .quantity(requestDTO.getQuantity())
-                .feedingTime(LocalDateTime.now())
+                .feedingTime(feedingTime)
+                .unitCost(unitCost)
                 .build();
 
         FeedingRecord savedRecord = feedingRecordRepository.save(feedingRecord);
@@ -100,6 +113,17 @@ public class FeedingRecordService {
         existingRecord.setFeedId(requestDTO.getFeedId());
         existingRecord.setQuantity(requestDTO.getQuantity());
 
+        if (requestDTO.getFeedingTime() != null && !requestDTO.getFeedingTime().isEmpty()) {
+            try {
+                existingRecord.setFeedingTime(LocalDateTime.parse(requestDTO.getFeedingTime()));
+            } catch (Exception e) {
+                // Ignore or log
+            }
+        }
+        if (requestDTO.getUnitCost() != null) {
+            existingRecord.setUnitCost(requestDTO.getUnitCost());
+        }
+
         FeedingRecord updatedRecord = feedingRecordRepository.save(existingRecord);
         return mapToDTO(updatedRecord);
     }
@@ -127,6 +151,7 @@ public class FeedingRecordService {
                 .feedId(record.getFeedId())
                 .quantity(record.getQuantity())
                 .feedingTime(record.getFeedingTime())
+                .unitCost(record.getUnitCost())
                 .build();
     }
 }

@@ -26,13 +26,26 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
     }
   }
 
-  Future<bool> createTank(String name, String species, int capacity, [String? customImage]) async {
+  Future<bool> createTank(
+    String name,
+    String species,
+    int capacity, {
+    String? stockingDate,
+    int? initialStockingQty,
+    int? initialAverageWeightG,
+    String? supplier,
+    String? customImage,
+  }) async {
     try {
       print('TanksNotifier.createTank: customImage length = ${customImage?.length}');
       final newTank = await _repository.createTank({
         'name': name,
         'fishSpecies': species,
         'fishCapacity': capacity,
+        'stockingDate': stockingDate,
+        'initialStockingQty': initialStockingQty,
+        'initialAverageWeightG': initialAverageWeightG,
+        'supplier': supplier,
         'customImage': customImage,
       });
       // Update state optimistically or by fetching
@@ -58,10 +71,14 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
     int averageWeight,
     int mortalityCount,
     String? nextHarvestDate,
-    String status, [
+    String? stockingDate,
+    String status, {
+    int? initialStockingQty,
+    int? initialAverageWeightG,
+    String? supplier,
     String? customImage,
     bool clearImage = false,
-  ]) async {
+  }) async {
     try {
       final imgVal = clearImage ? "" : customImage;
       print('TanksNotifier.updateTank: customImage length = ${imgVal?.length}, clearImage = $clearImage');
@@ -72,6 +89,10 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
         'averageWeightG': averageWeight,
         'mortalityCount': mortalityCount,
         'nextHarvestDate': nextHarvestDate,
+        'stockingDate': stockingDate,
+        'initialStockingQty': initialStockingQty,
+        'initialAverageWeightG': initialAverageWeightG,
+        'supplier': supplier,
         'status': status,
         'customImage': imgVal,
       });

@@ -21,4 +21,9 @@ public class WaterQualityRequestDTO {
     private BigDecimal ph;
     private BigDecimal temperature;
     private BigDecimal dissolvedOxygen;
+    private BigDecimal ammonia;
+    private BigDecimal nitrite;
+    private BigDecimal alkalinity;
+    private BigDecimal hardness;
+    private BigDecimal solids;
 }

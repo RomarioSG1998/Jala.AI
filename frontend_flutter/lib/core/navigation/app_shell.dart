@@ -29,6 +29,7 @@ import 'package:frontend_flutter/features/suppliers/presentation/suppliers_scree
 import 'package:frontend_flutter/features/saas_admin/presentation/tenants_screen.dart';
 import 'package:frontend_flutter/features/feeding_records/presentation/feeding_records_screen.dart';
 import 'package:frontend_flutter/features/employees/presentation/employees_screen.dart';
+import 'package:frontend_flutter/features/mortality/presentation/mortality_screen.dart';
 
 // Dashboard Screen containing SaasAdminBody
 import 'package:frontend_flutter/features/dashboard/presentation/dashboard_screen.dart';
@@ -219,6 +220,9 @@ class _AppShellState extends ConsumerState<AppShell> {
         break;
       case '/employees':
         EmployeesScreen.showAddEmployeeModal(context);
+        break;
+      case '/mortality':
+        MortalityScreen.showAddMortalityModal(context, ref);
         break;
       case '/saas-dashboard':
         TenantsScreen.showAddTenantModal(context, ref);
@@ -675,6 +679,9 @@ class _AppShellState extends ConsumerState<AppShell> {
       case '/employees':
         searchHint = 'Buscar funcionários...';
         break;
+      case '/mortality':
+        searchHint = 'Buscar registros de mortalidade...';
+        break;
     }
 
     return Scaffold(
@@ -1032,6 +1039,9 @@ class AppDrawer extends ConsumerWidget {
                     _tile(context, Icons.agriculture, 'Colheitas', Colors.green, () {
                       Navigator.pop(context); context.go('/harvests');
                     }),
+                    _tile(context, Icons.warning_amber_rounded, 'Mortalidade', Colors.red, () {
+                      Navigator.pop(context); context.go('/mortality');
+                    }),
                   ],
                   if (role == 'FIELD_OPERATOR') ...[
                     FieldOperatorDrawerItems(userId: authState.userId ?? '', context: context),
@@ -1108,6 +1118,7 @@ class FieldOperatorDrawerItems extends ConsumerWidget {
     'feeding_records': ('/feeding-records', Icons.restaurant,            'Alimentação',       Colors.purple),
     'inventory':       ('/inventory',       Icons.inventory,             'Estoque',           Colors.orange),
     'harvests':        ('/harvests',        Icons.agriculture,           'Colheitas',         Colors.green),
+    'mortality':       ('/mortality',       Icons.warning_amber_rounded, 'Mortalidade',       Colors.red),
     'maintenance':     ('/maintenance',     Icons.build,                 'Manutenção',        Colors.grey),
   };
 

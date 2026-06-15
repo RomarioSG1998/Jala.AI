@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
+import 'package:frontend_flutter/features/tanks/data/biometrics_model.dart';
 
 class TankRepository {
   final Dio _dio;
@@ -62,6 +63,42 @@ class TankRepository {
       await _dio.delete('/api/tanks/$tankId?farmId=$_farmId');
     } catch (e) {
       throw Exception('Failed to delete tank: $e');
+    }
+  }
+
+  // ─── Biometrics Endpoints ───
+  Future<List<BiometricsRecord>> getBiometrics(String tankId) async {
+    try {
+      final response = await _dio.get('/api/biometrics/tank/$tankId?farmId=$_farmId');
+      final rawItems = _extractCollection(response.data);
+      return rawItems
+          .whereType<Map<String, dynamic>>()
+          .map(BiometricsRecord.fromJson)
+          .toList();
+    } catch (e) {
+      throw Exception('Failed to load biometrics: $e');
+    }
+  }
+
+  Future<BiometricsRecord> createBiometricsRecord(String tankId, int weightG, [String? recordDate]) async {
+    try {
+      final response = await _dio.post('/api/biometrics', data: {
+        'farmId': _farmId,
+        'tankId': tankId,
+        'weightG': weightG,
+        'recordDate': recordDate,
+      });
+      return BiometricsRecord.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Failed to create biometrics: $e');
+    }
+  }
+
+  Future<void> deleteBiometricsRecord(String id) async {
+    try {
+      await _dio.delete('/api/biometrics/$id?farmId=$_farmId');
+    } catch (e) {
+      throw Exception('Failed to delete biometrics record: $e');
     }
   }
 }

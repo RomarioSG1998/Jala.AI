@@ -21,4 +21,6 @@ public class FeedingRecordRequestDTO {
     private UUID userId;
     private UUID feedId;
     private BigDecimal quantity;
+    private BigDecimal unitCost;
+    private String feedingTime;
 }

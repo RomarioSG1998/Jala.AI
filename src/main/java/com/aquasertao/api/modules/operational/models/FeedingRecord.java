@@ -38,8 +38,11 @@ public class FeedingRecord {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal quantity;
 
-    @Column(name = "feeding_time", nullable = false, updatable = false)
+    @Column(name = "feeding_time", nullable = false)
     private LocalDateTime feedingTime;
+
+    @Column(name = "unit_cost", precision = 10, scale = 2)
+    private BigDecimal unitCost;
 
     @PrePersist
     public void prePersist() {

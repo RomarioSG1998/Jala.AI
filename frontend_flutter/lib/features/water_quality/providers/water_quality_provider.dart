@@ -25,13 +25,28 @@ class WaterQualityNotifier extends AsyncNotifier<List<WaterQuality>> {
     }
   }
 
-  Future<bool> createRecord(String tankId, double ph, double temperature, double dissolvedOxygen) async {
+  Future<bool> createRecord(
+    String tankId,
+    double ph,
+    double temperature,
+    double dissolvedOxygen, {
+    double? ammonia,
+    double? nitrite,
+    double? alkalinity,
+    double? hardness,
+    double? solids,
+  }) async {
     try {
       final newRecord = await _repository.createRecord({
         'tankId': tankId,
         'ph': ph,
         'temperature': temperature,
         'dissolvedOxygen': dissolvedOxygen,
+        'ammonia': ammonia,
+        'nitrite': nitrite,
+        'alkalinity': alkalinity,
+        'hardness': hardness,
+        'solids': solids,
       });
       if (state.hasValue) {
         state = AsyncValue.data([...state.value!, newRecord]);
@@ -42,9 +57,31 @@ class WaterQualityNotifier extends AsyncNotifier<List<WaterQuality>> {
     }
   }
 
-  Future<bool> updateRecord(String id, String tankId, double ph, double temperature, double dissolvedOxygen) async {
+  Future<bool> updateRecord(
+    String id,
+    String tankId,
+    double ph,
+    double temperature,
+    double dissolvedOxygen, {
+    double? ammonia,
+    double? nitrite,
+    double? alkalinity,
+    double? hardness,
+    double? solids,
+  }) async {
     try {
-      final updated = await _repository.updateRecord(id, tankId, ph, temperature, dissolvedOxygen);
+      final updated = await _repository.updateRecord(
+        id,
+        tankId,
+        ph,
+        temperature,
+        dissolvedOxygen,
+        ammonia: ammonia,
+        nitrite: nitrite,
+        alkalinity: alkalinity,
+        hardness: hardness,
+        solids: solids,
+      );
       if (state.hasValue) {
         state = AsyncValue.data(state.value!.map((r) => r.id == id ? updated : r).toList());
       }

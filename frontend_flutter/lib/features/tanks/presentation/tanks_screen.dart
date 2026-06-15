@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/features/tanks/presentation/widgets/tank_card.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
+import 'package:frontend_flutter/features/tanks/data/biometrics_model.dart';
+import 'package:frontend_flutter/features/tanks/providers/biometrics_provider.dart';
 import 'package:frontend_flutter/features/dashboard/providers/farm_summary_provider.dart';
 import 'package:frontend_flutter/features/dashboard/data/farm_summary_model.dart';
 import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
@@ -451,6 +453,10 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
   final _nameController = TextEditingController();
   final _speciesController = TextEditingController();
   final _capacityController = TextEditingController();
+  final _stockingDateController = TextEditingController();
+  final _initialStockingQtyController = TextEditingController();
+  final _initialAverageWeightGController = TextEditingController();
+  final _supplierController = TextEditingController();
   String? _customImageBase64;
   bool _isLoading = false;
 
@@ -459,6 +465,10 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
     _nameController.dispose();
     _speciesController.dispose();
     _capacityController.dispose();
+    _stockingDateController.dispose();
+    _initialStockingQtyController.dispose();
+    _initialAverageWeightGController.dispose();
+    _supplierController.dispose();
     super.dispose();
   }
 
@@ -486,6 +496,26 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
     }
   }
 
+  Future<void> _selectStockingDate() async {
+    DateTime initial = DateTime.now();
+    if (_stockingDateController.text.isNotEmpty) {
+      try {
+        initial = DateTime.parse(_stockingDateController.text);
+      } catch (_) {}
+    }
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        _stockingDateController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
@@ -493,7 +523,11 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
           _nameController.text.trim(),
           _speciesController.text.trim(),
           int.parse(_capacityController.text.trim()),
-          _customImageBase64,
+          stockingDate: _stockingDateController.text.isEmpty ? null : _stockingDateController.text,
+          initialStockingQty: int.tryParse(_initialStockingQtyController.text.trim()),
+          initialAverageWeightG: int.tryParse(_initialAverageWeightGController.text.trim()),
+          supplier: _supplierController.text.isEmpty ? null : _supplierController.text.trim(),
+          customImage: _customImageBase64,
         );
     if (mounted) {
       setState(() => _isLoading = false);
@@ -598,8 +632,48 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
                 TextFormField(controller: _nameController, decoration: const InputDecoration(labelText: 'Nome do Tanque', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
                 const SizedBox(height: 16),
                 TextFormField(controller: _speciesController, decoration: const InputDecoration(labelText: 'Espécie de Peixe', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
+                          TextFormField(controller: _capacityController, decoration: const InputDecoration(labelText: 'Capacidade', border: OutlineInputBorder()), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null)),
                 const SizedBox(height: 16),
-                TextFormField(controller: _capacityController, decoration: const InputDecoration(labelText: 'Capacidade', border: OutlineInputBorder()), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null)),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _stockingDateController,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Data de Povoamento',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.calendar_today),
+                        ),
+                        onTap: _selectStockingDate,
+                      ),
+                    ),
+                    if (_stockingDateController.text.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () => setState(() => _stockingDateController.clear()),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _initialStockingQtyController,
+                  decoration: const InputDecoration(labelText: 'Quantidade de Povoamento (Opcional)', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v!.isNotEmpty && int.tryParse(v) == null ? 'Deve ser um número inteiro' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _initialAverageWeightGController,
+                  decoration: const InputDecoration(labelText: 'Peso Médio Inicial (g) (Opcional)', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  validator: (v) => v!.isNotEmpty && int.tryParse(v) == null ? 'Deve ser um número inteiro' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _supplierController,
+                  decoration: const InputDecoration(labelText: 'Fornecedor (Opcional)', border: OutlineInputBorder()),
+                ),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
@@ -641,6 +715,16 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
   late TextEditingController _weightController;
   late TextEditingController _mortalityController;
   late TextEditingController _harvestDateController;
+  late TextEditingController _stockingDateController;
+  late TextEditingController _initialStockingQtyController;
+  late TextEditingController _initialAverageWeightGController;
+  late TextEditingController _supplierController;
+  
+  // Biometrics & tab state
+  int _activeTab = 0;
+  final _newWeightController = TextEditingController();
+  late TextEditingController _newWeightDateController;
+
   late String _status;
   String? _customImageBase64;
   bool _clearImage = false;
@@ -655,6 +739,14 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
     _weightController = TextEditingController(text: widget.tank.averageWeightG.toString());
     _mortalityController = TextEditingController(text: widget.tank.mortalityCount.toString());
     _harvestDateController = TextEditingController(text: widget.tank.nextHarvestDate ?? '');
+    _stockingDateController = TextEditingController(text: widget.tank.stockingDate ?? '');
+    _initialStockingQtyController = TextEditingController(text: widget.tank.initialStockingQty?.toString() ?? '');
+    _initialAverageWeightGController = TextEditingController(text: widget.tank.initialAverageWeightG?.toString() ?? '');
+    _supplierController = TextEditingController(text: widget.tank.supplier ?? '');
+    
+    final today = DateTime.now();
+    _newWeightDateController = TextEditingController(text: "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}");
+    
     _status = widget.tank.status;
     _customImageBase64 = widget.tank.customImage;
   }
@@ -667,7 +759,33 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
     _weightController.dispose();
     _mortalityController.dispose();
     _harvestDateController.dispose();
+    _stockingDateController.dispose();
+    _initialStockingQtyController.dispose();
+    _initialAverageWeightGController.dispose();
+    _supplierController.dispose();
+    _newWeightController.dispose();
+    _newWeightDateController.dispose();
     super.dispose();
+  }
+
+  Future<void> _selectNewWeightDate() async {
+    DateTime initial = DateTime.now();
+    if (_newWeightDateController.text.isNotEmpty) {
+      try {
+        initial = DateTime.parse(_newWeightDateController.text);
+      } catch (_) {}
+    }
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        _newWeightDateController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
   }
 
   Future<void> _pickImage() async {
@@ -715,6 +833,26 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
     }
   }
 
+  Future<void> _selectStockingDate() async {
+    DateTime initial = DateTime.now();
+    if (_stockingDateController.text.isNotEmpty) {
+      try {
+        initial = DateTime.parse(_stockingDateController.text);
+      } catch (_) {}
+    }
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        _stockingDateController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
@@ -727,9 +865,13 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
           int.parse(_weightController.text.trim()),
           int.parse(_mortalityController.text.trim()),
           _harvestDateController.text.isEmpty ? null : _harvestDateController.text,
+          _stockingDateController.text.isEmpty ? null : _stockingDateController.text,
           _status,
-          _customImageBase64,
-          _clearImage,
+          initialStockingQty: int.tryParse(_initialStockingQtyController.text.trim()),
+          initialAverageWeightG: int.tryParse(_initialAverageWeightGController.text.trim()),
+          supplier: _supplierController.text.isEmpty ? null : _supplierController.text.trim(),
+          customImage: _customImageBase64,
+          clearImage: _clearImage,
         );
 
     if (mounted) {
@@ -808,156 +950,435 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    height: 140,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? const Color(0xFF1E293B)
-                          : Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Theme.of(context).primaryColor.withOpacity(0.3),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: _customImageBase64 != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Image.memory(
-                                  base64Decode(_customImageBase64!),
-                                  fit: BoxFit.cover,
-                                ),
-                                Positioned(
-                                  top: 8,
-                                  right: 8,
-                                  child: CircleAvatar(
-                                    radius: 16,
-                                    backgroundColor: Colors.black54,
-                                    child: IconButton(
-                                      icon: const Icon(Icons.close, size: 16, color: Colors.white),
-                                      onPressed: () {
-                                        setState(() {
-                                          _customImageBase64 = null;
-                                          _clearImage = true;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => setState(() => _activeTab = 0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: _activeTab == 0 ? Theme.of(context).primaryColor : Colors.transparent,
+                                width: 2,
+                              ),
                             ),
-                          )
-                        : Column(
+                          ),
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.add_photo_alternate_outlined,
-                                size: 40,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Alterar Foto do Tanque (Opcional)',
+                              Icon(Icons.info_outline, size: 16, color: _activeTab == 0 ? Theme.of(context).primaryColor : Colors.grey),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Informações',
                                 style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: _activeTab == 0 ? FontWeight.bold : FontWeight.normal,
+                                  color: _activeTab == 0 ? Theme.of(context).primaryColor : Colors.grey,
                                 ),
                               ),
                             ],
                           ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Nome do Tanque', border: OutlineInputBorder()),
-                  validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _speciesController,
-                  decoration: const InputDecoration(labelText: 'Espécie de Peixe', border: OutlineInputBorder()),
-                  validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _capacityController,
-                  decoration: const InputDecoration(labelText: 'Capacidade', border: OutlineInputBorder()),
-                  keyboardType: TextInputType.number,
-                  validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _weightController,
-                  decoration: const InputDecoration(labelText: 'Peso Médio / Biometria (g)', border: OutlineInputBorder()),
-                  keyboardType: TextInputType.number,
-                  validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _mortalityController,
-                  decoration: const InputDecoration(labelText: 'Mortalidade', border: OutlineInputBorder()),
-                  keyboardType: TextInputType.number,
-                  validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _harvestDateController,
-                        readOnly: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Data de Despesca',
-                          border: OutlineInputBorder(),
-                          suffixIcon: Icon(Icons.calendar_today),
                         ),
-                        onTap: _selectDate,
                       ),
                     ),
-                    if (_harvestDateController.text.isNotEmpty)
-                      IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () => setState(() => _harvestDateController.clear()),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => setState(() => _activeTab = 1),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: _activeTab == 1 ? Theme.of(context).primaryColor : Colors.transparent,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.scale_outlined, size: 16, color: _activeTab == 1 ? Theme.of(context).primaryColor : Colors.grey),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Biometria',
+                                style: TextStyle(
+                                  fontWeight: _activeTab == 1 ? FontWeight.bold : FontWeight.normal,
+                                  color: _activeTab == 1 ? Theme.of(context).primaryColor : Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
+                    ),
                   ],
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: _status,
-                  decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
-                  items: const [
-                    DropdownMenuItem(value: 'ACTIVE', child: Text('Ativo')),
-                    DropdownMenuItem(value: 'INACTIVE', child: Text('Inativo')),
-                  ],
-                  onChanged: (val) => setState(() => _status = val!),
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF13A538),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                if (_activeTab == 0) ...[
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      height: 140,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF1E293B)
+                            : Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Theme.of(context).primaryColor.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: _customImageBase64 != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  Image.memory(
+                                    base64Decode(_customImageBase64!),
+                                    fit: BoxFit.cover,
+                                  ),
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: Colors.black54,
+                                      child: IconButton(
+                                        icon: const Icon(Icons.close, size: 16, color: Colors.white),
+                                        onPressed: () {
+                                          setState(() {
+                                            _customImageBase64 = null;
+                                            _clearImage = true;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_photo_alternate_outlined,
+                                  size: 40,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Alterar Foto do Tanque (Opcional)',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Salvar Alterações'),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(labelText: 'Nome do Tanque', border: OutlineInputBorder()),
+                    validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                   ),
-                  child: const Text('Cancelar', style: TextStyle(fontSize: 16)),
-                ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _speciesController,
+                    decoration: const InputDecoration(labelText: 'Espécie de Peixe', border: OutlineInputBorder()),
+                    validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _capacityController,
+                    decoration: const InputDecoration(labelText: 'Capacidade', border: OutlineInputBorder()),
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _weightController,
+                    decoration: const InputDecoration(labelText: 'Peso Médio / Biometria (g)', border: OutlineInputBorder()),
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _mortalityController,
+                    decoration: const InputDecoration(labelText: 'Mortalidade', border: OutlineInputBorder()),
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _stockingDateController,
+                          readOnly: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Data de Povoamento',
+                            border: OutlineInputBorder(),
+                            suffixIcon: Icon(Icons.calendar_today),
+                          ),
+                          onTap: _selectStockingDate,
+                        ),
+                      ),
+                      if (_stockingDateController.text.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () => setState(() => _stockingDateController.clear()),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _initialStockingQtyController,
+                    decoration: const InputDecoration(labelText: 'Quantidade de Povoamento (Opcional)', border: OutlineInputBorder()),
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v!.isNotEmpty && int.tryParse(v) == null ? 'Deve ser um número inteiro' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _initialAverageWeightGController,
+                    decoration: const InputDecoration(labelText: 'Peso Médio Inicial (g) (Opcional)', border: OutlineInputBorder()),
+                    keyboardType: TextInputType.number,
+                    validator: (v) => v!.isNotEmpty && int.tryParse(v) == null ? 'Deve ser um número inteiro' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _supplierController,
+                    decoration: const InputDecoration(labelText: 'Fornecedor (Opcional)', border: OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _harvestDateController,
+                          readOnly: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Data de Despesca',
+                            border: OutlineInputBorder(),
+                            suffixIcon: Icon(Icons.calendar_today),
+                          ),
+                          onTap: _selectDate,
+                        ),
+                      ),
+                      if (_harvestDateController.text.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () => setState(() => _harvestDateController.clear()),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _status,
+                    decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
+                    items: const [
+                      DropdownMenuItem(value: 'ACTIVE', child: Text('Ativo')),
+                      DropdownMenuItem(value: 'INACTIVE', child: Text('Inativo')),
+                    ],
+                    onChanged: (val) => setState(() => _status = val!),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF13A538),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('Salvar Alterações'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text('Cancelar', style: TextStyle(fontSize: 16)),
+                  ),
+                ] else ...[
+                  // Biometrics Tab
+                  Builder(
+                    builder: (context) {
+                      final biometricsAsync = ref.watch(biometricsProvider(widget.tank.id));
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            'Registrar Nova Biometria',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _newWeightController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Peso Médio (g)',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _newWeightDateController,
+                                  readOnly: true,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Data do Registro',
+                                    border: OutlineInputBorder(),
+                                    suffixIcon: Icon(Icons.calendar_today),
+                                  ),
+                                  onTap: _selectNewWeightDate,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: _isLoading ? null : () async {
+                              if (_newWeightController.text.trim().isEmpty) return;
+                              final weight = int.tryParse(_newWeightController.text.trim());
+                              if (weight == null) return;
+                              setState(() => _isLoading = true);
+                              final success = await ref
+                                  .read(biometricsProvider(widget.tank.id).notifier)
+                                  .logBiometrics(weight, _newWeightDateController.text);
+                              setState(() => _isLoading = false);
+                              if (success) {
+                                _newWeightController.clear();
+                                // Refresh current tank weight field state
+                                setState(() {
+                                  _weightController.text = weight.toString();
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Biometria registrada com sucesso!')),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: const Text('Registrar'),
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Histórico de Medições',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 12),
+                          biometricsAsync.when(
+                            data: (records) {
+                              if (records.isEmpty) {
+                                return const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 20),
+                                  child: Text(
+                                    'Nenhuma biometria registrada para este tanque ainda.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                );
+                              }
+                              return ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: records.length,
+                                itemBuilder: (context, index) {
+                                  final record = records[index];
+                                  
+                                  String growthText = '';
+                                  if (index < records.length - 1) {
+                                    final prev = records[index + 1];
+                                    final diff = record.weightG - prev.weightG;
+                                    final sign = diff >= 0 ? '+' : '';
+                                    growthText = ' ($sign${diff}g)';
+                                  }
+                                  
+                                  final formattedDate = record.recordDate.split('-').reversed.join('/');
+                                  
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    child: ListTile(
+                                      title: Text(
+                                        '${record.weightG} g$growthText',
+                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                      subtitle: Text('Registrado em: $formattedDate'),
+                                      trailing: IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                        onPressed: () async {
+                                          final confirm = await showDialog<bool>(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              title: const Text('Confirmar Exclusão'),
+                                              content: const Text('Deseja realmente excluir este registro de biometria?'),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(ctx, false),
+                                                  child: const Text('Cancelar'),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () => Navigator.pop(ctx, true),
+                                                  child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                          if (confirm == true) {
+                                            setState(() => _isLoading = true);
+                                            await ref
+                                                .read(biometricsProvider(widget.tank.id).notifier)
+                                                .deleteBiometrics(record.id);
+                                            setState(() => _isLoading = false);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                            loading: () => const Center(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 20),
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                            error: (err, stack) => Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                child: Text('Erro ao carregar biometria: $err'),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            child: const Text('Fechar', style: TextStyle(fontSize: 16)),
+                          ),
+                        ],
+                      );
+                    }
+                  ),
+                ],
               ],
             ),
           ),

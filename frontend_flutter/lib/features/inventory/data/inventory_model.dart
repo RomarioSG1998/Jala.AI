@@ -5,6 +5,8 @@ class InventoryItem {
   final double quantity;
   final String unit;
   final String type;
+  final String? power;
+  final double? unitCost;
 
   InventoryItem({
     required this.id,
@@ -13,6 +15,8 @@ class InventoryItem {
     required this.quantity,
     required this.unit,
     required this.type,
+    this.power,
+    this.unitCost,
   });
 
   factory InventoryItem.fromJson(Map<String, dynamic> json) {
@@ -23,6 +27,8 @@ class InventoryItem {
       quantity: (json['quantity'] as num?)?.toDouble() ?? 0.0,
       unit: json['unit'] ?? '',
       type: json['type'] ?? '',
+      power: json['power'],
+      unitCost: (json['unitCost'] as num?)?.toDouble(),
     );
   }
 
@@ -33,5 +39,7 @@ class InventoryItem {
         'quantity': quantity,
         'unit': unit,
         'type': type,
+        if (power != null) 'power': power,
+        if (unitCost != null) 'unitCost': unitCost,
       };
 }

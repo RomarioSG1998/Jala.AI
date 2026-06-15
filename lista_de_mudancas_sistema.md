@@ -11,47 +11,46 @@
 
 ## 🐟 Biometria e Povoamento
 - [x] **Nomenclatura de Peso**: Adicionar o termo "Biometria" junto ao campo de "Peso Médio" (com a unidade em gramas).
-- [ ] **Data de Povoamento**: Criar um calendário/campo para registrar a data de entrada dos alevinos no tanque.
-- [ ] **Data da Despesca**: Criar um calendário/campo marcado como opcional para a despesca, pois a retirada pode acontecer em etapas.
-- [ ] **Histórico de Biometria**: Estruturar a aba para receber atualizações periódicas de peso (ex: a cada 8, 15 ou 30 dias), acompanhando o desenvolvimento da biomassa para cálculo de ração.
+- [x] **Data de Povoamento**: Criar um calendário/campo para registrar a data de entrada dos alevinos no tanque.
+- [x] **Data da Despesca**: Criar um calendário/campo marcado como opcional para a despesca, pois a retirada pode acontecer em etapas.
+- [x] **Histórico de Biometria**: Estruturar a aba para receber atualizações periódicas de peso (ex: a cada 8, 15 ou 30 dias), acompanhando o desenvolvimento da biomassa para cálculo de ração.
 
 ## 💧 Qualidade da Água
-- [ ] **Atualização de Nomenclatura**: Remover o item isolado "Teste de pH" e substituir por "Kit de análise de qualidade de água".
-- [ ] **Parâmetros de Análise**: Dentro do kit, incluir os campos de registro para:
-  - [ ] pH
-  - [ ] Amônia
-  - [ ] Nitrito
-  - [ ] Alcalinidade
-  - [ ] Dureza total
-  - [ ] Sólidos
+- [x] **Atualização de Nomenclatura**: Remover o item isolado "Teste de pH" e substituir por "Kit de análise de qualidade de água".
+- [x] **Parâmetros de Análise**: Dentro do kit, incluir os campos de registro para:
+  - [x] pH
+  - [x] Amônia
+  - [x] Nitrito
+  - [x] Alcalinidade
+  - [x] Dureza total
+  - [x] Sólidos
 
 ## ⚙️ Equipamentos
-- [ ] **Cadastro de Itens**: Adicionar novos itens de infraestrutura no sistema:
-  - [ ] Tarrafa
-  - [ ] Soprador
-  - [ ] Aerador
-- [ ] **Especificação de Potência**: Ao selecionar "Aerador", abrir um campo opcional para o usuário registrar a potência do equipamento (ex: 0.5 cavalo, 1 cavalo, 2 cavalos).
+- [x] **Cadastro de Itens**: Adicionar novos itens de infraestrutura no sistema:
+  - [x] Tarrafa
+  - [x] Soprador
+  - [x] Aerador
+- [x] **Especificação de Potência**: Ao selecionar "Aerador", abrir um campo opcional para o usuário registrar a potência do equipamento (ex: 0.5 cavalo, 1 cavalo, 2 cavalos).
 
 ## 🛠️ Funcionalidades Principais (A revisar/implementar)
-- [ ] **Cadastro dos tanques**
-  - [ ] Nome do tanque
-  - [ ] Tipo (escavado, geomembrana, elevado)
-  - [ ] Comprimento, largura e profundidade
-  - [ ] Volume de água
-- [ ] **Controle de povoamento**
-  - [ ] Data de entrada dos alevinos
-  - [ ] Quantidade
-  - [ ] Peso médio inicial
-  - [ ] Fornecedor
-- [ ] **Controle de alimentação**
-  - [ ] Quantidade de ração por dia
-  - [ ] Tipo de ração
-  - [ ] Horários de arraçoamento
-  - [ ] Custo da ração
-- [ ] **Controle de mortalidade**
-  - [ ] Registro diário de mortes
-  - [ ] Causa provável
-  - [ ] Taxa de mortalidade por lote
+- [x] **Cadastro dos tanques**
+  - [x] **Opção de Fechar/Cancelar**: O formulário de cadastro de tanques deve conter opções claras de Cancelar ou Fechar.
+- [x] **Cadastro de biometrias**
+  - [x] **Opção de Fechar/Cancelar**: O formulário de biometria deve conter opções claras de Cancelar ou Fechar.
+- [x] **Controle de povoamento**
+  - [x] Data de entrada dos alevinos
+  - [x] Quantidade
+  - [x] Peso médio inicial
+  - [x] Fornecedor
+- [x] **Controle de alimentação**
+  - [x] Quantidade de ração por dia
+  - [x] Tipo de ração
+  - [x] Horários de arraçoamento
+  - [x] Custo da ração
+- [x] **Controle de mortalidade**
+  - [x] Registro diário de mortes
+  - [x] Causa provável
+  - [x] Taxa de mortalidade por lote
 - [ ] **Controle de biometria**
   - [ ] Peso médio dos peixes
   - [ ] Crescimento semanal

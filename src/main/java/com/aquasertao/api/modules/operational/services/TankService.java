@@ -28,6 +28,15 @@ public class TankService {
             }
         }
 
+        LocalDate stockingDate = null;
+        if (requestDTO.getStockingDate() != null && !requestDTO.getStockingDate().isEmpty()) {
+            try {
+                stockingDate = LocalDate.parse(requestDTO.getStockingDate());
+            } catch (Exception e) {
+                // Ignore or log
+            }
+        }
+
         Tank tank = Tank.builder()
                 .farmId(requestDTO.getFarmId())
                 .name(requestDTO.getName())
@@ -36,6 +45,10 @@ public class TankService {
                 .averageWeightG(requestDTO.getAverageWeightG() != null ? requestDTO.getAverageWeightG() : 0)
                 .mortalityCount(requestDTO.getMortalityCount() != null ? requestDTO.getMortalityCount() : 0)
                 .nextHarvestDate(harvestDate)
+                .stockingDate(stockingDate)
+                .initialStockingQty(requestDTO.getInitialStockingQty())
+                .initialAverageWeightG(requestDTO.getInitialAverageWeightG())
+                .supplier(requestDTO.getSupplier())
                 .status(requestDTO.getStatus() != null ? requestDTO.getStatus() : "ACTIVE")
                 .customImage(requestDTO.getCustomImage())
                 .build();
@@ -64,6 +77,9 @@ public class TankService {
         existingTank.setFishCapacity(requestDTO.getFishCapacity());
         existingTank.setAverageWeightG(requestDTO.getAverageWeightG() != null ? requestDTO.getAverageWeightG() : existingTank.getAverageWeightG());
         existingTank.setMortalityCount(requestDTO.getMortalityCount() != null ? requestDTO.getMortalityCount() : existingTank.getMortalityCount());
+        existingTank.setInitialStockingQty(requestDTO.getInitialStockingQty());
+        existingTank.setInitialAverageWeightG(requestDTO.getInitialAverageWeightG());
+        existingTank.setSupplier(requestDTO.getSupplier());
         
         if (requestDTO.getNextHarvestDate() != null) {
             if (requestDTO.getNextHarvestDate().isEmpty()) {
@@ -71,6 +87,17 @@ public class TankService {
             } else {
                 try {
                     existingTank.setNextHarvestDate(LocalDate.parse(requestDTO.getNextHarvestDate()));
+                } catch (Exception e) {
+                    // Ignore or log
+                }
+            }
+        }
+        if (requestDTO.getStockingDate() != null) {
+            if (requestDTO.getStockingDate().isEmpty()) {
+                existingTank.setStockingDate(null);
+            } else {
+                try {
+                    existingTank.setStockingDate(LocalDate.parse(requestDTO.getStockingDate()));
                 } catch (Exception e) {
                     // Ignore or log
                 }
@@ -104,6 +131,10 @@ public class TankService {
                 .averageWeightG(tank.getAverageWeightG())
                 .mortalityCount(tank.getMortalityCount())
                 .nextHarvestDate(tank.getNextHarvestDate())
+                .stockingDate(tank.getStockingDate())
+                .initialStockingQty(tank.getInitialStockingQty())
+                .initialAverageWeightG(tank.getInitialAverageWeightG())
+                .supplier(tank.getSupplier())
                 .status(tank.getStatus())
                 .customImage(tank.getCustomImage())
                 .build();

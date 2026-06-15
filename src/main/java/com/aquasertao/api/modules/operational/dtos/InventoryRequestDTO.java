@@ -21,4 +21,6 @@ public class InventoryRequestDTO {
     private BigDecimal quantity;
     private String unit;
     private String type;
+    private String power;
+    private BigDecimal unitCost;
 }
