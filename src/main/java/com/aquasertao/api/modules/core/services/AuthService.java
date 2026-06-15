@@ -15,6 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.aquasertao.api.modules.core.dtos.ProfileImageDTO;
+import com.aquasertao.api.modules.core.dtos.UpdateProfileRequestDTO;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -61,6 +63,7 @@ public class AuthService {
         return AuthResponseDTO.builder()
                 .token(jwtToken)
                 .email(savedUser.getEmail())
+                .name(savedUser.getName())
                 .accountType(savedUser.getAccountType())
                 .userId(savedUser.getId())
                 .build();
@@ -82,10 +85,11 @@ public class AuthService {
         return AuthResponseDTO.builder()
                 .token(jwtToken)
                 .email(user.getEmail())
+                .name(user.getName())
                 .accountType(user.getAccountType())
                 .userId(user.getId())
                 .build();
-     }
+    }
 
      public ProfileImageDTO getProfileImage(UUID userId) {
          var user = repository.findById(userId)
@@ -100,5 +104,36 @@ public class AuthService {
                  .orElseThrow(() -> new IllegalArgumentException("User not found."));
          user.setProfileImage(dto.getProfileImage());
          repository.save(user);
+     }
+
+     @Transactional
+     public AuthResponseDTO updateProfile(UUID userId, UpdateProfileRequestDTO request) {
+         var user = repository.findById(userId)
+                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
+
+         if (!user.getEmail().equalsIgnoreCase(request.getEmail())) {
+             if (repository.findByEmail(request.getEmail()).isPresent()) {
+                 throw new IllegalArgumentException("Email already registered.");
+             }
+             user.setEmail(request.getEmail());
+         }
+
+         user.setName(request.getName());
+
+         if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
+             user.setPassword(passwordEncoder.encode(request.getPassword()));
+         }
+
+         GlobalUser updatedUser = repository.save(user);
+         
+         var jwtToken = jwtService.generateToken(updatedUser);
+
+         return AuthResponseDTO.builder()
+                 .token(jwtToken)
+                 .email(updatedUser.getEmail())
+                 .name(updatedUser.getName())
+                 .accountType(updatedUser.getAccountType())
+                 .userId(updatedUser.getId())
+                 .build();
      }
 }

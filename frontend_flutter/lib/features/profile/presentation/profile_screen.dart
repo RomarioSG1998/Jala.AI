@@ -76,12 +76,22 @@ class ProfileScreen extends ConsumerWidget {
         ? ref.watch(profileImageProvider(authState.userId!))
         : null;
 
-    // Try to find full name from the employee list
-    String displayName = authState.email?.split('@').first ?? 'Usuário';
-    if (employeesAsync.hasValue && authState.userId != null) {
-      final match = employeesAsync.value!.where((emp) => emp.id == authState.userId).firstOrNull;
-      if (match != null) {
-        displayName = match.name;
+    // Try to find full name from authState, then employee list, then email
+    String displayName = authState.name ?? authState.email?.split('@').first ?? 'Usuário';
+    if (authState.name == null) {
+      if (employeesAsync.hasValue && authState.userId != null) {
+        final match = employeesAsync.value!.where((emp) => emp.id == authState.userId).firstOrNull;
+        if (match != null) {
+          displayName = match.name;
+        } else {
+          // format email prefix
+          displayName = displayName
+              .split('.')
+              .map((word) => word.isNotEmpty
+                  ? '${word[0].toUpperCase()}${word.substring(1)}'
+                  : '')
+              .join(' ');
+        }
       } else {
         // format email prefix
         displayName = displayName
@@ -118,6 +128,13 @@ class ProfileScreen extends ConsumerWidget {
             }
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.white),
+            tooltip: 'Editar Perfil',
+            onPressed: () => _showEditProfileBottomSheet(context, ref, displayName, authState.email ?? ''),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -243,6 +260,23 @@ class ProfileScreen extends ConsumerWidget {
                   _buildSectionTitle(context, 'Informações da Conta'),
                   _buildInfoCard(context, [
                     _buildInfoTile(context, Icons.email_outlined, 'E-mail', authState.email ?? 'Não informado'),
+                    _buildDivider(context),
+                    ListTile(
+                      leading: Icon(Icons.edit_note, color: isDark ? Colors.blue.shade300 : _kNavyBlue.withOpacity(0.7)),
+                      title: Text(
+                        'Editar Informações',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      subtitle: const Text(
+                        'Alterar nome, e-mail ou senha',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                      onTap: () => _showEditProfileBottomSheet(context, ref, displayName, authState.email ?? ''),
+                    ),
                     _buildDivider(context),
                     _buildInfoTile(
                       context,
@@ -976,5 +1010,219 @@ class ProfileScreen extends ConsumerWidget {
         );
       },
     );
+  }
+
+  void _showEditProfileBottomSheet(BuildContext context, WidgetRef ref, String currentName, String currentEmail) {
+    final nameController = TextEditingController(text: currentName);
+    final emailController = TextEditingController(text: currentEmail);
+    final passwordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Consumer(
+          builder: (context, ref, child) {
+            final authState = ref.watch(authNotifierProvider);
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  border: isDark ? Border.all(color: const Color(0xFF263350), width: 1.5) : null,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                child: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 48,
+                            height: 5,
+                            margin: const EdgeInsets.only(bottom: 20),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(2.5),
+                            ),
+                          ),
+                        ),
+                        Text(
+                          'Editar Perfil',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : const Color(0xFF003366),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        
+                        // Name Field
+                        TextFormField(
+                          controller: nameController,
+                          decoration: InputDecoration(
+                            labelText: 'Nome Completo',
+                            prefixIcon: const Icon(Icons.person_outline),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Por favor, insira seu nome';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Email Field
+                        TextFormField(
+                          controller: emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: 'E-mail',
+                            prefixIcon: const Icon(Icons.email_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Por favor, insira seu e-mail';
+                            }
+                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                              return 'Por favor, insira um e-mail válido';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Password Field
+                        TextFormField(
+                          controller: passwordController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: 'Nova Senha (opcional)',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value != null && value.isNotEmpty && value.length < 6) {
+                              return 'A senha deve ter pelo menos 6 caracteres';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Confirm Password Field
+                        TextFormField(
+                          controller: confirmPasswordController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: 'Confirmar Nova Senha',
+                            prefixIcon: const Icon(Icons.lock_clock_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (passwordController.text.isNotEmpty && value != passwordController.text) {
+                              return 'As senhas não coincidem';
+                            }
+                            return null;
+                          },
+                        ),
+                        
+                        if (authState.error != null) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            authState.error!,
+                            style: const TextStyle(color: Colors.red, fontSize: 13),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+
+                        const SizedBox(height: 24),
+
+                        ElevatedButton(
+                          onPressed: authState.isLoading
+                              ? null
+                              : () async {
+                                  if (formKey.currentState!.validate()) {
+                                    final success = await ref
+                                        .read(authNotifierProvider.notifier)
+                                        .updateProfile(
+                                          name: nameController.text.trim(),
+                                          email: emailController.text.trim(),
+                                          password: passwordController.text.isNotEmpty
+                                              ? passwordController.text
+                                              : null,
+                                        );
+                                    if (success && context.mounted) {
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Perfil atualizado com sucesso!'),
+                                          backgroundColor: _kGreen,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _kNavyBlue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: authState.isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  'Salvar Alterações',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ).whenComplete(() {
+      ref.read(authNotifierProvider.notifier).clearError();
+    });
   }
 }
