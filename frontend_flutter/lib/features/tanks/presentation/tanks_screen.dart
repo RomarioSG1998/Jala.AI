@@ -233,7 +233,7 @@ class _TanksScreenState extends ConsumerState<TanksScreen> {
                 count > 0 ? '${avgWeight.toInt()} g' : '--',
                 Colors.purple,
                 progress,
-                subtitle: 'Peso médio',
+                subtitle: 'Peso médio / Biometria',
               );
             }(),
             () {
@@ -895,7 +895,7 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _weightController,
-                  decoration: const InputDecoration(labelText: 'Peso Médio (g)', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Peso Médio / Biometria (g)', border: OutlineInputBorder()),
                   keyboardType: TextInputType.number,
                   validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
                 ),

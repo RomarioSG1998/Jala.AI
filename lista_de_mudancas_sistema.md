@@ -10,7 +10,7 @@
 - [x] **Registro de Datas**: Garantir que o sistema grave a data exata de cada transação (receita ou despesa).
 
 ## 🐟 Biometria e Povoamento
-- [ ] **Nomenclatura de Peso**: Adicionar o termo "Biometria" junto ao campo de "Peso Médio" (com a unidade em gramas).
+- [x] **Nomenclatura de Peso**: Adicionar o termo "Biometria" junto ao campo de "Peso Médio" (com a unidade em gramas).
 - [ ] **Data de Povoamento**: Criar um calendário/campo para registrar a data de entrada dos alevinos no tanque.
 - [ ] **Data da Despesca**: Criar um calendário/campo marcado como opcional para a despesca, pois a retirada pode acontecer em etapas.
 - [ ] **Histórico de Biometria**: Estruturar a aba para receber atualizações periódicas de peso (ex: a cada 8, 15 ou 30 dias), acompanhando o desenvolvimento da biomassa para cálculo de ração.
