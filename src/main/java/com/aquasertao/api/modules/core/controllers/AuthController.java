@@ -31,6 +31,11 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("OK");
+    }
+
     @GetMapping("/profile-image/{userId}")
     public ResponseEntity<ProfileImageDTO> getProfileImage(
             @PathVariable UUID userId
@@ -45,5 +50,13 @@ public class AuthController {
     ) {
         authService.updateProfileImage(userId, request);
         return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/profile/{userId}")
+    public ResponseEntity<AuthResponseDTO> updateProfile(
+            @PathVariable UUID userId,
+            @RequestBody com.aquasertao.api.modules.core.dtos.UpdateProfileRequestDTO request
+    ) {
+        return ResponseEntity.ok(authService.updateProfile(userId, request));
     }
 }

@@ -20,9 +20,25 @@ class TransactionNotifier extends AsyncNotifier<List<FinancialTransaction>> {
     }
   }
 
-  Future<bool> createTransaction(String type, double amount) async {
+  Future<bool> createTransaction({
+    required String type,
+    required double amount,
+    String? category,
+    String? clientName,
+    String? fishSpecies,
+    double? quantityKg,
+    String? transactionDate,
+  }) async {
     try {
-      final transaction = await _repository.createTransaction(type, amount);
+      final transaction = await _repository.createTransaction(
+        type: type,
+        amount: amount,
+        category: category,
+        clientName: clientName,
+        fishSpecies: fishSpecies,
+        quantityKg: quantityKg,
+        transactionDate: transactionDate,
+      );
       if (state.hasValue) {
         state = AsyncValue.data([...state.value!, transaction]);
       }
@@ -32,9 +48,27 @@ class TransactionNotifier extends AsyncNotifier<List<FinancialTransaction>> {
     }
   }
 
-  Future<bool> updateTransaction(String id, String type, double amount) async {
+  Future<bool> updateTransaction({
+    required String id,
+    required String type,
+    required double amount,
+    String? category,
+    String? clientName,
+    String? fishSpecies,
+    double? quantityKg,
+    String? transactionDate,
+  }) async {
     try {
-      final updated = await _repository.updateTransaction(id, type, amount);
+      final updated = await _repository.updateTransaction(
+        id: id,
+        type: type,
+        amount: amount,
+        category: category,
+        clientName: clientName,
+        fishSpecies: fishSpecies,
+        quantityKg: quantityKg,
+        transactionDate: transactionDate,
+      );
       if (state.hasValue) {
         state = AsyncValue.data(state.value!.map((t) => t.id == id ? updated : t).toList());
       }

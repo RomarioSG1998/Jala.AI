@@ -162,7 +162,7 @@ class FeedingRecordsScreen extends ConsumerWidget {
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
-                                  '$feedName: ${record.quantity} $unit',
+                                  '$feedName: ${record.quantity} $unit${record.unitCost != null ? " (Custo: R\$ ${(record.quantity * record.unitCost!).toStringAsFixed(2)})" : ""}',
                                   style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade300 : Colors.grey.shade600, fontSize: 13),
                                 ),
                               ),
@@ -267,11 +267,14 @@ class _AddFeedingRecordFormState extends ConsumerState<_AddFeedingRecordForm> {
   String? _selectedTankId;
   String? _selectedFeedId;
   final _quantityController = TextEditingController();
+  final _unitCostController = TextEditingController();
+  DateTime _selectedFeedingTime = DateTime.now();
   bool _isSaving = false;
 
   @override
   void dispose() {
     _quantityController.dispose();
+    _unitCostController.dispose();
     super.dispose();
   }
 
@@ -367,6 +370,14 @@ class _AddFeedingRecordFormState extends ConsumerState<_AddFeedingRecordForm> {
                 }).toList(),
                 onChanged: (val) => setState(() {
                   _selectedFeedId = val;
+                  if (val != null) {
+                    final feed = feeds.firstWhere((f) => f.id == val);
+                    if (feed.unitCost != null) {
+                      _unitCostController.text = feed.unitCost!.toString();
+                    } else {
+                      _unitCostController.clear();
+                    }
+                  }
                 }),
                 validator: (val) => val == null ? 'Selecione a ração' : null,
               ),
@@ -388,6 +399,65 @@ class _AddFeedingRecordFormState extends ConsumerState<_AddFeedingRecordForm> {
                   if (numVal == null || numVal <= 0) return 'Digite um número maior que zero';
                   if (numVal > availableQuantity) {
                     return 'Quantidade maior que o disponível em estoque ($availableQuantity $unit)';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              // Horário do Trato / Arraçoamento
+              InkWell(
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedFeedingTime,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2100),
+                  );
+                  if (date != null) {
+                    final time = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(_selectedFeedingTime),
+                    );
+                    if (time != null) {
+                      setState(() {
+                        _selectedFeedingTime = DateTime(
+                          date.year,
+                          date.month,
+                          date.day,
+                          time.hour,
+                          time.minute,
+                        );
+                      });
+                    }
+                  }
+                },
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Horário do Trato',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.access_time),
+                  ),
+                  child: Text(
+                    DateFormat('dd/MM/yyyy HH:mm').format(_selectedFeedingTime),
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Custo Unitário da Ração
+              TextFormField(
+                controller: _unitCostController,
+                decoration: InputDecoration(
+                  labelText: 'Custo Unitário da Ração (R\$ / $unit)',
+                  helperText: 'Opcional. Preenche automaticamente com base no estoque.',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.monetization_on_outlined),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (val) {
+                  if (val != null && val.isNotEmpty) {
+                    if (double.tryParse(val) == null) return 'Digite um valor numérico válido';
                   }
                   return null;
                 },
@@ -427,6 +497,8 @@ class _AddFeedingRecordFormState extends ConsumerState<_AddFeedingRecordForm> {
           _selectedTankId!,
           _selectedFeedId!,
           double.parse(_quantityController.text),
+          unitCost: double.tryParse(_unitCostController.text),
+          feedingTime: _selectedFeedingTime.toIso8601String(),
         );
 
     if (mounted) {
@@ -456,6 +528,8 @@ class _EditFeedingRecordForm extends ConsumerStatefulWidget {
 class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _quantityController;
+  late final TextEditingController _unitCostController;
+  late DateTime _selectedFeedingTime;
   String? _selectedTankId;
   String? _selectedFeedId;
   bool _isSaving = false;
@@ -464,13 +538,21 @@ class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> 
   void initState() {
     super.initState();
     _quantityController = TextEditingController(text: widget.record.quantity.toString());
+    _unitCostController = TextEditingController(text: widget.record.unitCost?.toString() ?? '');
     _selectedTankId = widget.record.tankId;
     _selectedFeedId = widget.record.feedId;
+
+    DateTime? timeParsed;
+    try {
+      timeParsed = DateTime.parse(widget.record.feedingTime);
+    } catch (_) {}
+    _selectedFeedingTime = timeParsed ?? DateTime.now();
   }
 
   @override
   void dispose() {
     _quantityController.dispose();
+    _unitCostController.dispose();
     super.dispose();
   }
 
@@ -559,6 +641,14 @@ class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> 
                 }).toList(),
                 onChanged: (val) => setState(() {
                   _selectedFeedId = val;
+                  if (val != null) {
+                    final feed = feeds.firstWhere((f) => f.id == val);
+                    if (feed.unitCost != null) {
+                      _unitCostController.text = feed.unitCost!.toString();
+                    } else {
+                      _unitCostController.clear();
+                    }
+                  }
                 }),
                 validator: (val) => val == null ? 'Selecione a ração' : null,
               ),
@@ -580,6 +670,65 @@ class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> 
                   if (numVal == null || numVal <= 0) return 'Digite um número maior que zero';
                   if (numVal > availableQuantity) {
                     return 'Quantidade maior que o disponível em estoque ($availableQuantity $unit)';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              // Horário do Trato / Arraçoamento
+              InkWell(
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedFeedingTime,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2100),
+                  );
+                  if (date != null) {
+                    final time = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(_selectedFeedingTime),
+                    );
+                    if (time != null) {
+                      setState(() {
+                        _selectedFeedingTime = DateTime(
+                          date.year,
+                          date.month,
+                          date.day,
+                          time.hour,
+                          time.minute,
+                        );
+                      });
+                    }
+                  }
+                },
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Horário do Trato',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.access_time),
+                  ),
+                  child: Text(
+                    DateFormat('dd/MM/yyyy HH:mm').format(_selectedFeedingTime),
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Custo Unitário da Ração
+              TextFormField(
+                controller: _unitCostController,
+                decoration: InputDecoration(
+                  labelText: 'Custo Unitário da Ração (R\$ / $unit)',
+                  helperText: 'Opcional. Preenche automaticamente com base no estoque.',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.monetization_on_outlined),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (val) {
+                  if (val != null && val.isNotEmpty) {
+                    if (double.tryParse(val) == null) return 'Digite um valor numérico válido';
                   }
                   return null;
                 },
@@ -621,6 +770,8 @@ class _EditFeedingRecordFormState extends ConsumerState<_EditFeedingRecordForm> 
           _selectedTankId!,
           _selectedFeedId!,
           double.parse(_quantityController.text),
+          unitCost: double.tryParse(_unitCostController.text),
+          feedingTime: _selectedFeedingTime.toIso8601String(),
         );
 
     if (mounted) {

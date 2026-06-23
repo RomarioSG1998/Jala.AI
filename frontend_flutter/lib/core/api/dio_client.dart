@@ -1,14 +1,29 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/secure_storage.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 
+String _getEffectiveBaseUrl() {
+  const envUrl = String.fromEnvironment('API_URL');
+  if (envUrl.isNotEmpty) {
+    return envUrl;
+  }
+  if (kIsWeb) {
+    return 'http://localhost:8085';
+  }
+  return 'https://jala-ai.onrender.com';
+}
+
 final dioProvider = Provider<Dio>((ref) {
+  final baseUrl = _getEffectiveBaseUrl();
+  debugPrint('[DioClient] Detected API baseUrl: $baseUrl');
+
   final dio = Dio(
     BaseOptions(
-      baseUrl: 'http://localhost:8081',
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: 60),
+      receiveTimeout: const Duration(seconds: 60),
       contentType: 'application/json',
     ),
   );

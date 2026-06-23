@@ -1,0 +1,21 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: supplier-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://ep-cool-glitter-ap8z1vk7.c-7.us-east-1.aws.neon.tech:5432/neondb?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:neondb_owner}
+    password: ${SPRING_DATASOURCE_PASSWORD:npg_ZWCyu4sKU6gE}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: supplier_schema
+  flyway:
+    enabled: false

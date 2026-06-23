@@ -89,7 +89,7 @@ class InventoryScreen extends ConsumerWidget {
                     ),
                     child: const Icon(Icons.delete, color: Colors.white),
                   ),
-                   confirmDismiss: (direction) async {
+                  confirmDismiss: (direction) async {
                     return await PasswordConfirmationDialog.confirm(context, ref);
                   },
                   onDismissed: (direction) {
@@ -118,9 +118,17 @@ class InventoryScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 4),
-                          Text('Quantidade: ${item.quantity} ${item.unit}'),
+                          Text('Quantidade: ${item.quantity} ${item.unit}${item.unitCost != null ? " (Custo: R\$ ${item.unitCost!.toStringAsFixed(2)}/${item.unit})" : ""}'),
+                          if (item.power != null && item.power!.trim().isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                'Potência: ${item.power}',
+                                style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.blueGrey),
+                              ),
+                            ),
+                          const SizedBox(height: 6),
                           Container(
-                            margin: const EdgeInsets.only(top: 4),
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
@@ -220,16 +228,25 @@ class _AddInventoryItemFormState
   final _nameController = TextEditingController();
   final _qtyController = TextEditingController();
   final _unitController = TextEditingController();
+  final _customEquipmentNameController = TextEditingController();
+  final _powerController = TextEditingController();
+  final _unitCostController = TextEditingController();
+
   String _selectedType = 'Feed';
+  String _selectedEquipmentName = 'Tarrafa';
   bool _isLoading = false;
 
   static const _types = ['Feed', 'Medicine', 'Equipment', 'Other'];
+  static const _equipments = ['Tarrafa', 'Soprador', 'Aerador', 'Outro'];
 
   @override
   void dispose() {
     _nameController.dispose();
     _qtyController.dispose();
     _unitController.dispose();
+    _customEquipmentNameController.dispose();
+    _powerController.dispose();
+    _unitCostController.dispose();
     super.dispose();
   }
 
@@ -237,11 +254,26 @@ class _AddInventoryItemFormState
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
+    String finalName = _nameController.text.trim();
+    if (_selectedType == 'Equipment') {
+      if (_selectedEquipmentName != 'Outro') {
+        finalName = _selectedEquipmentName;
+      } else {
+        finalName = _customEquipmentNameController.text.trim();
+      }
+    }
+
+    String? finalPower = (_selectedType == 'Equipment' && _selectedEquipmentName == 'Aerador')
+        ? _powerController.text.trim()
+        : null;
+
     final success = await ref.read(inventoryProvider.notifier).createItem(
-          _nameController.text.trim(),
+          finalName,
           double.parse(_qtyController.text.trim()),
           _unitController.text.trim(),
           _selectedType,
+          power: finalPower,
+          unitCost: double.tryParse(_unitCostController.text.trim()),
         );
 
     if (mounted) {
@@ -258,6 +290,8 @@ class _AddInventoryItemFormState
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -267,19 +301,74 @@ class _AddInventoryItemFormState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Adicionar Item ao Estoque',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                    labelText: 'Nome do Item', border: OutlineInputBorder()),
-                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Adicionar Item',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF003366),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedType,
+                decoration: const InputDecoration(
+                    labelText: 'Tipo de Item', border: OutlineInputBorder()),
+                items: _types
+                    .map((t) =>
+                        DropdownMenuItem(value: t, child: Text(t == 'Feed' ? 'Ração' : (t == 'Medicine' ? 'Medicamento' : (t == 'Equipment' ? 'Equipamento' : 'Outro')))))
+                    .toList(),
+                onChanged: (val) =>
+                    setState(() => _selectedType = val ?? 'Feed'),
+              ),
+              const SizedBox(height: 16),
+              if (_selectedType == 'Equipment') ...[
+                DropdownButtonFormField<String>(
+                  value: _selectedEquipmentName,
+                  decoration: const InputDecoration(
+                      labelText: 'Equipamento', border: OutlineInputBorder()),
+                  items: _equipments
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                      .toList(),
+                  onChanged: (val) =>
+                      setState(() => _selectedEquipmentName = val ?? 'Tarrafa'),
+                ),
+                const SizedBox(height: 16),
+                if (_selectedEquipmentName == 'Outro') ...[
+                  TextFormField(
+                    controller: _customEquipmentNameController,
+                    decoration: const InputDecoration(
+                        labelText: 'Nome do Equipamento Personalizado', border: OutlineInputBorder()),
+                    validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (_selectedEquipmentName == 'Aerador') ...[
+                  TextFormField(
+                    controller: _powerController,
+                    decoration: const InputDecoration(
+                        labelText: 'Potência (ex: 1 cavalo, 2 cavalos) - Opcional', border: OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ] else ...[
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                      labelText: 'Nome do Item', border: OutlineInputBorder()),
+                  validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                ),
+                const SizedBox(height: 16),
+              ],
               Row(
                 children: [
                   Expanded(
@@ -309,32 +398,54 @@ class _AddInventoryItemFormState
                 ],
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedType,
+              TextFormField(
+                controller: _unitCostController,
                 decoration: const InputDecoration(
-                    labelText: 'Tipo de Item', border: OutlineInputBorder()),
-                items: _types
-                    .map((t) =>
-                        DropdownMenuItem(value: t, child: Text(t == 'Feed' ? 'Ração' : (t == 'Medicine' ? 'Medicamento' : (t == 'Equipment' ? 'Equipamento' : 'Outro')))))
-                    .toList(),
-                onChanged: (val) =>
-                    setState(() => _selectedType = val ?? 'Feed'),
+                    labelText: 'Custo Unitário (R\$)',
+                    helperText: 'Opcional. Ex: preço pago por kg/unidade',
+                    border: OutlineInputBorder()),
+                keyboardType:
+                    TextInputType.numberWithOptions(decimal: true),
+                validator: (v) {
+                  if (v != null && v.isNotEmpty) {
+                    if (double.tryParse(v) == null) return 'Valor inválido';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF13A538),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : const Text('Adicionar Item'),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Cancelar'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF13A538),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
+                          : const Text('Salvar'),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -343,6 +454,8 @@ class _AddInventoryItemFormState
     );
   }
 }
+
+// ─── Edit Item Form ───────────────────────────────────────────────────────────
 
 class EditInventoryItemForm extends ConsumerStatefulWidget {
   final InventoryItem item;
@@ -359,10 +472,16 @@ class _EditInventoryItemFormState
   late final TextEditingController _nameController;
   late final TextEditingController _qtyController;
   late final TextEditingController _unitController;
+  late final TextEditingController _customEquipmentNameController;
+  late final TextEditingController _powerController;
+  late final TextEditingController _unitCostController;
+
   late String _selectedType;
+  late String _selectedEquipmentName;
   bool _isLoading = false;
 
   static const _types = ['Feed', 'Medicine', 'Equipment', 'Other'];
+  static const _equipments = ['Tarrafa', 'Soprador', 'Aerador', 'Outro'];
 
   @override
   void initState() {
@@ -371,6 +490,21 @@ class _EditInventoryItemFormState
     _qtyController = TextEditingController(text: widget.item.quantity.toString());
     _unitController = TextEditingController(text: widget.item.unit);
     _selectedType = _types.contains(widget.item.type) ? widget.item.type : 'Feed';
+    _unitCostController = TextEditingController(text: widget.item.unitCost?.toString() ?? '');
+
+    _customEquipmentNameController = TextEditingController();
+    _powerController = TextEditingController(text: widget.item.power ?? '');
+
+    if (_selectedType == 'Equipment') {
+      if (_equipments.contains(widget.item.itemName)) {
+        _selectedEquipmentName = widget.item.itemName;
+      } else {
+        _selectedEquipmentName = 'Outro';
+        _customEquipmentNameController.text = widget.item.itemName;
+      }
+    } else {
+      _selectedEquipmentName = 'Tarrafa';
+    }
   }
 
   @override
@@ -378,6 +512,9 @@ class _EditInventoryItemFormState
     _nameController.dispose();
     _qtyController.dispose();
     _unitController.dispose();
+    _customEquipmentNameController.dispose();
+    _powerController.dispose();
+    _unitCostController.dispose();
     super.dispose();
   }
 
@@ -385,12 +522,27 @@ class _EditInventoryItemFormState
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
+    String finalName = _nameController.text.trim();
+    if (_selectedType == 'Equipment') {
+      if (_selectedEquipmentName != 'Outro') {
+        finalName = _selectedEquipmentName;
+      } else {
+        finalName = _customEquipmentNameController.text.trim();
+      }
+    }
+
+    String? finalPower = (_selectedType == 'Equipment' && _selectedEquipmentName == 'Aerador')
+        ? _powerController.text.trim()
+        : null;
+
     final success = await ref.read(inventoryProvider.notifier).updateItem(
           widget.item.id,
-          _nameController.text.trim(),
+          finalName,
           double.parse(_qtyController.text.trim()),
           _unitController.text.trim(),
           _selectedType,
+          power: finalPower,
+          unitCost: double.tryParse(_unitCostController.text.trim()),
         );
 
     if (mounted) {
@@ -407,6 +559,8 @@ class _EditInventoryItemFormState
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -416,19 +570,74 @@ class _EditInventoryItemFormState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Editar Item do Estoque',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                    labelText: 'Nome do Item', border: OutlineInputBorder()),
-                validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Editar Item',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF003366),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedType,
+                decoration: const InputDecoration(
+                    labelText: 'Tipo de Item', border: OutlineInputBorder()),
+                items: _types
+                    .map((t) =>
+                        DropdownMenuItem(value: t, child: Text(t == 'Feed' ? 'Ração' : (t == 'Medicine' ? 'Medicamento' : (t == 'Equipment' ? 'Equipamento' : 'Outro')))))
+                    .toList(),
+                onChanged: (val) =>
+                    setState(() => _selectedType = val ?? 'Feed'),
+              ),
+              const SizedBox(height: 16),
+              if (_selectedType == 'Equipment') ...[
+                DropdownButtonFormField<String>(
+                  value: _selectedEquipmentName,
+                  decoration: const InputDecoration(
+                      labelText: 'Equipamento', border: OutlineInputBorder()),
+                  items: _equipments
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                      .toList(),
+                  onChanged: (val) =>
+                      setState(() => _selectedEquipmentName = val ?? 'Tarrafa'),
+                ),
+                const SizedBox(height: 16),
+                if (_selectedEquipmentName == 'Outro') ...[
+                  TextFormField(
+                    controller: _customEquipmentNameController,
+                    decoration: const InputDecoration(
+                        labelText: 'Nome do Equipamento Personalizado', border: OutlineInputBorder()),
+                    validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (_selectedEquipmentName == 'Aerador') ...[
+                  TextFormField(
+                    controller: _powerController,
+                    decoration: const InputDecoration(
+                        labelText: 'Potência (ex: 1 cavalo, 2 cavalos) - Opcional', border: OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ] else ...[
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                      labelText: 'Nome do Item', border: OutlineInputBorder()),
+                  validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                ),
+                const SizedBox(height: 16),
+              ],
               Row(
                 children: [
                   Expanded(
@@ -458,34 +667,55 @@ class _EditInventoryItemFormState
                 ],
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedType,
+              TextFormField(
+                controller: _unitCostController,
                 decoration: const InputDecoration(
-                    labelText: 'Tipo de Item', border: OutlineInputBorder()),
-                items: _types
-                    .map((t) =>
-                        DropdownMenuItem(value: t, child: Text(t == 'Feed' ? 'Ração' : (t == 'Medicine' ? 'Medicamento' : (t == 'Equipment' ? 'Equipamento' : 'Outro')))))
-                    .toList(),
-                onChanged: (val) =>
-                    setState(() => _selectedType = val ?? 'Feed'),
+                    labelText: 'Custo Unitário (R\$)',
+                    helperText: 'Opcional. Ex: preço pago por kg/unidade',
+                    border: OutlineInputBorder()),
+                keyboardType:
+                    TextInputType.numberWithOptions(decimal: true),
+                validator: (v) {
+                  if (v != null && v.isNotEmpty) {
+                    if (double.tryParse(v) == null) return 'Valor inválido';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF13A538),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : const Text('Salvar Alterações'),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Cancelar'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF003366),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
+                          : const Text('Salvar'),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
             ],
           ),
         ),

@@ -14,6 +14,7 @@ import java.util.UUID;
 public class AuthResponseDTO {
     private String token;
     private String email;
+    private String name;
     private String accountType;
     private UUID userId;
 }

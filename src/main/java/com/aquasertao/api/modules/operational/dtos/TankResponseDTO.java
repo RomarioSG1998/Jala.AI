@@ -21,6 +21,10 @@ public class TankResponseDTO {
     private Integer averageWeightG;
     private Integer mortalityCount;
     private LocalDate nextHarvestDate;
+    private LocalDate stockingDate;
+    private Integer initialStockingQty;
+    private Integer initialAverageWeightG;
+    private String supplier;
     private String status;
     private String customImage;
 }

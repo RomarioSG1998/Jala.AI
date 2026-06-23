@@ -6,6 +6,10 @@ class Tank {
   final int averageWeightG;
   final int mortalityCount;
   final String? nextHarvestDate;
+  final String? stockingDate;
+  final int? initialStockingQty;
+  final int? initialAverageWeightG;
+  final String? supplier;
   final String status;
   final String? customImage;
 
@@ -17,6 +21,10 @@ class Tank {
     required this.averageWeightG,
     required this.mortalityCount,
     this.nextHarvestDate,
+    this.stockingDate,
+    this.initialStockingQty,
+    this.initialAverageWeightG,
+    this.supplier,
     required this.status,
     this.customImage,
   });
@@ -30,6 +38,10 @@ class Tank {
       averageWeightG: (json['averageWeightG'] as num?)?.toInt() ?? 0,
       mortalityCount: (json['mortalityCount'] as num?)?.toInt() ?? 0,
       nextHarvestDate: json['nextHarvestDate'],
+      stockingDate: json['stockingDate'],
+      initialStockingQty: (json['initialStockingQty'] as num?)?.toInt(),
+      initialAverageWeightG: (json['initialAverageWeightG'] as num?)?.toInt(),
+      supplier: json['supplier'],
       status: json['status'] ?? 'ACTIVE',
       customImage: json['customImage'],
     );
@@ -44,6 +56,10 @@ class Tank {
       'averageWeightG': averageWeightG,
       'mortalityCount': mortalityCount,
       'nextHarvestDate': nextHarvestDate,
+      'stockingDate': stockingDate,
+      'initialStockingQty': initialStockingQty,
+      'initialAverageWeightG': initialAverageWeightG,
+      'supplier': supplier,
       'status': status,
       'customImage': customImage,
     };

@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "feeding_record")
+@Table(name = "feeding_record", schema = "ops_schema")
 @Data
 @Builder
 @NoArgsConstructor
@@ -38,8 +38,11 @@ public class FeedingRecord {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal quantity;
 
-    @Column(name = "feeding_time", nullable = false, updatable = false)
+    @Column(name = "feeding_time", nullable = false)
     private LocalDateTime feedingTime;
+
+    @Column(name = "unit_cost", precision = 10, scale = 2)
+    private BigDecimal unitCost;
 
     @PrePersist
     public void prePersist() {

@@ -25,6 +25,11 @@ public class WaterQualityService {
                 .ph(requestDTO.getPh())
                 .temperature(requestDTO.getTemperature())
                 .dissolvedOxygen(requestDTO.getDissolvedOxygen())
+                .ammonia(requestDTO.getAmmonia())
+                .nitrite(requestDTO.getNitrite())
+                .alkalinity(requestDTO.getAlkalinity())
+                .hardness(requestDTO.getHardness())
+                .solids(requestDTO.getSolids())
                 .measurementTime(LocalDateTime.now())
                 .build();
 
@@ -57,6 +62,11 @@ public class WaterQualityService {
         existingRecord.setPh(requestDTO.getPh());
         existingRecord.setTemperature(requestDTO.getTemperature());
         existingRecord.setDissolvedOxygen(requestDTO.getDissolvedOxygen());
+        existingRecord.setAmmonia(requestDTO.getAmmonia());
+        existingRecord.setNitrite(requestDTO.getNitrite());
+        existingRecord.setAlkalinity(requestDTO.getAlkalinity());
+        existingRecord.setHardness(requestDTO.getHardness());
+        existingRecord.setSolids(requestDTO.getSolids());
 
         WaterQuality updatedRecord = waterQualityRepository.save(existingRecord);
         return mapToDTO(updatedRecord);
@@ -77,6 +87,11 @@ public class WaterQualityService {
                 .ph(waterQuality.getPh())
                 .temperature(waterQuality.getTemperature())
                 .dissolvedOxygen(waterQuality.getDissolvedOxygen())
+                .ammonia(waterQuality.getAmmonia())
+                .nitrite(waterQuality.getNitrite())
+                .alkalinity(waterQuality.getAlkalinity())
+                .hardness(waterQuality.getHardness())
+                .solids(waterQuality.getSolids())
                 .measurementTime(waterQuality.getMeasurementTime())
                 .build();
     }

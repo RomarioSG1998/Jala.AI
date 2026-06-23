@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "global_user")
+@Table(name = "global_user", schema = "auth_schema")
 @Data
 @Builder
 @NoArgsConstructor

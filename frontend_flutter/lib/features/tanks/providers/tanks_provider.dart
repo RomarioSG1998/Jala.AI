@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_repository.dart';
@@ -25,13 +26,26 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
     }
   }
 
-  Future<bool> createTank(String name, String species, int capacity, [String? customImage]) async {
+  Future<bool> createTank(
+    String name,
+    String species,
+    int capacity, {
+    String? stockingDate,
+    int? initialStockingQty,
+    int? initialAverageWeightG,
+    String? supplier,
+    String? customImage,
+  }) async {
     try {
       print('TanksNotifier.createTank: customImage length = ${customImage?.length}');
       final newTank = await _repository.createTank({
         'name': name,
         'fishSpecies': species,
         'fishCapacity': capacity,
+        'stockingDate': stockingDate,
+        'initialStockingQty': initialStockingQty,
+        'initialAverageWeightG': initialAverageWeightG,
+        'supplier': supplier,
         'customImage': customImage,
       });
       // Update state optimistically or by fetching
@@ -39,8 +53,12 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
         state = AsyncValue.data([...state.value!, newTank]);
       }
       return true;
-    } catch (e, stack) {
-      print('TanksNotifier.createTank: Error: $e\n$stack');
+    } catch (e) {
+      if (e is DioException) {
+        print('TanksNotifier.createTank: Error: ${e.message} (status: ${e.response?.statusCode})');
+      } else {
+        print('TanksNotifier.createTank: Error: $e');
+      }
       return false;
     }
   }
@@ -53,10 +71,14 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
     int averageWeight,
     int mortalityCount,
     String? nextHarvestDate,
-    String status, [
+    String? stockingDate,
+    String status, {
+    int? initialStockingQty,
+    int? initialAverageWeightG,
+    String? supplier,
     String? customImage,
     bool clearImage = false,
-  ]) async {
+  }) async {
     try {
       final imgVal = clearImage ? "" : customImage;
       print('TanksNotifier.updateTank: customImage length = ${imgVal?.length}, clearImage = $clearImage');
@@ -67,6 +89,10 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
         'averageWeightG': averageWeight,
         'mortalityCount': mortalityCount,
         'nextHarvestDate': nextHarvestDate,
+        'stockingDate': stockingDate,
+        'initialStockingQty': initialStockingQty,
+        'initialAverageWeightG': initialAverageWeightG,
+        'supplier': supplier,
         'status': status,
         'customImage': imgVal,
       });
@@ -76,8 +102,12 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
         );
       }
       return true;
-    } catch (e, stack) {
-      print('TanksNotifier.updateTank: Error: $e\n$stack');
+    } catch (e) {
+      if (e is DioException) {
+        print('TanksNotifier.updateTank: Error: ${e.message} (status: ${e.response?.statusCode})');
+      } else {
+        print('TanksNotifier.updateTank: Error: $e');
+      }
       return false;
     }
   }

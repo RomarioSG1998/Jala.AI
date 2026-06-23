@@ -24,12 +24,19 @@ class TokenStorage {
     await _storage.write(key: _tokenKey, value: token);
   }
 
-  Future<void> saveUserDetails(String email, String accountType, {String? userId}) async {
+  Future<void> saveUserDetails(String email, String accountType, {String? userId, String? name}) async {
     await _storage.write(key: 'user_email', value: email);
     await _storage.write(key: 'user_account_type', value: accountType);
     if (userId != null) {
       await _storage.write(key: 'user_id', value: userId);
     }
+    if (name != null) {
+      await _storage.write(key: 'user_name', value: name);
+    }
+  }
+
+  Future<String?> getName() async {
+    return await _storage.read(key: 'user_name');
   }
 
   Future<String?> getToken() async {
@@ -48,11 +55,39 @@ class TokenStorage {
     return await _storage.read(key: 'user_id');
   }
 
+  Future<void> saveRememberMeCredentials(String email, String password) async {
+    await _storage.write(key: 'remember_email', value: email);
+    await _storage.write(key: 'remember_password', value: password);
+    await _storage.write(key: 'remember_me_enabled', value: 'true');
+  }
+
+  Future<void> clearRememberMeCredentials() async {
+    await _storage.delete(key: 'remember_email');
+    await _storage.delete(key: 'remember_password');
+    await _storage.write(key: 'remember_me_enabled', value: 'false');
+  }
+
+  Future<Map<String, String>?> getRememberMeCredentials() async {
+    final email = await _storage.read(key: 'remember_email');
+    final password = await _storage.read(key: 'remember_password');
+    final enabled = await _storage.read(key: 'remember_me_enabled');
+    if (enabled == 'true' && email != null && password != null) {
+      return {'email': email, 'password': password};
+    }
+    return null;
+  }
+
+  Future<bool> isRememberMeEnabled() async {
+    final enabled = await _storage.read(key: 'remember_me_enabled');
+    return enabled == 'true';
+  }
+
   Future<void> clearAll() async {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: 'user_email');
     await _storage.delete(key: 'user_account_type');
     await _storage.delete(key: 'user_id');
+    await _storage.delete(key: 'user_name');
   }
 }
 

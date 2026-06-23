@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "notification")
+@Table(name = "notification", schema = "general_schema")
 @Data
 @Builder
 @NoArgsConstructor

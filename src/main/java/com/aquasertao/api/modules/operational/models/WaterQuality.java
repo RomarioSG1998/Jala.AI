@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "water_quality")
+@Table(name = "water_quality", schema = "ops_schema")
 @Data
 @Builder
 @NoArgsConstructor
@@ -37,6 +37,21 @@ public class WaterQuality {
 
     @Column(name = "dissolved_oxygen", precision = 5, scale = 2)
     private BigDecimal dissolvedOxygen;
+
+    @Column(precision = 5, scale = 2)
+    private BigDecimal ammonia;
+
+    @Column(precision = 5, scale = 2)
+    private BigDecimal nitrite;
+
+    @Column(precision = 6, scale = 2)
+    private BigDecimal alkalinity;
+
+    @Column(precision = 6, scale = 2)
+    private BigDecimal hardness;
+
+    @Column(precision = 6, scale = 2)
+    private BigDecimal solids;
 
     @Column(name = "measurement_time", nullable = false, updatable = false)
     private LocalDateTime measurementTime;

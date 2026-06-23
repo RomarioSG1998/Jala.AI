@@ -1,26 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
-import 'package:frontend_flutter/features/auth/presentation/login_screen.dart';
-import 'package:frontend_flutter/features/dashboard/presentation/dashboard_screen.dart';
-import 'package:frontend_flutter/features/tanks/presentation/tanks_screen.dart';
-import 'package:frontend_flutter/features/water_quality/presentation/water_quality_screen.dart';
-import 'package:frontend_flutter/features/inventory/presentation/inventory_screen.dart';
-import 'package:frontend_flutter/features/harvests/presentation/harvests_screen.dart';
-import 'package:frontend_flutter/features/maintenance/presentation/maintenance_screen.dart';
-import 'package:frontend_flutter/features/saas_admin/presentation/saas_dashboard_screen.dart';
-import 'package:frontend_flutter/features/saas_admin/presentation/plans_screen.dart';
-import 'package:frontend_flutter/features/finances/presentation/finances_screen.dart';
-import 'package:frontend_flutter/features/suppliers/presentation/suppliers_screen.dart';
-import 'package:frontend_flutter/features/saas_admin/presentation/tenants_screen.dart';
-import 'package:frontend_flutter/features/feeding_records/presentation/feeding_records_screen.dart';
-import 'package:frontend_flutter/features/employees/presentation/employees_screen.dart';
-import 'package:frontend_flutter/features/profile/presentation/profile_screen.dart';
-import 'package:frontend_flutter/features/approvals/presentation/approvals_screen.dart';
 import 'package:frontend_flutter/core/theme/theme_provider.dart';
+import 'package:frontend_flutter/core/routing/app_router.dart';
+import 'package:frontend_flutter/core/api/server_ping_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,164 +19,7 @@ void main() async {
   );
 }
 
-// ─── RouterNotifier: Listenable wrapper for Riverpod Auth State ──────────────
-class RouterNotifier extends ChangeNotifier {
-  final Ref _ref;
 
-  RouterNotifier(this._ref) {
-    _ref.listen<AuthState>(
-      authNotifierProvider,
-      (_, __) => notifyListeners(),
-    );
-  }
-}
-
-final routerNotifierProvider = Provider<RouterNotifier>((ref) {
-  return RouterNotifier(ref);
-});
-
-// ─── GoRouter Provider ───────────────────────────────────────────────────────
-final routerProvider = Provider<GoRouter>((ref) {
-  final routerNotifier = ref.watch(routerNotifierProvider);
-
-  return GoRouter(
-    initialLocation: '/login',
-    refreshListenable: routerNotifier,
-    redirect: (context, state) {
-      final authState = ref.read(authNotifierProvider);
-      final isGoingToLogin = state.matchedLocation == '/login';
-      if (!authState.isAuthenticated && !isGoingToLogin) return '/login';
-      if (authState.isAuthenticated && isGoingToLogin) return '/dashboard';
-
-      if (authState.isAuthenticated) {
-        final role = authState.accountType;
-        final location = state.matchedLocation;
-
-        // SaaS Admin exclusive routes
-        final isSaasRoute = location == '/tenants' || location == '/suppliers' || location == '/saas-dashboard' || location == '/plans';
-        if (isSaasRoute && role != 'SAAS_ADMIN') return '/dashboard';
-
-        // Farm Owner / Client exclusive routes
-        final isOwnerRoute = location == '/employees' || location == '/finances' || location == '/maintenance' || location == '/approvals';
-        if (isOwnerRoute && role != 'FARM_OWNER' && role != 'CLIENT') return '/dashboard';
-      }
-      return null;
-    },
-    routes: [
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: '/profile',
-        builder: (context, state) => const ProfileScreen(),
-      ),
-      // ── Shell permanente com Bottom Navigation ─────────────────────────
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) {
-          return AppShell(
-            navigationShell: navigationShell,
-            currentLocation: state.matchedLocation,
-          );
-        },
-        branches: [
-          // Aba 0 – Início (Dashboard)
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/dashboard',
-                builder: (context, state) => const FarmDashboardBody(),
-              ),
-            ],
-          ),
-          // Aba 1 – Tanques
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/tanks',
-                builder: (context, state) {
-                  final authState = ref.read(authNotifierProvider);
-                  if (authState.accountType == 'SAAS_ADMIN') {
-                    return const TenantsScreen();
-                  }
-                  return const TanksScreen();
-                },
-              ),
-            ],
-          ),
-          // Aba 2 – Qualidade da Água (Relatórios)
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/water-quality',
-                builder: (context, state) {
-                  final authState = ref.read(authNotifierProvider);
-                  if (authState.accountType == 'SAAS_ADMIN') {
-                    return const SuppliersScreen();
-                  }
-                  return const WaterQualityScreen();
-                },
-              ),
-            ],
-          ),
-          // Aba 3 – Menu (mais opções via drawer)
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/more',
-                builder: (context, state) => const MoreMenuBody(),
-              ),
-              GoRoute(
-                path: '/saas-dashboard',
-                builder: (context, state) => const SaasDashboardScreen(),
-              ),
-              GoRoute(
-                path: '/inventory',
-                builder: (context, state) => const InventoryScreen(),
-              ),
-              GoRoute(
-                path: '/harvests',
-                builder: (context, state) => const HarvestsScreen(),
-              ),
-              GoRoute(
-                path: '/maintenance',
-                builder: (context, state) => const MaintenanceScreen(),
-              ),
-              GoRoute(
-                path: '/tenants',
-                builder: (context, state) => const TenantsScreen(),
-              ),
-              GoRoute(
-                path: '/suppliers',
-                builder: (context, state) => const SuppliersScreen(),
-              ),
-              GoRoute(
-                path: '/finances',
-                builder: (context, state) => const FinancesScreen(),
-              ),
-              GoRoute(
-                path: '/feeding-records',
-                builder: (context, state) => const FeedingRecordsScreen(),
-              ),
-              GoRoute(
-                path: '/employees',
-                builder: (context, state) => const EmployeesScreen(),
-              ),
-              GoRoute(
-                path: '/approvals',
-                builder: (context, state) => const ApprovalsScreen(),
-              ),
-              GoRoute(
-                path: '/plans',
-                builder: (context, state) => const PlansScreen(),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ],
-  );
-});
 
 class AquaSertaoApp extends ConsumerWidget {
   const AquaSertaoApp({super.key});
@@ -318,99 +145,113 @@ class AquaSertaoApp extends ConsumerWidget {
         Locale('pt', 'BR'),
       ],
       routerConfig: router,
+      builder: (context, child) {
+        final serverStatus = ref.watch(serverPingProvider);
+        return Stack(
+          children: [
+            if (child != null) child,
+            if (serverStatus == ServerStatus.sleeping || serverStatus == ServerStatus.error)
+              ServerWakeUpOverlay(status: serverStatus),
+          ],
+        );
+      },
     );
   }
 }
 
-// ─── Tela "Mais opções" (aba 3 da shell) ─────────────────────────────────────
-
-class MoreMenuBody extends ConsumerWidget {
-  const MoreMenuBody({super.key});
+class ServerWakeUpOverlay extends ConsumerWidget {
+  final ServerStatus status;
+  const ServerWakeUpOverlay({super.key, required this.status});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authNotifierProvider);
-    final role = authState.accountType ?? '';
-    final themeMode = ref.watch(themeNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Text('MAIS MÓDULOS', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.black54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
-        ),
-        if (role == 'FARM_OWNER' || role == 'CLIENT' || role == 'FIELD_OPERATOR') ...[
-          _menuTile(context, Icons.restaurant, 'Alimentação', 'Registro de tratos diários', Colors.purple, '/feeding-records'),
-          _menuTile(context, Icons.inventory, 'Estoque', 'Controle de ração e insumos', Colors.orange, '/inventory'),
-          _menuTile(context, Icons.agriculture, 'Colheitas', 'Registre e acompanhe despescas', Colors.green, '/harvests'),
-        ],
-        if (role == 'FARM_OWNER' || role == 'CLIENT') ...[
-          _menuTile(context, Icons.people, 'Funcionários', 'Gerenciar equipe', Colors.indigo, '/employees'),
-          _menuTile(context, Icons.build, 'Manutenção', 'Tarefas e agendamentos', Colors.grey, '/maintenance'),
-          _menuTile(context, Icons.attach_money, 'Finanças', 'Controle financeiro', Colors.green.shade700, '/finances'),
-          _menuTile(context, Icons.assignment_turned_in, 'Aprovações', 'Central de solicitações', Colors.deepOrange, '/approvals'),
-        ],
-        if (role == 'SAAS_ADMIN') ...[
-          _menuTile(context, Icons.business, 'Tenants', 'Gerenciar clientes', Colors.indigo, '/tenants'),
-          _menuTile(context, Icons.local_shipping, 'Fornecedores', 'Parceiros B2B', Colors.brown, '/suppliers'),
-        ],
-        const SizedBox(height: 20),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Text('CONFIGURAÇÕES', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.black54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
-        ),
-        _menuTile(
-          context,
-          themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
-          'Tema Escuro',
-          themeMode == ThemeMode.dark ? 'Ativado' : 'Desativado',
-          Colors.blue,
-          null,
-          trailingWidget: Switch(
-            value: themeMode == ThemeMode.dark,
-            activeColor: const Color(0xFF13A538),
-            onChanged: (val) {
-              ref.read(themeNotifierProvider.notifier).toggleTheme();
-            },
+    
+    return Material(
+      color: isDark ? const Color(0xFF090D16) : Colors.white,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [              if (status == ServerStatus.sleeping) ...[
+                const FishSwimAnimation(),
+                const SizedBox(height: 40),
+                Text(
+                  'Acordando Servidor...',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF003366),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Como utilizamos um servidor gratuito (Render) para demonstração, o servidor entra em repouso após inatividade e pode levar até 1 minuto para acordar.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Agradecemos a sua paciência! 🌊',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF13A538),
+                  ),
+                ),
+              ] else if (status == ServerStatus.error) ...[
+                const Icon(
+                  Icons.cloud_off_rounded,
+                  color: Colors.redAccent,
+                  size: 80,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Conexão Instável',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF003366),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Não foi possível estabelecer contato com o servidor. Por favor, verifique sua conexão de rede ou tente novamente.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      ref.read(serverPingProvider.notifier).checkServer();
+                    },
+                    icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                    label: const Text('Tentar Novamente', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF13A538),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-        const SizedBox(height: 20),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Text('CONTA', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.black54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
-        ),
-        _menuTile(context, Icons.logout, 'Sair', 'Encerrar sessão', Colors.red, null,
-          onTap: () => ref.read(authNotifierProvider.notifier).logout(),
-        ),
-      ],
-    );
-  }
-
-  Widget _menuTile(BuildContext context, IconData icon, String title, String subtitle, Color color, String? route, {VoidCallback? onTap, Widget? trailingWidget}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(14),
-        border: isDark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
-        boxShadow: [
-          if (!isDark)
-            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        leading: CircleAvatar(
-          backgroundColor: color.withOpacity(0.12),
-          child: Icon(icon, color: color, size: 22),
-        ),
-        title: Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
-        subtitle: Text(subtitle, style: TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade500, fontSize: 12)),
-        trailing: trailingWidget ?? (route != null ? Icon(Icons.chevron_right, color: isDark ? Colors.white30 : Colors.black26) : null),
-        onTap: onTap ?? (route != null ? () => context.go(route) : null),
       ),
     );
   }
@@ -427,6 +268,173 @@ class DummyScreen extends StatelessWidget {
       body: Center(
         child: Text('$title em breve!', style: const TextStyle(fontSize: 24)),
       ),
+    );
+  }
+}
+
+class FishSwimAnimation extends StatefulWidget {
+  const FishSwimAnimation({super.key});
+
+  @override
+  State<FishSwimAnimation> createState() => _FishSwimAnimationState();
+}
+
+class _FishSwimAnimationState extends State<FishSwimAnimation> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
+  bool _swimmingRight = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    );
+
+    _animation = Tween<double>(begin: -1.2, end: 1.2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          setState(() {
+            _swimmingRight = false;
+          });
+          _controller.reverse();
+        } else if (status == AnimationStatus.dismissed) {
+          setState(() {
+            _swimmingRight = true;
+          });
+          _controller.forward();
+        }
+      });
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 150,
+      width: double.infinity,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Bubbles
+          ...List.generate(12, (index) => _Bubble(index: index)),
+          
+          // Swimming Fish
+          AnimatedBuilder(
+            animation: _animation,
+            builder: (context, child) {
+              return Align(
+                alignment: Alignment(_animation.value, 0),
+                child: Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.diagonal3Values(_swimmingRight ? 1.0 : -1.0, 1.0, 1.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          '🐟',
+                          style: TextStyle(fontSize: 48, decoration: TextDecoration.none),
+                        ),
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.3),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Bubble extends StatefulWidget {
+  final int index;
+  const _Bubble({required this.index});
+
+  @override
+  State<_Bubble> createState() => _BubbleState();
+}
+
+class _BubbleState extends State<_Bubble> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _verticalAnimation;
+  late final Animation<double> _horizontalAnimation;
+  late double _startX;
+  late double _size;
+
+  @override
+  void initState() {
+    super.initState();
+    _startX = (widget.index * 137) % 300 - 150.0;
+    _size = 4.0 + (widget.index % 4) * 3.0;
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 2000 + (widget.index % 3) * 600),
+    );
+
+    _verticalAnimation = Tween<double>(begin: 80, end: -80).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    _horizontalAnimation = Tween<double>(begin: 0, end: (widget.index % 2 == 0 ? 15 : -15)).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
+
+    Future.delayed(Duration(milliseconds: widget.index * 250), () {
+      if (mounted) {
+        _controller.repeat();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(_startX + _horizontalAnimation.value, _verticalAnimation.value),
+          child: Opacity(
+            opacity: (1.0 - _controller.value).clamp(0.0, 0.8),
+            child: Container(
+              width: _size,
+              height: _size,
+              decoration: BoxDecoration(
+                color: Colors.blue.shade300.withOpacity(0.5),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.blue.shade200.withOpacity(0.8), width: 1),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

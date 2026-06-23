@@ -21,4 +21,5 @@ public class FeedingRecordResponseDTO {
     private UUID feedId;
     private BigDecimal quantity;
     private LocalDateTime feedingTime;
+    private BigDecimal unitCost;
 }

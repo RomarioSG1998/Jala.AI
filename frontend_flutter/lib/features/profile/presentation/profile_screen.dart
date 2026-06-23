@@ -7,6 +7,10 @@ import 'package:frontend_flutter/features/employees/providers/employee_permissio
 import 'package:frontend_flutter/core/theme/theme_provider.dart';
 import 'dart:convert';
 import 'package:frontend_flutter/features/profile/providers/profile_image_provider.dart';
+import 'package:intl/intl.dart';
+import 'package:frontend_flutter/features/saas_admin/providers/saas_providers.dart';
+import 'package:frontend_flutter/features/saas_admin/data/saas_models.dart';
+import 'package:frontend_flutter/features/profile/providers/subscription_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -72,13 +76,24 @@ class ProfileScreen extends ConsumerWidget {
     final profileImage = authState.userId != null
         ? ref.watch(profileImageProvider(authState.userId!))
         : null;
+    final currentPlan = ref.watch(userSubscriptionProvider);
 
-    // Try to find full name from the employee list
-    String displayName = authState.email?.split('@').first ?? 'Usuário';
-    if (employeesAsync.hasValue && authState.userId != null) {
-      final match = employeesAsync.value!.where((emp) => emp.id == authState.userId).firstOrNull;
-      if (match != null) {
-        displayName = match.name;
+    // Try to find full name from authState, then employee list, then email
+    String displayName = authState.name ?? authState.email?.split('@').first ?? 'Usuário';
+    if (authState.name == null) {
+      if (employeesAsync.hasValue && authState.userId != null) {
+        final match = employeesAsync.value!.where((emp) => emp.id == authState.userId).firstOrNull;
+        if (match != null) {
+          displayName = match.name;
+        } else {
+          // format email prefix
+          displayName = displayName
+              .split('.')
+              .map((word) => word.isNotEmpty
+                  ? '${word[0].toUpperCase()}${word.substring(1)}'
+                  : '')
+              .join(' ');
+        }
       } else {
         // format email prefix
         displayName = displayName
@@ -94,8 +109,7 @@ class ProfileScreen extends ConsumerWidget {
         ? displayName.split(' ').map((s) => s.isNotEmpty ? s[0] : '').take(2).join().toUpperCase()
         : 'U';
 
-    final roleLabel = _formatRole(authState.accountType);
-    final roleColor = _getRoleColor(authState.accountType);
+
 
     final themeMode = ref.watch(themeNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -115,6 +129,13 @@ class ProfileScreen extends ConsumerWidget {
             }
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.white),
+            tooltip: 'Editar Perfil',
+            onPressed: () => _showEditProfileBottomSheet(context, ref, displayName, authState.email ?? ''),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -210,23 +231,6 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: roleColor.withOpacity(0.2),
-                      border: Border.all(color: roleColor.withOpacity(0.5), width: 1.5),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      roleLabel,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -240,6 +244,23 @@ class ProfileScreen extends ConsumerWidget {
                   _buildSectionTitle(context, 'Informações da Conta'),
                   _buildInfoCard(context, [
                     _buildInfoTile(context, Icons.email_outlined, 'E-mail', authState.email ?? 'Não informado'),
+                    _buildDivider(context),
+                    ListTile(
+                      leading: Icon(Icons.edit_note, color: isDark ? Colors.blue.shade300 : _kNavyBlue.withOpacity(0.7)),
+                      title: Text(
+                        'Editar Informações',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      subtitle: const Text(
+                        'Alterar nome, e-mail ou senha',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                      onTap: () => _showEditProfileBottomSheet(context, ref, displayName, authState.email ?? ''),
+                    ),
                     _buildDivider(context),
                     _buildInfoTile(
                       context,
@@ -338,6 +359,38 @@ class ProfileScreen extends ConsumerWidget {
                         );
                       },
                     ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Subscription Section
+                  if (authState.accountType != null) ...[
+                    _buildSectionTitle(context, 'Assinatura'),
+                    _buildInfoCard(context, [
+                      ListTile(
+                        leading: Icon(
+                          Icons.workspace_premium_rounded,
+                          color: isDark ? Colors.amber.shade300 : Colors.amber.shade700,
+                        ),
+                        title: Text(
+                          'Meu Plano',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        subtitle: Text(
+                          currentPlan == UserSubscriptionPlan.pro
+                              ? 'Plano Profissional (R\$ 19,90) · Ativo'
+                              : 'Plano Gratuito (até 1 tanque) · Ativo',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                        onTap: () => _showPlansSelectionBottomSheet(context, ref),
+                      ),
+                    ]),
                     const SizedBox(height: 24),
                   ],
 
@@ -551,5 +604,579 @@ class ProfileScreen extends ConsumerWidget {
         );
       },
     );
+  }
+
+  void _showPlansSelectionBottomSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return DraggableScrollableSheet(
+          initialChildSize: 0.75,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: isDark ? Border.all(color: const Color(0xFF263350), width: 1.5) : null,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Center(
+                    child: Container(
+                      width: 48,
+                      height: 5,
+                      margin: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2.5),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Escolha o seu Plano',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : const Color(0xFF003366),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Selecione um plano ideal para gerenciar sua piscicultura.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 20),
+                  Expanded(
+                    child: Consumer(
+                      builder: (context, ref, child) {
+                        final plansAsync = ref.watch(plansProvider);
+                        return plansAsync.when(
+                          loading: () => const Center(
+                            child: CircularProgressIndicator(color: _kGreen),
+                          ),
+                          error: (err, stack) => Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Erro ao carregar planos',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    err.toString(),
+                                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          data: (plans) {
+                            if (plans.isEmpty) {
+                              return Center(
+                                child: Text(
+                                  'Nenhum plano disponível no momento.',
+                                  style: TextStyle(
+                                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                  ),
+                                ),
+                              );
+                            }
+
+                            final currencyFmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+
+                            final currentPlan = ref.read(userSubscriptionProvider);
+                            return ListView.builder(
+                              controller: scrollController,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              itemCount: plans.length,
+                              itemBuilder: (context, index) {
+                                final plan = plans[index];
+                                final isCurrent = plan.priceMonthly > 0
+                                    ? currentPlan == UserSubscriptionPlan.pro
+                                    : currentPlan == UserSubscriptionPlan.free;
+
+                                return _buildPlanOptionCard(context, ref, plan, isCurrent, isDark, currencyFmt);
+                              },
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPlanOptionCard(
+    BuildContext context,
+    WidgetRef ref,
+    SaasPlan plan,
+    bool isCurrent,
+    bool isDark,
+    NumberFormat fmt,
+  ) {
+    final colors = [const Color(0xFF3B82F6), _kGreen, const Color(0xFF8B5CF6), const Color(0xFFE11D48)];
+    final gradientColors = [
+      [const Color(0xFF1D4ED8), const Color(0xFF3B82F6)],
+      [const Color(0xFF003366), _kGreen],
+      [const Color(0xFF5B21B6), const Color(0xFF8B5CF6)],
+      [const Color(0xFF9F1239), const Color(0xFFE11D48)],
+    ];
+
+    final planIndex = plan.name.toLowerCase().contains('free') || plan.name.toLowerCase().contains('gratuito')
+        ? 0
+        : plan.name.toLowerCase().contains('basic') || plan.name.toLowerCase().contains('básico')
+            ? 1
+            : plan.name.toLowerCase().contains('professional') || plan.name.toLowerCase().contains('profissional')
+                ? 2
+                : 3;
+
+    final accentColor = colors[planIndex % colors.length];
+    final planGradients = gradientColors[planIndex % gradientColors.length];
+    final isFree = plan.priceMonthly == 0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isCurrent
+              ? _kGreen
+              : isDark
+                  ? const Color(0xFF263350)
+                  : accentColor.withOpacity(0.2),
+          width: isCurrent ? 2 : 1
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isCurrent
+                ? _kGreen.withOpacity(0.08)
+                : accentColor.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4)
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: planGradients,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isCurrent)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        margin: const EdgeInsets.only(bottom: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.white60, width: 1),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white, size: 12),
+                            SizedBox(width: 4),
+                            Text(
+                              'PLANO ATUAL',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    Text(
+                      plan.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  isFree ? 'Grátis' : '${fmt.format(plan.priceMonthly)}/mês',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildLimitBadge(
+                      context,
+                      Icons.water_drop_rounded,
+                      '${plan.maxTanks} tanques',
+                      accentColor,
+                      isDark
+                    ),
+                    const SizedBox(width: 12),
+                    _buildLimitBadge(
+                      context,
+                      Icons.people_alt_rounded,
+                      '${plan.maxUsers} usuários',
+                      accentColor,
+                      isDark
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isCurrent
+                        ? null
+                        : () {
+                            final newPlan = plan.priceMonthly > 0 ? UserSubscriptionPlan.pro : UserSubscriptionPlan.free;
+                            ref.read(userSubscriptionProvider.notifier).selectPlan(newPlan);
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Plano alterado para ${plan.name}!'),
+                                backgroundColor: _kGreen,
+                              ),
+                            );
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: accentColor,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: isDark ? const Color(0xFF334155) : Colors.grey.shade200,
+                      disabledForegroundColor: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      isCurrent ? 'Seu Plano Ativo' : 'Adquirir Plano',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLimitBadge(
+    BuildContext context,
+    IconData icon,
+    String label,
+    Color color,
+    bool isDark,
+  ) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(isDark ? 0.12 : 0.06),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black87,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+
+  void _showEditProfileBottomSheet(BuildContext context, WidgetRef ref, String currentName, String currentEmail) {
+    final nameController = TextEditingController(text: currentName);
+    final emailController = TextEditingController(text: currentEmail);
+    final passwordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Consumer(
+          builder: (context, ref, child) {
+            final authState = ref.watch(authNotifierProvider);
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  border: isDark ? Border.all(color: const Color(0xFF263350), width: 1.5) : null,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                child: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 48,
+                            height: 5,
+                            margin: const EdgeInsets.only(bottom: 20),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(2.5),
+                            ),
+                          ),
+                        ),
+                        Text(
+                          'Editar Perfil',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : const Color(0xFF003366),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        
+                        // Name Field
+                        TextFormField(
+                          controller: nameController,
+                          decoration: InputDecoration(
+                            labelText: 'Nome Completo',
+                            prefixIcon: const Icon(Icons.person_outline),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Por favor, insira seu nome';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Email Field
+                        TextFormField(
+                          controller: emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: 'E-mail',
+                            prefixIcon: const Icon(Icons.email_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Por favor, insira seu e-mail';
+                            }
+                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                              return 'Por favor, insira um e-mail válido';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Password Field
+                        TextFormField(
+                          controller: passwordController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: 'Nova Senha (opcional)',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value != null && value.isNotEmpty && value.length < 6) {
+                              return 'A senha deve ter pelo menos 6 caracteres';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Confirm Password Field
+                        TextFormField(
+                          controller: confirmPasswordController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: 'Confirmar Nova Senha',
+                            prefixIcon: const Icon(Icons.lock_clock_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (passwordController.text.isNotEmpty && value != passwordController.text) {
+                              return 'As senhas não coincidem';
+                            }
+                            return null;
+                          },
+                        ),
+                        
+                        if (authState.error != null) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            authState.error!,
+                            style: const TextStyle(color: Colors.red, fontSize: 13),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+
+                        const SizedBox(height: 24),
+
+                        ElevatedButton(
+                          onPressed: authState.isLoading
+                              ? null
+                              : () async {
+                                  if (formKey.currentState!.validate()) {
+                                    final success = await ref
+                                        .read(authNotifierProvider.notifier)
+                                        .updateProfile(
+                                          name: nameController.text.trim(),
+                                          email: emailController.text.trim(),
+                                          password: passwordController.text.isNotEmpty
+                                              ? passwordController.text
+                                              : null,
+                                        );
+                                    if (success && context.mounted) {
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Perfil atualizado com sucesso!'),
+                                          backgroundColor: _kGreen,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _kNavyBlue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: authState.isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  'Salvar Alterações',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ).whenComplete(() {
+      ref.read(authNotifierProvider.notifier).clearError();
+    });
   }
 }

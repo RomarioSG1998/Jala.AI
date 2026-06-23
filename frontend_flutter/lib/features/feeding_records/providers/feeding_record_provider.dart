@@ -27,7 +27,7 @@ class FeedingRecordNotifier extends AsyncNotifier<List<FeedingRecord>> {
     }
   }
 
-  Future<String?> createRecord(String tankId, String feedId, double quantity) async {
+  Future<String?> createRecord(String tankId, String feedId, double quantity, {double? unitCost, String? feedingTime}) async {
     try {
       final userId = ref.read(authNotifierProvider).userId;
       final newRecord = await _repository.createRecord({
@@ -35,6 +35,8 @@ class FeedingRecordNotifier extends AsyncNotifier<List<FeedingRecord>> {
         'feedId': feedId,
         'quantity': quantity,
         'userId': userId,
+        if (unitCost != null) 'unitCost': unitCost,
+        if (feedingTime != null) 'feedingTime': feedingTime,
       });
       if (state.hasValue) {
         state = AsyncValue.data([...state.value!, newRecord]);
@@ -47,7 +49,7 @@ class FeedingRecordNotifier extends AsyncNotifier<List<FeedingRecord>> {
     }
   }
 
-  Future<String?> updateRecord(String id, String tankId, String feedId, double quantity) async {
+  Future<String?> updateRecord(String id, String tankId, String feedId, double quantity, {double? unitCost, String? feedingTime}) async {
     try {
       final userId = ref.read(authNotifierProvider).userId;
       final updated = await _repository.updateRecord(id, {
@@ -55,6 +57,8 @@ class FeedingRecordNotifier extends AsyncNotifier<List<FeedingRecord>> {
         'feedId': feedId,
         'quantity': quantity,
         'userId': userId,
+        if (unitCost != null) 'unitCost': unitCost,
+        if (feedingTime != null) 'feedingTime': feedingTime,
       });
       if (state.hasValue) {
         state = AsyncValue.data(state.value!.map((r) => r.id == id ? updated : r).toList());

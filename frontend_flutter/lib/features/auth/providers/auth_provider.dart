@@ -9,6 +9,7 @@ class AuthState {
   final bool isAuthenticated;
   final String? error;
   final String? email;
+  final String? name;
   final String? accountType;
   final String? userId;
 
@@ -17,6 +18,7 @@ class AuthState {
     this.isAuthenticated = false,
     this.error,
     this.email,
+    this.name,
     this.accountType,
     this.userId,
   });
@@ -26,6 +28,7 @@ class AuthState {
     bool? isAuthenticated,
     String? error,
     String? email,
+    String? name,
     String? accountType,
     String? userId,
   }) {
@@ -34,6 +37,7 @@ class AuthState {
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       error: error,
       email: email ?? this.email,
+      name: name ?? this.name,
       accountType: accountType ?? this.accountType,
       userId: userId ?? this.userId,
     );
@@ -58,6 +62,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final token = await _tokenStorage.getToken();
       final email = await _tokenStorage.getEmail();
       final userId = await _tokenStorage.getUserId();
+      final name = await _tokenStorage.getName();
       // Prefer accountType from JWT payload (authoritative), fall back to stored value
       String? accountType = _extractAccountTypeFromToken(token);
       accountType ??= await _tokenStorage.getAccountType();
@@ -65,12 +70,13 @@ class AuthNotifier extends Notifier<AuthState> {
       if (token != null && !_isTokenExpired(token)) {
         // Sync storage with JWT value if needed
         if (accountType != null) {
-          await _tokenStorage.saveUserDetails(email ?? '', accountType, userId: userId);
+          await _tokenStorage.saveUserDetails(email ?? '', accountType, userId: userId, name: name);
         }
         state = AuthState(
           isLoading: false,
           isAuthenticated: true,
           email: email,
+          name: name,
           accountType: accountType,
           userId: userId,
         );
@@ -129,6 +135,7 @@ class AuthNotifier extends Notifier<AuthState> {
       
       final token = response['token'];
       final resEmail = response['email'];
+      final resName = response['name'];
       final resAccountType = response['accountType'];
 
       if (token != null) {
@@ -139,12 +146,14 @@ class AuthNotifier extends Notifier<AuthState> {
           resEmail ?? email,
           resAccountType ?? 'UNKNOWN',
           userId: response['userId']?.toString(),
+          name: resName,
         );
 
         state = state.copyWith(
           isLoading: false,
           isAuthenticated: true,
           email: resEmail ?? email,
+          name: resName,
           accountType: resAccountType,
           userId: response['userId']?.toString(),
         );
@@ -159,10 +168,117 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  Future<bool> register({
+    required String name,
+    required String email,
+    required String password,
+    String accountType = 'CLIENT',
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+    
+    try {
+      final response = await _repository.register(
+        name: name,
+        email: email,
+        password: password,
+        accountType: accountType,
+      );
+      
+      final token = response['token'];
+      final resEmail = response['email'];
+      final resName = response['name'];
+      final resAccountType = response['accountType'];
+
+      if (token != null) {
+        await _tokenStorage.clearAll();
+        await _tokenStorage.saveToken(token);
+        await _tokenStorage.saveUserDetails(
+          resEmail ?? email,
+          resAccountType ?? accountType,
+          userId: response['userId']?.toString(),
+          name: resName ?? name,
+        );
+
+        state = state.copyWith(
+          isLoading: false,
+          isAuthenticated: true,
+          email: resEmail ?? email,
+          name: resName ?? name,
+          accountType: resAccountType ?? accountType,
+          userId: response['userId']?.toString(),
+        );
+        return true;
+      } else {
+        state = state.copyWith(isLoading: false, error: 'Invalid response from server.');
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
+      return false;
+    }
+  }
+
+  Future<bool> updateProfile({
+    required String name,
+    required String email,
+    String? password,
+  }) async {
+    final userId = state.userId;
+    if (userId == null) {
+      state = state.copyWith(error: 'User not authenticated');
+      return false;
+    }
+
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final response = await _repository.updateProfile(
+        userId: userId,
+        name: name,
+        email: email,
+        password: password,
+      );
+
+      final token = response['token'];
+      final resEmail = response['email'];
+      final resName = response['name'];
+      final resAccountType = response['accountType'];
+
+      if (token != null) {
+        await _tokenStorage.saveToken(token);
+        await _tokenStorage.saveUserDetails(
+          resEmail ?? email,
+          resAccountType ?? state.accountType ?? 'UNKNOWN',
+          userId: userId,
+          name: resName ?? name,
+        );
+
+        state = state.copyWith(
+          isLoading: false,
+          email: resEmail ?? email,
+          name: resName ?? name,
+          accountType: resAccountType ?? state.accountType,
+          error: null,
+        );
+        return true;
+      } else {
+        state = state.copyWith(isLoading: false, error: 'Resposta inválida do servidor.');
+        return false;
+      }
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     await _tokenStorage.clearAll();
     // Reset state entirely
     state = AuthState();
+  }
+
+  void clearError() {
+    state = state.copyWith(error: null);
   }
 }
 

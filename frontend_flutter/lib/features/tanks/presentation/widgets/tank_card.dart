@@ -108,8 +108,8 @@ class TankCard extends ConsumerWidget {
                                         fit: BoxFit.cover,
                                         errorBuilder: (_, __, ___) => const Icon(Icons.water, color: Colors.blue, size: 40),
                                       )
-                                    : Image.network(
-                                        '/tank_piscicultura.png',
+                                    : Image.asset(
+                                        'web/tank_piscicultura.png',
                                         fit: BoxFit.cover,
                                         errorBuilder: (_, __, ___) => const Icon(Icons.water, color: Colors.blue, size: 40),
                                       ))
@@ -166,6 +166,13 @@ class TankCard extends ConsumerWidget {
                             '${tank.fishSpecies}  •  $stock peixes',
                             style: TextStyle(fontSize: 12, color: subTextColor),
                           ),
+                          if (isActive && tank.stockingDate != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'Povoado em: ${_formatDate(tank.stockingDate!)}${tank.initialStockingQty != null ? " (${tank.initialStockingQty} un)" : ""}${tank.supplier != null ? " - ${tank.supplier}" : ""}',
+                              style: TextStyle(fontSize: 10, color: subTextColor.withOpacity(0.85), fontStyle: FontStyle.italic),
+                            ),
+                          ],
                           const SizedBox(height: 12),
                           
                           // 3 mini colunas

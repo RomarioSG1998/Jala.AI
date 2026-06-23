@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.aquasertao.api.modules.tenant.repositories.UserFarmLinkRepository;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,6 +35,9 @@ class AuthServiceTest {
 
     @Mock
     private AuthenticationManager authenticationManager;
+
+    @Mock
+    private UserFarmLinkRepository userFarmLinkRepository;
 
     @InjectMocks
     private AuthService authService;

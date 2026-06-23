@@ -59,7 +59,18 @@ class WaterQualityRepository {
     }
   }
 
-  Future<WaterQuality> updateRecord(String id, String tankId, double ph, double temperature, double dissolvedOxygen) async {
+  Future<WaterQuality> updateRecord(
+    String id,
+    String tankId,
+    double ph,
+    double temperature,
+    double dissolvedOxygen, {
+    double? ammonia,
+    double? nitrite,
+    double? alkalinity,
+    double? hardness,
+    double? solids,
+  }) async {
     try {
       final response = await _dio.put(
         '/api/water-quality/$id',
@@ -69,6 +80,11 @@ class WaterQualityRepository {
           'ph': ph,
           'temperature': temperature,
           'dissolvedOxygen': dissolvedOxygen,
+          'ammonia': ammonia,
+          'nitrite': nitrite,
+          'alkalinity': alkalinity,
+          'hardness': hardness,
+          'solids': solids,
         },
       );
       return WaterQuality.fromJson(response.data);

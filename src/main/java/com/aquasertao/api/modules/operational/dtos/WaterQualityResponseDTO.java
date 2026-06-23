@@ -20,5 +20,10 @@ public class WaterQualityResponseDTO {
     private BigDecimal ph;
     private BigDecimal temperature;
     private BigDecimal dissolvedOxygen;
+    private BigDecimal ammonia;
+    private BigDecimal nitrite;
+    private BigDecimal alkalinity;
+    private BigDecimal hardness;
+    private BigDecimal solids;
     private LocalDateTime measurementTime;
 }

@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_farm_link")
+@Table(name = "user_farm_link", schema = "auth_schema")
 @Data
 @Builder
 @NoArgsConstructor

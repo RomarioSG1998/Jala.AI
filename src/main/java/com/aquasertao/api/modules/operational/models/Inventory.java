@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "inventory")
+@Table(name = "inventory", schema = "ops_schema")
 @Data
 @Builder
 @NoArgsConstructor
@@ -36,4 +36,10 @@ public class Inventory {
 
     @Column(length = 100)
     private String type; // e.g., FEED, MEDICINE, EQUIPMENT
+
+    @Column(length = 100)
+    private String power;
+
+    @Column(name = "unit_cost", precision = 10, scale = 2)
+    private BigDecimal unitCost;
 }

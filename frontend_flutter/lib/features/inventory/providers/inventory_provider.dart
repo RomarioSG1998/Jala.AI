@@ -20,13 +20,15 @@ class InventoryNotifier extends AsyncNotifier<List<InventoryItem>> {
     }
   }
 
-  Future<bool> createItem(String name, double qty, String unit, String type) async {
+  Future<bool> createItem(String name, double qty, String unit, String type, {String? power, double? unitCost}) async {
     try {
       final item = await _repository.createItem({
         'itemName': name,
         'quantity': qty,
         'unit': unit,
         'type': type,
+        'power': power,
+        'unitCost': unitCost,
       });
       if (state.hasValue) {
         state = AsyncValue.data([...state.value!, item]);
@@ -37,13 +39,15 @@ class InventoryNotifier extends AsyncNotifier<List<InventoryItem>> {
     }
   }
 
-  Future<bool> updateItem(String id, String name, double qty, String unit, String type) async {
+  Future<bool> updateItem(String id, String name, double qty, String unit, String type, {String? power, double? unitCost}) async {
     try {
       final updated = await _repository.updateItem(id, {
         'itemName': name,
         'quantity': qty,
         'unit': unit,
         'type': type,
+        'power': power,
+        'unitCost': unitCost,
       });
       if (state.hasValue) {
         state = AsyncValue.data(state.value!.map((i) => i.id == id ? updated : i).toList());
