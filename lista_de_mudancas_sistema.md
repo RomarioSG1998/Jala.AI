@@ -106,5 +106,59 @@
 - [x] Mortalidade
 - [x] Financeiro
 - [x] Relatórios
+- [x] Dashboard
+- [x] Tanques
+- [x] Alimentação
+- [x] Mortalidade
+- [x] Financeiro
+- [x] Relatórios
 - [x] Marketplace
 - [x] Config
+
+---
+
+## 🔍 Análise: Funcional vs. Visual/Simulado
+
+> Legenda: ✅ **Funcional** (integrado ao backend/API real) | 🎭 **Visual** (UI pronta, dados simulados ou sem persistência) | ⚠️ **Parcial** (funciona localmente, mas sem backend integrado)
+
+### ✅ Totalmente Funcionais (Backend Integrado)
+
+| Funcionalidade | Observação |
+|---|---|
+| Autenticação (Login/Registro) | JWT + Spring Boot, tokens persistidos |
+| Cadastro e listagem de tanques | CRUD completo via API REST |
+| Controle de qualidade da água | Registros salvos no PostgreSQL |
+| Controle de alimentação (tratos) | CRUD com datas e horários reais |
+| Controle de mortalidade | Registros com causa e taxa por lote |
+| Controle de biometria | Histórico com datas e conversão alimentar |
+| Controle de colheitas/despesca | Registros salvos via API |
+| Controle de estoque/inventário | CRUD de insumos e equipamentos |
+| Controle financeiro (receitas/despesas) | Registros com categorias específicas de piscicultura |
+| Fornecedores/Suppliers | Serviço dedicado (supplier-service) |
+| Funcionários | Listagem com permissões por role |
+| Perfil de usuário | Foto + dados persistidos |
+| Previsão do tempo (5 dias) | API Open-Meteo + GPS real do dispositivo |
+| Planos SaaS / Admin Panel | Lógica de roles: FARM_OWNER, FIELD_OPERATOR, CLIENT, SAAS_ADMIN |
+
+---
+
+### 🎭 Visual / Simulado (Sem Backend Real)
+
+| Funcionalidade | O que falta |
+|---|---|
+| **Relatórios** (crescimento, mortalidade, consumo, despesca) | A tela existe com cards bonitos, mas o `onTap` mostra apenas um SnackBar `"em breve!"`. Nenhum dado real é calculado/exibido. Precisa: criar endpoint de agregação no backend e gráficos reais. |
+| **Alertas** (alimentar, biometria, renovação, despesca) | Não existe `flutter_local_notifications` nem `firebase_messaging` no projeto. Os alertas não são disparados. Precisa: implementar notificações agendadas. |
+| **Marketplace** (Mercado Local) | Os dados são uma lista estática em memória (hardcoded). O botão "Anunciar" adiciona itens apenas localmente (perdidos ao fechar o app). Precisa: endpoint de anúncios no backend + imagens reais. |
+| **Banner de anúncio** ("AgroShop Nordeste — cupom AQUA15") | É um widget decorativo fixo. Não há integração com parceiros/loja real. |
+| **Checkout / Pagamento** (Cursos e E-books na Biblioteca) | O fluxo de checkout (Pix / Cartão) é uma **simulação**. O `_processPayment` usa um `Future.delayed` de 2s para fingir aprovação — sem gateway de pagamento real. O código Pix é um placeholder fixo. |
+| **Plano gratuito / Pro (Monetização)** | A lógica de planos SaaS existe no painel admin, mas não há bloqueio real de funcionalidades para usuários do plano gratuito nem cobrança automatizada. |
+
+---
+
+### ⚠️ Parcialmente Funcionais
+
+| Funcionalidade | Observação |
+|---|---|
+| **Biblioteca** (Artigos e Manuais) | O conteúdo dos artigos (Manejo da Tilápia, Qualidade da Água, Doenças) está hardcoded no Flutter — funciona bem como referência, mas não é editável remotamente via CMS. |
+| **Calculadora automática** | Funciona com lógica local (sem API). Cálculos corretos, mas não salva os resultados no banco. |
+| **Configurações / Tema dark-light** | Funciona localmente com `SharedPreferences`, mas preferências não sincronizam entre dispositivos. |
