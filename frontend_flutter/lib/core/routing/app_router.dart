@@ -29,6 +29,7 @@ import 'package:frontend_flutter/features/reports/presentation/reports_screen.da
 import 'package:frontend_flutter/features/calculator/presentation/calculator_screen.dart';
 import 'package:frontend_flutter/features/marketplace/presentation/marketplace_screen.dart';
 import 'package:frontend_flutter/features/library/presentation/library_screen.dart';
+import 'package:frontend_flutter/features/weather/presentation/weather_screen.dart';
 
 // ─── RouterNotifier: Listenable wrapper for Riverpod Auth State ──────────────
 class RouterNotifier extends ChangeNotifier {
@@ -221,6 +222,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/library',
                 builder: (context, state) => const LibraryScreen(),
+              ),
+              GoRoute(
+                path: '/weather',
+                builder: (context, state) => const WeatherScreen(),
               ),
             ],
           ),

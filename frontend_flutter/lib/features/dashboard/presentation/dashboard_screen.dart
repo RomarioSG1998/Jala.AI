@@ -9,7 +9,8 @@ import 'package:frontend_flutter/features/saas_admin/data/saas_models.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import 'package:frontend_flutter/features/water_quality/providers/water_quality_provider.dart';
 import 'package:frontend_flutter/features/dashboard/providers/farm_summary_provider.dart';
-import 'package:frontend_flutter/features/dashboard/providers/weather_provider.dart';
+import 'package:frontend_flutter/features/weather/providers/weather_provider.dart';
+import 'package:frontend_flutter/features/weather/data/weather_model.dart';
 import 'dart:convert';
 import 'package:frontend_flutter/features/profile/providers/profile_image_provider.dart';
 import 'package:intl/intl.dart';
@@ -57,7 +58,7 @@ class FarmDashboardBody extends ConsumerWidget {
       onRefresh: () async {
         ref.invalidate(tanksProvider);
         ref.invalidate(waterQualityProvider);
-        ref.invalidate(weatherProvider);
+        ref.read(weatherProvider.notifier).detectAndFetch();
       },
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
@@ -379,56 +380,47 @@ class FarmDashboardBody extends ConsumerWidget {
 
   Widget _buildWeatherWidget(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final weatherAsync = ref.watch(weatherProvider);
+    final weatherState = ref.watch(weatherProvider);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark 
-            ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-            : [Colors.blue.shade50, Colors.blue.shade100],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return GestureDetector(
+      onTap: () => context.go('/weather'),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                : [Colors.blue.shade50, Colors.blue.shade100],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: isDark ? Border.all(color: const Color(0xFF334155), width: 1) : null,
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: isDark ? Border.all(color: const Color(0xFF334155), width: 1) : null,
-      ),
-      child: weatherAsync.when(
-        data: (weather) => Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Clima em ${weather.cityName}', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.blue.shade800, fontSize: 12, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(weather.weatherDescription, style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 2),
-                Text('Vento: ${weather.windSpeed} km/h', style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.black54, fontSize: 11)),
-              ],
-            ),
-            Row(
-              children: [
-                Text('${weather.temperature.round()}°C', style: TextStyle(color: isDark ? Colors.orange.shade300 : Colors.orange.shade800, fontSize: 32, fontWeight: FontWeight.bold)),
-                const SizedBox(width: 8),
-                Icon(
-                  weather.weatherCode <= 3 ? Icons.wb_sunny : Icons.cloud,
-                  color: weather.weatherCode <= 3 ? Colors.orange.shade400 : Colors.blueGrey,
-                  size: 36,
+        child: weatherState.isLoading
+            ? const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: CircularProgressIndicator(),
                 ),
-              ],
-            ),
-          ],
-        ),
-        loading: () => const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator())),
-        error: (err, stack) => Row(
-          children: [
-            Icon(Icons.error_outline, color: Colors.red.shade300),
-            const SizedBox(width: 8),
-            const Expanded(child: Text('Erro ao carregar clima.', style: TextStyle(fontSize: 12))),
-          ],
-        ),
+              )
+            : weatherState.error != null
+                ? Row(children: [
+                    Icon(Icons.error_outline, color: Colors.red.shade300),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text('Erro ao carregar clima.', style: TextStyle(fontSize: 12)),
+                    ),
+                    const Icon(Icons.chevron_right, color: Colors.grey, size: 18),
+                  ])
+                : weatherState.forecast != null
+                    ? _WeatherBannerContent(
+                        forecast: weatherState.forecast!,
+                        cityName: weatherState.cityName,
+                        locationGranted: weatherState.locationGranted,
+                        isDark: isDark,
+                      )
+                    : const SizedBox.shrink(),
       ),
     );
   }
@@ -576,4 +568,99 @@ class SaasAdminBody extends ConsumerWidget {
 
 }
 
+// ─── Banner compacto de clima exibido no Dashboard ───────────────────────────
+class _WeatherBannerContent extends StatelessWidget {
+  final WeatherForecast forecast;
+  final String cityName;
+  final bool locationGranted;
+  final bool isDark;
 
+  const _WeatherBannerContent({
+    required this.forecast,
+    required this.cityName,
+    required this.locationGranted,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final temp = forecast.currentTemp ?? forecast.days.first.tempMax;
+    final windSpeed = forecast.currentWindSpeed ?? forecast.days.first.windSpeedMax;
+    final info = forecast.currentInfo;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Cidade + badge de localização
+              Row(
+                children: [
+                  Icon(
+                    locationGranted ? Icons.my_location : Icons.location_on_outlined,
+                    size: 12,
+                    color: locationGranted
+                        ? Colors.green.shade600
+                        : (isDark ? Colors.grey.shade400 : Colors.blue.shade700),
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      cityName,
+                      style: TextStyle(
+                        color: isDark ? Colors.grey.shade400 : Colors.blue.shade800,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                info.label,
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Vento: ${windSpeed.round()} km/h  •  Ver previsão completa →',
+                style: TextStyle(
+                  color: isDark ? Colors.grey.shade400 : Colors.black54,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Row(
+          children: [
+            Text(
+              '${temp.round()}°C',
+              style: TextStyle(
+                color: isDark ? Colors.orange.shade300 : Colors.orange.shade800,
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(info.emoji, style: const TextStyle(fontSize: 32)),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.chevron_right,
+              color: isDark ? Colors.white30 : Colors.blue.shade300,
+              size: 20,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}

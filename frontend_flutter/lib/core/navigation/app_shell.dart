@@ -1083,6 +1083,9 @@ class AppDrawer extends ConsumerWidget {
                     _tile(context, Icons.monitor_weight_outlined, 'Biometria', Colors.teal.shade700, () {
                       Navigator.pop(context); context.go('/biometrics');
                     }),
+                    _tile(context, Icons.cloud_rounded, 'Previsão do Tempo', Colors.lightBlue, () {
+                      Navigator.pop(context); context.go('/weather');
+                    }),
                   ],
                   if (role == 'FIELD_OPERATOR') ...[
                     FieldOperatorDrawerItems(userId: authState.userId ?? '', context: context),
