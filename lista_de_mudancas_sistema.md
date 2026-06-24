@@ -162,3 +162,58 @@
 | **Biblioteca** (Artigos e Manuais) | O conteúdo dos artigos (Manejo da Tilápia, Qualidade da Água, Doenças) está hardcoded no Flutter — funciona bem como referência, mas não é editável remotamente via CMS. |
 | **Calculadora automática** | Funciona com lógica local (sem API). Cálculos corretos, mas não salva os resultados no banco. |
 | **Configurações / Tema dark-light** | Funciona localmente com `SharedPreferences`, mas preferências não sincronizam entre dispositivos. |
+
+Novas demandas do clientes: 📋 Observações e Ajustes do Cliente (App de Aquicultura)
+🔴 Alta Prioridade (Bugs e Correções Críticas)
+
+[ ] Corrigir opções de pagamento: Na aba de anúncios (atual Mercado Local), a tela está travada ao clicar no anúncio e não exibe as opções de Pix e Cartão.
+
+[ ] Corrigir bug de duplicação nos Relatórios (Tanque 1): O "Tanque 1" está aparecendo duplicado no relatório após a atualização do nome. O app mostra o mesmo horário de registro (ex: 17:26), mas com níveis de pH diferentes (7.2 e 7.1).
+
+[ ] Corrigir conflito de exibição de Estoque/Povoamento (Tanque 2): Ao editar a "quantidade de povoamento" para 1.000 (em um tanque que já exibe, por exemplo, "Tilápia 1992 peixes" / "Estoque 1992"), o valor preenchido acaba aparecendo duplicado nos campos de capacidade e quantidade.
+
+🟡 Média Prioridade (Novas Funcionalidades e Ajustes na Interface)
+
+[ ] Ajuste nos Campos de Registro do Tanque:
+
+Remover totalmente o campo "Capacidade" (o valor genérico de quanto o tanque suporta está confundindo os usuários com o total efetivamente povoado).
+
+Mover o campo "Quantidade de Povoamento" lá para cima (logo abaixo do nome do tanque e da espécie).
+
+Remover o termo "opcional" da "Quantidade de Povoamento", pois este registro precisa ser obrigatório.
+
+Manter os demais campos como estão: Peso Médio (biometria), Mortalidade, Data do povoamento e Fornecedor (este continua sendo opcional).
+
+[ ] Renomear e estruturar aba de fornecimento: Alterar o nome da aba de "Mercado Local" para "Fornecedor Local".
+
+[ ] Filtro de Localização de Fornecedores: Adicionar uma estrutura de busca/filtro por Estado e Município. A ideia é garantir que um usuário (ex: de São Paulo) possa filtrar e ver apenas os anúncios de sua cidade/estado, sem ter que visualizar a lista geral do país todo misturada.
+
+[ ] Filtros de Lucro/Perda: Na tela de registros (onde ficam todas as despesas e vendas no Lucro líquido / Lucro estimado), adicionar botões para que o usuário filtre os resultados. Ele deve poder identificar qual semana, mês ou ano gerou mais lucro através das opções: Semanal, Mensal e Anual.
+
+[ ] Seleção de Espécie e Quantidade (Calculadora): Adicionar no topo da tela de parâmetros um local para selecionar a espécie (ex: Tilápia, Pacu, Tambaqui) e informar a quantidade de peixes, já que a alimentação varia de acordo com cada espécie.
+
+[ ] Lógica da Calculadora de Ração: Implementar a lógica de cálculo usando o aplicativo "calculadora em APK" do próprio cliente como modelo e guia do que precisa ser feito.
+
+[ ] Parâmetros da Recomendação de Trato: A área de resultados deve estar organizada exibindo:
+
+Quantidade de ração fornecida.
+
+Quantidade de trato por dia.
+
+Quantidade de ração por trato.
+
+Nível de proteína.
+
+Tamanho da ração.
+
+[ ] Regras de Temperatura no Racionamento: O racionamento deve ser obrigatoriamente atrelado à temperatura da água:
+
+Até 31ºC ou 32ºC: Recomendação normal de alimentação.
+
+A partir de 33ºC: O aplicativo deve emitir um alerta recomendando não alimentar os peixes.
+
+[ ] Fluxo de Simulação de Crescimento: O sistema precisa rodar "redondinho" para permitir testes de evolução do peixe, começando da fase de alevino pequeno, aumentando as gramas, até chegar ao peso de abate (1 kg a 1,5 kg).
+
+🟢 Baixa Prioridade / Ideias Futuras
+
+[ ] Melhoria Visual para a Play Store: Antes de lançar o aplicativo oficialmente, trabalhar a identidade visual externa. Criar fotos mais elaboradas, chamativas e cheias de cores para atrair a atenção do usuário na loja de aplicativos.
