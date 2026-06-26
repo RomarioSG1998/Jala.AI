@@ -1,5 +1,8 @@
 package com.aquasertao.api.modules.operational.services;
 
+import com.aquasertao.api.modules.billing.repositories.SaaSPlanRepository;
+import com.aquasertao.api.modules.billing.repositories.SaaSPlanRepository;
+import com.aquasertao.api.modules.billing.repositories.SubscriptionRepository;
 import com.aquasertao.api.modules.operational.dtos.TankRequestDTO;
 import com.aquasertao.api.modules.operational.dtos.TankResponseDTO;
 import com.aquasertao.api.modules.operational.models.Tank;
@@ -10,15 +13,44 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class TankService {
 
+    // ── Plan guard ─────────────────────────────────────────────────────────────
+    /** Thrown when the farm's tank count exceeds the plan limit. */
+    public static class PlanLimitExceededException extends RuntimeException {
+        private final int maxAllowed;
+        public PlanLimitExceededException(int maxAllowed) {
+            super("PLAN_LIMIT_EXCEEDED:" + maxAllowed);
+            this.maxAllowed = maxAllowed;
+        }
+        public int getMaxAllowed() { return maxAllowed; }
+    }
+
     private final TankRepository tankRepository;
+    private final SubscriptionRepository subscriptionRepository;
+    private final SaaSPlanRepository saasPlanRepository;
+
+    /** Returns the max tanks allowed for this farm based on its active plan. FREE default = 1. */
+    private int getMaxTanksAllowed(UUID farmId) {
+        return subscriptionRepository.findByFarmIdAndStatus(farmId, "ACTIVE")
+                .map(sub -> saasPlanRepository.findById(sub.getPlanId())
+                        .map(plan -> plan.getMaxTanks())
+                        .orElse(1))
+                .orElse(1);
+    }
 
     public TankResponseDTO createTank(TankRequestDTO requestDTO) {
+        // ── Plan limit guard ──────────────────────────────────────────────────
+        List<Tank> existing = tankRepository.findByFarmId(requestDTO.getFarmId());
+        int maxAllowed = getMaxTanksAllowed(requestDTO.getFarmId());
+        if (existing.size() >= maxAllowed) {
+            throw new PlanLimitExceededException(maxAllowed);
+        }
         LocalDate harvestDate = null;
         if (requestDTO.getNextHarvestDate() != null && !requestDTO.getNextHarvestDate().isEmpty()) {
             try {

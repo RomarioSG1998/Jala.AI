@@ -13,6 +13,8 @@ import 'package:frontend_flutter/features/dashboard/data/farm_summary_model.dart
 import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
 import 'package:go_router/go_router.dart';
 import 'package:frontend_flutter/features/profile/providers/subscription_provider.dart';
+import 'package:frontend_flutter/features/tanks/presentation/upgrade_plan_screen.dart';
+import 'package:frontend_flutter/features/tanks/data/tank_repository.dart';
 
 class TanksScreen extends ConsumerStatefulWidget {
   const TanksScreen({super.key});
@@ -563,12 +565,12 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
     }
 
     setState(() => _isLoading = true);
-    // Usa initialStockingQty como fishCapacity para evitar conflito de duplicação
     final stockingQty = int.parse(_initialStockingQtyController.text.trim());
-    final success = await ref.read(tanksProvider.notifier).createTank(
+    final notifier = ref.read(tanksProvider.notifier);
+    final success = await notifier.createTank(
           _nameController.text.trim(),
           _speciesController.text.trim(),
-          stockingQty, // fishCapacity = quantidade de povoamento
+          stockingQty,
           stockingDate: _stockingDateController.text.isEmpty ? null : _stockingDateController.text,
           initialStockingQty: stockingQty,
           initialAverageWeightG: int.tryParse(_initialAverageWeightGController.text.trim()),
@@ -579,6 +581,16 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
       setState(() => _isLoading = false);
       if (success) {
         Navigator.of(context).pop();
+      } else if (notifier.lastPlanLimitError != null) {
+        // Backend returned HTTP 402 — show upgrade screen
+        final err = notifier.lastPlanLimitError!;
+        Navigator.of(context).pop();
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => UpgradePlanScreen(
+            currentTanks: (ref.read(tanksProvider).value ?? []).length,
+            maxAllowed: err.maxAllowed,
+          ),
+        ));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Falha ao criar tanque')));
       }

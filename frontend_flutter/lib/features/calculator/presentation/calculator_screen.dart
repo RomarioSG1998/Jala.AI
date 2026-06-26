@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // ── Modelos de Espécie ─────────────────────────────────────────────────────
 
@@ -296,20 +298,56 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
     );
   }
 
+  Future<void> _saveToBackend(CalcResult result, int quantity, double weightG, double? tempC) async {
+    try {
+      const storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'auth_token');
+      final farmId = await storage.read(key: 'farm_id');
+      if (token == null || farmId == null) return;
+
+      final dio = Dio();
+      await dio.post(
+        'http://localhost:8080/api/calculator/history',
+        data: {
+          'farmId': farmId,
+          'species': _selectedSpecies.name,
+          'quantity': quantity,
+          'weightG': weightG,
+          'biomassKg': result.biomassKg,
+          'dailyFeedKg': result.dailyFeedKg,
+          'feedPerTreatmentKg': result.feedPerTreatmentKg,
+          'treatmentsPerDay': result.treatmentsPerDay,
+          'proteinLevel': result.proteinLevel,
+          'granulometry': result.granulometry,
+          'daysToHarvest': result.daysToHarvest,
+          'temperatureC': tempC,
+          'tempAlert': result.tempAlert,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    } catch (e) {
+      // Fail silently — calculation result is still shown locally
+      debugPrint('Calculator save error: $e');
+    }
+  }
+
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     final quantity = int.tryParse(_quantityController.text) ?? 0;
     final weightG = double.tryParse(_weightController.text) ?? 0.0;
     final tempC = double.tryParse(_tempController.text);
 
-    setState(() {
-      _result = _calculate(
-        species: _selectedSpecies,
-        quantity: quantity,
-        weightG: weightG,
-        tempC: tempC,
-      );
-    });
+    final result = _calculate(
+      species: _selectedSpecies,
+      quantity: quantity,
+      weightG: weightG,
+      tempC: tempC,
+    );
+
+    setState(() => _result = result);
+
+    // Save to backend (non-blocking, fail-safe)
+    _saveToBackend(result, quantity, weightG, tempC);
   }
 
   @override

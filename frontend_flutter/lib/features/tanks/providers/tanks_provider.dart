@@ -26,6 +26,9 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
     }
   }
 
+  // Holds the last PlanLimitException so the UI can react to it.
+  PlanLimitException? lastPlanLimitError;
+
   Future<bool> createTank(
     String name,
     String species,
@@ -36,6 +39,7 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
     String? supplier,
     String? customImage,
   }) async {
+    lastPlanLimitError = null;
     try {
       print('TanksNotifier.createTank: customImage length = ${customImage?.length}');
       final newTank = await _repository.createTank({
@@ -48,11 +52,14 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
         'supplier': supplier,
         'customImage': customImage,
       });
-      // Update state optimistically or by fetching
       if (state.hasValue) {
         state = AsyncValue.data([...state.value!, newTank]);
       }
       return true;
+    } on PlanLimitException catch (e) {
+      // Propagate plan limit so UI can show upgrade screen
+      lastPlanLimitError = e;
+      return false;
     } catch (e) {
       if (e is DioException) {
         print('TanksNotifier.createTank: Error: ${e.message} (status: ${e.response?.statusCode})');

@@ -146,12 +146,8 @@
 
 | Funcionalidade | O que falta |
 |---|---|
-| **Relatórios** (crescimento, mortalidade, consumo, despesca) | A tela existe com cards bonitos, mas o `onTap` mostra apenas um SnackBar `"em breve!"`. Nenhum dado real é calculado/exibido. Precisa: criar endpoint de agregação no backend e gráficos reais. |
-| **Alertas** (alimentar, biometria, renovação, despesca) | Não existe `flutter_local_notifications` nem `firebase_messaging` no projeto. Os alertas não são disparados. Precisa: implementar notificações agendadas. |
-| **Marketplace** (Mercado Local) | Os dados são uma lista estática em memória (hardcoded). O botão "Anunciar" adiciona itens apenas localmente (perdidos ao fechar o app). Precisa: endpoint de anúncios no backend + imagens reais. |
 | **Banner de anúncio** ("AgroShop Nordeste — cupom AQUA15") | É um widget decorativo fixo. Não há integração com parceiros/loja real. |
 | **Checkout / Pagamento** (Cursos e E-books na Biblioteca) | O fluxo de checkout (Pix / Cartão) é uma **simulação**. O `_processPayment` usa um `Future.delayed` de 2s para fingir aprovação — sem gateway de pagamento real. O código Pix é um placeholder fixo. |
-| **Plano gratuito / Pro (Monetização)** | A lógica de planos SaaS existe no painel admin, mas não há bloqueio real de funcionalidades para usuários do plano gratuito nem cobrança automatizada. |
 
 ---
 
@@ -160,8 +156,19 @@
 | Funcionalidade | Observação |
 |---|---|
 | **Biblioteca** (Artigos e Manuais) | O conteúdo dos artigos (Manejo da Tilápia, Qualidade da Água, Doenças) está hardcoded no Flutter — funciona bem como referência, mas não é editável remotamente via CMS. |
-| **Calculadora automática** | Funciona com lógica local (sem API). Cálculos corretos, mas não salva os resultados no banco. |
 | **Configurações / Tema dark-light** | Funciona localmente com `SharedPreferences`, mas preferências não sincronizam entre dispositivos. |
+
+---
+
+### 🚀 Novas Funcionalidades Conectadas ao Backend (Production-Ready)
+
+| Funcionalidade | O que foi feito |
+|---|---|
+| **Relatórios Reais** | Endpoints de agregação implementados no Spring Boot e conectados ao frontend com gráficos reais gerados pelo `fl_chart` (Crescimento, Mortalidade, Consumo e Previsão de Despesca). |
+| **Marketplace Persistente** | Endpoint `/announcements` no backend com CRUD completo e isolamento por farmId. Frontend atualizado com busca, publicação real de anúncios e filtros de Estado e Município. |
+| **Bloqueio de Plano Gratuito** | Implementado guard no `TankService` que limita a criação de apenas 1 tanque para usuários do plano gratuito, lançando HTTP 402, tratado no Flutter com redirecionamento para a tela `UpgradePlanScreen`. |
+| **Alertas e Notificações** | Integrado `flutter_local_notifications` com agendamento local automático para manejo diário de ração (alimentação), biometria quinzenal, qualidade da água e proximidade de despesca. |
+| **Calculadora com Histórico** | Lógica de cálculo estendida para registrar e persistir os resultados no banco de dados via `/api/calculator/history` sempre que uma recomendação é computada. |
 
 ---
 

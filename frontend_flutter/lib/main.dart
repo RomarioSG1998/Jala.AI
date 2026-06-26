@@ -5,9 +5,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:frontend_flutter/core/theme/theme_provider.dart';
 import 'package:frontend_flutter/core/routing/app_router.dart';
 import 'package:frontend_flutter/core/api/server_ping_provider.dart';
+import 'package:frontend_flutter/core/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Initialize local notification service (requests permissions on Android 13+)
+  await NotificationService().initialize();
+  // Schedule default daily feeding reminder at 07:00
+  await NotificationService().scheduleDailyFeeding(hour: 7, minute: 0);
   final prefs = await SharedPreferences.getInstance();
   runApp(
     ProviderScope(
