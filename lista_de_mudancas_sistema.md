@@ -106,12 +106,6 @@
 - [x] Mortalidade
 - [x] Financeiro
 - [x] Relatórios
-- [x] Dashboard
-- [x] Tanques
-- [x] Alimentação
-- [x] Mortalidade
-- [x] Financeiro
-- [x] Relatórios
 - [x] Marketplace
 - [x] Config
 
@@ -221,9 +215,8 @@
     - [x] Campo de seleção de **espécie** (Tilápia, Pacu, Tambaqui, Pirarucu, Pintado) ✅
     - [x] Campo para **quantidade de peixes** ✅
   - ~~A alimentação varia por espécie — esses dados são essenciais para o cálculo~~ ✅
-  - [x] A alimentação varia por espécie — esses dados são essenciais para o cálculo ✅
 
-- [x] **Lógica da Calculadora de Ração**
+- [ ] **Lógica da Calculadora de Ração**
   - [ ] Implementar usando o APK do cliente como modelo e referência — fórmulas por espécie e faixa de peso (ainda não dissecamos a fundo o apk do cliente)
   - [ ] Validar fórmulas e fluxo com o cliente antes de finalizar (faremos isso em vídeo chamada)
 
