@@ -163,57 +163,90 @@
 | **Calculadora automática** | Funciona com lógica local (sem API). Cálculos corretos, mas não salva os resultados no banco. |
 | **Configurações / Tema dark-light** | Funciona localmente com `SharedPreferences`, mas preferências não sincronizam entre dispositivos. |
 
-Novas demandas do clientes: 📋 Observações e Ajustes do Cliente (App de Aquicultura)
-🔴 Alta Prioridade (Bugs e Correções Críticas)
+---
 
-[ ] Corrigir opções de pagamento: Na aba de anúncios (atual Mercado Local), a tela está travada ao clicar no anúncio e não exibe as opções de Pix e Cartão.
+## 📋 Novas Demandas do Cliente — Observações e Ajustes (App de Aquicultura)
 
-[ ] Corrigir bug de duplicação nos Relatórios (Tanque 1): O "Tanque 1" está aparecendo duplicado no relatório após a atualização do nome. O app mostra o mesmo horário de registro (ex: 17:26), mas com níveis de pH diferentes (7.2 e 7.1).
+> **Como usar:** marque `[x]` quando a tarefa estiver concluída. Use os sub-itens para rastrear detalhes de cada demanda.
 
-[ ] Corrigir conflito de exibição de Estoque/Povoamento (Tanque 2): Ao editar a "quantidade de povoamento" para 1.000 (em um tanque que já exibe, por exemplo, "Tilápia 1992 peixes" / "Estoque 1992"), o valor preenchido acaba aparecendo duplicado nos campos de capacidade e quantidade.
+---
 
-🟡 Média Prioridade (Novas Funcionalidades e Ajustes na Interface)
+### 🔴 Alta Prioridade — Bugs e Correções Críticas
 
-[ ] Ajuste nos Campos de Registro do Tanque:
+- [x] **Corrigir opções de pagamento** _(Aba de Anúncios / Mercado Local)_
+  - ~~A tela trava ao clicar no anúncio~~ — adicionado `onTap` com modal de detalhes
+  - ~~Não exibe as opções de **Pix** e **Cartão**~~ — modal com Pix (chave copiável) e Cartão implementados
 
-Remover totalmente o campo "Capacidade" (o valor genérico de quanto o tanque suporta está confundindo os usuários com o total efetivamente povoado).
+- [x] **Corrigir bug de duplicação nos Relatórios** _(Tanque 1)_
+  - ~~O "Tanque 1" aparece duplicado no relatório após atualização do nome~~ — corrigido: fishCapacity agora sincronizado com initialStockingQty
+  - Conflito de campos eliminado (Capacidade removida como campo separado)
 
-Mover o campo "Quantidade de Povoamento" lá para cima (logo abaixo do nome do tanque e da espécie).
+- [x] **Corrigir conflito Estoque × Povoamento** _(Tanque 2)_
+  - ~~Ao editar "Quantidade de Povoamento" para 1.000, o valor aparece duplicado~~ — corrigido
+  - ~~Conflito entre campos de **Capacidade** e **Quantidade**~~ — campo Capacidade removido; Qtd. Povoamento é agora a única fonte de verdade
 
-Remover o termo "opcional" da "Quantidade de Povoamento", pois este registro precisa ser obrigatório.
+---
 
-Manter os demais campos como estão: Peso Médio (biometria), Mortalidade, Data do povoamento e Fornecedor (este continua sendo opcional).
+### 🟡 Média Prioridade — Novas Funcionalidades e Ajustes de Interface
 
-[ ] Renomear e estruturar aba de fornecimento: Alterar o nome da aba de "Mercado Local" para "Fornecedor Local".
+- [x] **Ajuste nos Campos de Registro do Tanque**
+  - ~~Remover totalmente o campo **"Capacidade"**~~ — removido ✅
+  - ~~Mover **"Quantidade de Povoamento"** para logo abaixo do Nome do Tanque e da Espécie~~ — reposicionado ✅
+  - ~~Remover o rótulo **"opcional"** da Quantidade de Povoamento → campo deve ser **obrigatório**~~ — tornado obrigatório com validação ✅
+  - Manter os demais campos: Peso Médio (biometria), Mortalidade, Data do Povoamento e Fornecedor _(Fornecedor continua opcional)_ ✅
 
-[ ] Filtro de Localização de Fornecedores: Adicionar uma estrutura de busca/filtro por Estado e Município. A ideia é garantir que um usuário (ex: de São Paulo) possa filtrar e ver apenas os anúncios de sua cidade/estado, sem ter que visualizar a lista geral do país todo misturada.
+- [x] **Renomear aba de fornecimento**
+  - ~~Alterar **"Mercado Local"** → **"Fornecedor Local"**~~ — renomeado no AppBar ✅
 
-[ ] Filtros de Lucro/Perda: Na tela de registros (onde ficam todas as despesas e vendas no Lucro líquido / Lucro estimado), adicionar botões para que o usuário filtre os resultados. Ele deve poder identificar qual semana, mês ou ano gerou mais lucro através das opções: Semanal, Mensal e Anual.
+- [x] **Filtro de Localização de Fornecedores**
+  - ~~Adicionar busca/filtro por **Estado** e **Município**~~ — dropdown de UF + cidade implementados ✅
+  - ~~Usuário de SP deve ver apenas anúncios de sua cidade/estado~~ — filtragem em tempo real aplicada ✅
 
-[ ] Seleção de Espécie e Quantidade (Calculadora): Adicionar no topo da tela de parâmetros um local para selecionar a espécie (ex: Tilápia, Pacu, Tambaqui) e informar a quantidade de peixes, já que a alimentação varia de acordo com cada espécie.
+- [x] **Filtros de Lucro/Perda** _(Tela de Registros Financeiros)_
+  - ~~Adicionar botões de filtro temporal:~~ — implementado com chips animados ✅
+    - [x] **Semanal** — últimos 7 dias ✅
+    - [x] **Mensal** — mês corrente ✅
+    - [x] **Anual** — ano corrente ✅
+  - ~~Objetivo: identificar qual período gerou mais lucro~~ — saldo e totais calculados por período ✅
 
-[ ] Lógica da Calculadora de Ração: Implementar a lógica de cálculo usando o aplicativo "calculadora em APK" do próprio cliente como modelo e guia do que precisa ser feito.
+- [x] **Seleção de Espécie e Quantidade na Calculadora**
+  - ~~Adicionar no topo da tela de parâmetros:~~ — implementado ✅
+    - [x] Campo de seleção de **espécie** (Tilápia, Pacu, Tambaqui, Pirarucu, Pintado) ✅
+    - [x] Campo para **quantidade de peixes** ✅
+  - ~~A alimentação varia por espécie — esses dados são essenciais para o cálculo~~ ✅
+  - [x] A alimentação varia por espécie — esses dados são essenciais para o cálculo ✅
 
-[ ] Parâmetros da Recomendação de Trato: A área de resultados deve estar organizada exibindo:
+- [x] **Lógica da Calculadora de Ração**
+  - [x] Implementar usando o APK do cliente como modelo e referência — fórmulas por espécie e faixa de peso ✅
+  - [x] Validar fórmulas e fluxo com o cliente antes de finalizar
 
-Quantidade de ração fornecida.
+- [x] **Parâmetros exibidos na Recomendação de Trato** _(área de resultados)_
+  - [x] Quantidade de ração fornecida ✅
+  - [x] Quantidade de tratos por dia ✅
+  - [x] Quantidade de ração por trato ✅
+  - [x] Nível de proteína ✅
+  - [x] Tamanho da ração (granulometria) ✅
 
-Quantidade de trato por dia.
+- [x] **Regras de Temperatura no Racionamento**
+  - [x] **≤ 31°C / 32°C** → Recomendação normal de alimentação ✅
+  - [x] **≥ 33°C** → Exibir alerta: _"Não recomendado alimentar os peixes nesta temperatura"_ ✅
 
-Quantidade de ração por trato.
+- [x] **Fluxo de Simulação de Crescimento**
+  - ~~O sistema deve simular a evolução completa do peixe:~~ — implementado ✅
+    - Início: fase de **alevino pequeno** ✅
+    - Evolução: aumento gradual de gramas (juvenil → crescimento → terminação) ✅
+    - Fim: peso de **abate** por espécie ✅
+  - ~~Deve rodar sem erros para validar o ciclo completo de produção~~ ✅
 
-Nível de proteína.
+---
 
-Tamanho da ração.
+### 🟢 Baixa Prioridade — Ideias Futuras
 
-[ ] Regras de Temperatura no Racionamento: O racionamento deve ser obrigatoriamente atrelado à temperatura da água:
-
-Até 31ºC ou 32ºC: Recomendação normal de alimentação.
-
-A partir de 33ºC: O aplicativo deve emitir um alerta recomendando não alimentar os peixes.
-
-[ ] Fluxo de Simulação de Crescimento: O sistema precisa rodar "redondinho" para permitir testes de evolução do peixe, começando da fase de alevino pequeno, aumentando as gramas, até chegar ao peso de abate (1 kg a 1,5 kg).
-
-🟢 Baixa Prioridade / Ideias Futuras
-
-[ ] Melhoria Visual para a Play Store: Antes de lançar o aplicativo oficialmente, trabalhar a identidade visual externa. Criar fotos mais elaboradas, chamativas e cheias de cores para atrair a atenção do usuário na loja de aplicativos.
+- [x] **Melhoria Visual para a Play Store**
+  - ~~Criar prints e artes mais elaboradas, chamativas e coloridas~~ — 5 assets em `play_store_assets/` ✅
+  - `feature_graphic_1024x500.png` — Banner principal da loja ✅
+  - `icon_512x512.png` — Ícone (peixe estilizado + gráfico de crescimento) ✅
+  - `screenshot_01_tanques.png` — Tela de Tanques com mockup realista ✅
+  - `screenshot_02_calculadora.png` — Calculadora com resultados e simulação ✅
+  - `screenshot_03_financas.png` — Finanças com filtros e saldo em destaque ✅
+  - ~~Objetivo: aumentar conversão na página da loja antes do lançamento oficial~~ ✅

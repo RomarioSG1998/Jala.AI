@@ -454,7 +454,7 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _speciesController = TextEditingController();
-  final _capacityController = TextEditingController();
+  // Capacidade removida: usa initialStockingQty como contagem oficial
   final _stockingDateController = TextEditingController();
   final _initialStockingQtyController = TextEditingController();
   final _initialAverageWeightGController = TextEditingController();
@@ -466,7 +466,6 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
   void dispose() {
     _nameController.dispose();
     _speciesController.dispose();
-    _capacityController.dispose();
     _stockingDateController.dispose();
     _initialStockingQtyController.dispose();
     _initialAverageWeightGController.dispose();
@@ -564,12 +563,14 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
     }
 
     setState(() => _isLoading = true);
+    // Usa initialStockingQty como fishCapacity para evitar conflito de duplicação
+    final stockingQty = int.parse(_initialStockingQtyController.text.trim());
     final success = await ref.read(tanksProvider.notifier).createTank(
           _nameController.text.trim(),
           _speciesController.text.trim(),
-          int.parse(_capacityController.text.trim()),
+          stockingQty, // fishCapacity = quantidade de povoamento
           stockingDate: _stockingDateController.text.isEmpty ? null : _stockingDateController.text,
-          initialStockingQty: int.tryParse(_initialStockingQtyController.text.trim()),
+          initialStockingQty: stockingQty,
           initialAverageWeightG: int.tryParse(_initialAverageWeightGController.text.trim()),
           supplier: _supplierController.text.isEmpty ? null : _supplierController.text.trim(),
           customImage: _customImageBase64,
@@ -677,7 +678,24 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
                 TextFormField(controller: _nameController, decoration: const InputDecoration(labelText: 'Nome do Tanque', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
                 const SizedBox(height: 16),
                 TextFormField(controller: _speciesController, decoration: const InputDecoration(labelText: 'Espécie de Peixe', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Obrigatório' : null),
-                          TextFormField(controller: _capacityController, decoration: const InputDecoration(labelText: 'Capacidade', border: OutlineInputBorder()), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null)),
+                const SizedBox(height: 16),
+                // Quantidade de Povoamento: campo obrigatório, logo abaixo da espécie
+                TextFormField(
+                  controller: _initialStockingQtyController,
+                  decoration: const InputDecoration(
+                    labelText: 'Quantidade de Povoamento',
+                    hintText: 'Ex: 1000',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.set_meal_outlined),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Obrigatório';
+                    if (int.tryParse(v) == null) return 'Deve ser um número inteiro';
+                    if (int.parse(v) <= 0) return 'Deve ser maior que zero';
+                    return null;
+                  },
+                ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -699,13 +717,6 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
                         onPressed: () => setState(() => _stockingDateController.clear()),
                       ),
                   ],
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _initialStockingQtyController,
-                  decoration: const InputDecoration(labelText: 'Quantidade de Povoamento (Opcional)', border: OutlineInputBorder()),
-                  keyboardType: TextInputType.number,
-                  validator: (v) => v!.isNotEmpty && int.tryParse(v) == null ? 'Deve ser um número inteiro' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -756,7 +767,7 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _speciesController;
-  late TextEditingController _capacityController;
+  // _capacityController removido: fishCapacity agora é derivado de initialStockingQty
   late TextEditingController _weightController;
   late TextEditingController _mortalityController;
   late TextEditingController _harvestDateController;
@@ -780,12 +791,13 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
     super.initState();
     _nameController = TextEditingController(text: widget.tank.name);
     _speciesController = TextEditingController(text: widget.tank.fishSpecies);
-    _capacityController = TextEditingController(text: widget.tank.fishCapacity.toString());
+    // Usa initialStockingQty como fonte de verdade; fallback para fishCapacity se vazio
     _weightController = TextEditingController(text: widget.tank.averageWeightG.toString());
     _mortalityController = TextEditingController(text: widget.tank.mortalityCount.toString());
     _harvestDateController = TextEditingController(text: widget.tank.nextHarvestDate ?? '');
     _stockingDateController = TextEditingController(text: widget.tank.stockingDate ?? '');
-    _initialStockingQtyController = TextEditingController(text: widget.tank.initialStockingQty?.toString() ?? '');
+    final qty = widget.tank.initialStockingQty ?? widget.tank.fishCapacity;
+    _initialStockingQtyController = TextEditingController(text: qty > 0 ? qty.toString() : '');
     _initialAverageWeightGController = TextEditingController(text: widget.tank.initialAverageWeightG?.toString() ?? '');
     _supplierController = TextEditingController(text: widget.tank.supplier ?? '');
     
@@ -800,7 +812,6 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
   void dispose() {
     _nameController.dispose();
     _speciesController.dispose();
-    _capacityController.dispose();
     _weightController.dispose();
     _mortalityController.dispose();
     _harvestDateController.dispose();
@@ -902,17 +913,19 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     
+    // fishCapacity = initialStockingQty para manter sincronização e evitar duplicação
+    final stockingQty = int.tryParse(_initialStockingQtyController.text.trim()) ?? widget.tank.fishCapacity;
     final success = await ref.read(tanksProvider.notifier).updateTank(
           widget.tank.id,
           _nameController.text.trim(),
           _speciesController.text.trim(),
-          int.parse(_capacityController.text.trim()),
+          stockingQty, // fishCapacity sincronizado com initialStockingQty
           int.parse(_weightController.text.trim()),
           int.parse(_mortalityController.text.trim()),
           _harvestDateController.text.isEmpty ? null : _harvestDateController.text,
           _stockingDateController.text.isEmpty ? null : _stockingDateController.text,
           _status,
-          initialStockingQty: int.tryParse(_initialStockingQtyController.text.trim()),
+          initialStockingQty: stockingQty,
           initialAverageWeightG: int.tryParse(_initialAverageWeightGController.text.trim()),
           supplier: _supplierController.text.isEmpty ? null : _supplierController.text.trim(),
           customImage: _customImageBase64,
@@ -1139,11 +1152,22 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
                     validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                   ),
                   const SizedBox(height: 16),
+                  // Quantidade de Povoamento: obrigatório, logo abaixo da espécie
                   TextFormField(
-                    controller: _capacityController,
-                    decoration: const InputDecoration(labelText: 'Capacidade', border: OutlineInputBorder()),
+                    controller: _initialStockingQtyController,
+                    decoration: const InputDecoration(
+                      labelText: 'Quantidade de Povoamento',
+                      hintText: 'Ex: 1000',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.set_meal_outlined),
+                    ),
                     keyboardType: TextInputType.number,
-                    validator: (v) => v!.isEmpty ? 'Obrigatório' : (int.tryParse(v) == null ? 'Deve ser um número' : null),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Obrigatório';
+                      if (int.tryParse(v) == null) return 'Deve ser um número inteiro';
+                      if (int.parse(v) <= 0) return 'Deve ser maior que zero';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -1180,13 +1204,6 @@ class _EditTankFormState extends ConsumerState<EditTankForm> {
                           onPressed: () => setState(() => _stockingDateController.clear()),
                         ),
                     ],
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _initialStockingQtyController,
-                    decoration: const InputDecoration(labelText: 'Quantidade de Povoamento (Opcional)', border: OutlineInputBorder()),
-                    keyboardType: TextInputType.number,
-                    validator: (v) => v!.isNotEmpty && int.tryParse(v) == null ? 'Deve ser um número inteiro' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(

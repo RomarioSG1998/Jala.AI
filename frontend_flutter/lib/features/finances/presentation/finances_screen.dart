@@ -6,14 +6,63 @@ import 'package:intl/intl.dart';
 import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
 
-class FinancesScreen extends ConsumerWidget {
+// Enum de período de filtro
+enum FinancePeriod { all, weekly, monthly, annual }
+
+class FinancesScreen extends ConsumerStatefulWidget {
   const FinancesScreen({super.key});
 
   static const _kNavyBlue = Color(0xFF003366);
   static const _kGreen = Color(0xFF13A538);
 
+  static void showAddTransactionModal(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: const _AddTransactionForm(),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FinancesScreen> createState() => _FinancesScreenState();
+}
+
+class _FinancesScreenState extends ConsumerState<FinancesScreen> {
+  FinancePeriod _period = FinancePeriod.all;
+
+  static const _kNavyBlue = Color(0xFF003366);
+  static const _kGreen = Color(0xFF13A538);
+
+  List<FinancialTransaction> _filterByPeriod(List<FinancialTransaction> txs) {
+    if (_period == FinancePeriod.all) return txs;
+    final now = DateTime.now();
+    return txs.where((tx) {
+      final date = DateTime.tryParse(tx.transactionDate);
+      if (date == null) return false;
+      switch (_period) {
+        case FinancePeriod.weekly:
+          return now.difference(date).inDays <= 7;
+        case FinancePeriod.monthly:
+          return date.year == now.year && date.month == now.month;
+        case FinancePeriod.annual:
+          return date.year == now.year;
+        case FinancePeriod.all:
+          return true;
+      }
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final transactionsAsync = ref.watch(transactionProvider);
     final currencyFmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
     final searchQuery = ref.watch(globalSearchQueryProvider);
@@ -28,7 +77,11 @@ class FinancesScreen extends ConsumerWidget {
         onRefresh: () => ref.read(transactionProvider.notifier).refreshTransactions(),
         child: transactionsAsync.when(
           data: (transactions) {
-            final filtered = transactions.where((tx) {
+            // Primeiro filtra por período
+            final periodFiltered = _filterByPeriod(transactions);
+
+            // Depois filtra por texto de busca
+            final filtered = periodFiltered.where((tx) {
               if (searchQuery.isEmpty) return true;
               final query = searchQuery.toLowerCase();
               final typeMatch = tx.type.toLowerCase().contains(query);
@@ -54,16 +107,20 @@ class FinancesScreen extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 110),
               children: [
+                // ── Filtros de Período ──────────────────────────────────────
+                _buildPeriodFilter(isDark),
+                const SizedBox(height: 16),
+
                 // Summary Cards
                 _buildSummaryCards(context, totalIncome, totalExpense, netBalance, currencyFmt),
                 const SizedBox(height: 28),
                 Text(
-                  'Transações Recentes',
+                  'Transações${_period != FinancePeriod.all ? ' — ${_periodLabel(_period)}' : ' Recentes'}',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
                 ),
                 const SizedBox(height: 12),
                 if (filtered.isEmpty)
-                  _buildEmptyState(context, message: searchQuery.isNotEmpty ? 'Nenhuma transação encontrada para "$searchQuery"' : 'Nenhuma transação registrada')
+                  _buildEmptyState(context, message: searchQuery.isNotEmpty ? 'Nenhuma transação encontrada para "$searchQuery"' : 'Nenhuma transação no período selecionado')
                 else
                   Column(
                     children: filtered
@@ -82,9 +139,66 @@ class FinancesScreen extends ConsumerWidget {
           ),
         ),
       ),
-
     );
   }
+
+  String _periodLabel(FinancePeriod p) {
+    switch (p) {
+      case FinancePeriod.weekly: return 'Esta Semana';
+      case FinancePeriod.monthly: return 'Este Mês';
+      case FinancePeriod.annual: return 'Este Ano';
+      case FinancePeriod.all: return 'Todos';
+    }
+  }
+
+  Widget _buildPeriodFilter(bool isDark) {
+    final periods = [
+      (FinancePeriod.all, 'Todos', Icons.all_inclusive),
+      (FinancePeriod.weekly, 'Semanal', Icons.calendar_view_week),
+      (FinancePeriod.monthly, 'Mensal', Icons.calendar_month),
+      (FinancePeriod.annual, 'Anual', Icons.calendar_today),
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: periods.map(((FinancePeriod, String, IconData) item) {
+          final (period, label, icon) = item;
+          final isActive = _period == period;
+          return GestureDetector(
+            onTap: () => setState(() => _period = period),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                color: isActive ? _kNavyBlue : (isDark ? const Color(0xFF151D30) : Colors.grey.shade100),
+                borderRadius: BorderRadius.circular(20),
+                border: !isActive && isDark ? Border.all(color: const Color(0xFF263350)) : null,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 15, color: isActive ? Colors.white : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                      color: isActive ? Colors.white : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+
 
   Widget _buildSummaryCards(BuildContext context, double income, double expense, double balance, NumberFormat fmt) {
     return Column(
@@ -305,23 +419,6 @@ class FinancesScreen extends ConsumerWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-
-  static void showAddTransactionModal(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: const _AddTransactionForm(),
       ),
     );
   }
