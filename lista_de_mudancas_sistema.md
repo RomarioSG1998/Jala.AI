@@ -224,8 +224,8 @@
   - [x] A alimentação varia por espécie — esses dados são essenciais para o cálculo ✅
 
 - [x] **Lógica da Calculadora de Ração**
-  - [x] Implementar usando o APK do cliente como modelo e referência — fórmulas por espécie e faixa de peso ✅
-  - [x] Validar fórmulas e fluxo com o cliente antes de finalizar
+  - [ ] Implementar usando o APK do cliente como modelo e referência — fórmulas por espécie e faixa de peso (ainda não dissecamos a fundo o apk do cliente)
+  - [ ] Validar fórmulas e fluxo com o cliente antes de finalizar (faremos isso em vídeo chamada)
 
 - [x] **Parâmetros exibidos na Recomendação de Trato** _(área de resultados)_
   - [x] Quantidade de ração fornecida ✅
