@@ -17,4 +17,5 @@ public class AuthResponseDTO {
     private String name;
     private String accountType;
     private UUID userId;
+    private UUID farmId;
 }

@@ -147,6 +147,7 @@ class AuthNotifier extends Notifier<AuthState> {
           resAccountType ?? 'UNKNOWN',
           userId: response['userId']?.toString(),
           name: resName,
+          farmId: response['farmId']?.toString(),
         );
 
         state = state.copyWith(
@@ -197,6 +198,7 @@ class AuthNotifier extends Notifier<AuthState> {
           resAccountType ?? accountType,
           userId: response['userId']?.toString(),
           name: resName ?? name,
+          farmId: response['farmId']?.toString(),
         );
 
         state = state.copyWith(
@@ -251,6 +253,7 @@ class AuthNotifier extends Notifier<AuthState> {
           resAccountType ?? state.accountType ?? 'UNKNOWN',
           userId: userId,
           name: resName ?? name,
+          farmId: response['farmId']?.toString(),
         );
 
         state = state.copyWith(

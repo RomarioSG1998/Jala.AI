@@ -4,6 +4,14 @@ import 'package:frontend_flutter/core/api/dio_client.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
 import 'package:frontend_flutter/features/tanks/data/biometrics_model.dart';
 
+/// Thrown when the backend returns HTTP 402 (plan limit exceeded).
+class PlanLimitException implements Exception {
+  final int maxAllowed;
+  PlanLimitException(this.maxAllowed);
+  @override
+  String toString() => 'PlanLimitException(maxAllowed: $maxAllowed)';
+}
+
 class TankRepository {
   final Dio _dio;
 
@@ -43,6 +51,13 @@ class TankRepository {
       tankData['farmId'] = _farmId; // Inject required farmId
       final response = await _dio.post('/api/tanks', data: tankData);
       return Tank.fromJson(response.data);
+    } on DioException catch (e) {
+      // HTTP 402 = plan limit exceeded
+      if (e.response?.statusCode == 402) {
+        final maxAllowed = (e.response?.data['maxAllowed'] as int?) ?? 1;
+        throw PlanLimitException(maxAllowed);
+      }
+      throw Exception('Failed to create tank: ${e.message}');
     } catch (e) {
       throw Exception('Failed to create tank: $e');
     }
