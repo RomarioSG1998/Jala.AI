@@ -11,5 +11,6 @@ import java.util.UUID;
 public interface UserFarmLinkRepository extends JpaRepository<UserFarmLink, UserFarmLink.UserFarmLinkId> {
     List<UserFarmLink> findByFarmId(UUID farmId);
     List<UserFarmLink> findByFarmIdAndAccessRole(UUID farmId, String accessRole);
+    List<UserFarmLink> findByUserId(UUID userId);
     void deleteByUserIdAndFarmId(UUID userId, UUID farmId);
 }
