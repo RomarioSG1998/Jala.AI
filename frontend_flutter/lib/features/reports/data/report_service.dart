@@ -100,28 +100,21 @@ class ReportSummary {
 
 class ReportService {
   final Dio _dio;
-  final FlutterSecureStorage _storage;
 
-  ReportService({Dio? dio, FlutterSecureStorage? storage})
-      : _dio = dio ?? Dio(),
-        _storage = storage ?? const FlutterSecureStorage();
+  ReportService({required Dio dio}) : _dio = dio;
 
   Future<ReportSummary> fetchSummary(String farmId) async {
-    final token = await _storage.read(key: 'auth_token');
     final response = await _dio.get(
-      'http://localhost:8080/api/reports/summary',
+      '/api/reports/summary',
       queryParameters: {'farmId': farmId},
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
     return ReportSummary.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<int> fetchPlanLimit(String farmId) async {
-    final token = await _storage.read(key: 'auth_token');
     final response = await _dio.get(
-      'http://localhost:8080/api/reports/plan-limit',
+      '/api/reports/plan-limit',
       queryParameters: {'farmId': farmId},
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
     return (response.data['maxTanks'] ?? 1) as int;
   }

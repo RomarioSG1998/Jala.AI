@@ -57,29 +57,18 @@ class AnnouncementModel {
 }
 
 class AnnouncementApiService {
-  static const String _baseUrl = 'http://localhost:8080/api/announcements';
   final Dio _dio;
-  final FlutterSecureStorage _storage;
 
-  AnnouncementApiService({Dio? dio, FlutterSecureStorage? storage})
-      : _dio = dio ?? Dio(),
-        _storage = storage ?? const FlutterSecureStorage();
-
-  Future<Map<String, String>> _headers() async {
-    final token = await _storage.read(key: 'auth_token');
-    return {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'};
-  }
+  AnnouncementApiService({required Dio dio}) : _dio = dio;
 
   Future<List<AnnouncementModel>> fetchAll({String? category, String? location}) async {
-    final headers = await _headers();
     final Map<String, dynamic> params = {};
     if (category != null && category.isNotEmpty) params['category'] = category;
     if (location != null && location.isNotEmpty) params['location'] = location;
 
     final response = await _dio.get(
-      _baseUrl,
+      '/api/announcements',
       queryParameters: params.isEmpty ? null : params,
-      options: Options(headers: headers),
     );
 
     final list = response.data as List;
@@ -87,21 +76,17 @@ class AnnouncementApiService {
   }
 
   Future<AnnouncementModel> create(AnnouncementModel model) async {
-    final headers = await _headers();
     final response = await _dio.post(
-      _baseUrl,
+      '/api/announcements',
       data: model.toJson(),
-      options: Options(headers: headers),
     );
     return AnnouncementModel.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<void> deactivate(String id, String farmId) async {
-    final headers = await _headers();
     await _dio.delete(
-      '$_baseUrl/$id',
+      '/api/announcements/$id',
       queryParameters: {'farmId': farmId},
-      options: Options(headers: headers),
     );
   }
 }

@@ -47,6 +47,7 @@ public class AuthService {
         
         GlobalUser savedUser = repository.save(user);
 
+        UUID farmId = null;
         // Link user to default farm tenant only if accountType is CLIENT
         if ("CLIENT".equals(accountType)) {
             UUID defaultFarmId = UUID.fromString("55555555-5555-5555-5555-555555555555");
@@ -56,6 +57,7 @@ public class AuthService {
                     .accessRole("FARM_OWNER")
                     .build();
             userFarmLinkRepository.save(link);
+            farmId = defaultFarmId;
         }
 
         var jwtToken = jwtService.generateToken(savedUser);
@@ -66,6 +68,7 @@ public class AuthService {
                 .name(savedUser.getName())
                 .accountType(savedUser.getAccountType())
                 .userId(savedUser.getId())
+                .farmId(farmId)
                 .build();
     }
 
@@ -88,6 +91,7 @@ public class AuthService {
                 .name(user.getName())
                 .accountType(user.getAccountType())
                 .userId(user.getId())
+                .farmId(getUserFarmId(user.getId()))
                 .build();
     }
 
@@ -134,6 +138,14 @@ public class AuthService {
                  .name(updatedUser.getName())
                  .accountType(updatedUser.getAccountType())
                  .userId(updatedUser.getId())
+                 .farmId(getUserFarmId(updatedUser.getId()))
                  .build();
+     }
+
+     private UUID getUserFarmId(UUID userId) {
+         return userFarmLinkRepository.findByUserId(userId).stream()
+                 .map(UserFarmLink::getFarmId)
+                 .findFirst()
+                 .orElse(null);
      }
 }

@@ -2,6 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'dart:ui';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 /// Centralized notification service for AquaGestor.
 /// Manages local scheduled notifications for feeding, biometry, water renewal and harvest alerts.
@@ -20,6 +21,10 @@ class NotificationService {
   static const String _harvestChannelId = 'aqua_harvest';
 
   Future<void> initialize() async {
+    if (kIsWeb) {
+      _initialized = true;
+      return;
+    }
     if (_initialized) return;
     tz.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('America/Fortaleza'));
@@ -51,6 +56,7 @@ class NotificationService {
     required int minute,
     String tankName = '',
   }) async {
+    if (kIsWeb) return;
     await _ensureInitialized();
     await _plugin.zonedSchedule(
       1001,
@@ -66,6 +72,7 @@ class NotificationService {
 
   /// Schedule weekly biometry reminder (every 15 days starting from now).
   Future<void> scheduleBiometryReminder({String tankName = ''}) async {
+    if (kIsWeb) return;
     await _ensureInitialized();
     final next = tz.TZDateTime.now(tz.local).add(const Duration(days: 15));
     await _plugin.zonedSchedule(
@@ -81,6 +88,7 @@ class NotificationService {
 
   /// Schedule water renewal reminder in N days.
   Future<void> scheduleWaterRenewal({int inDays = 7}) async {
+    if (kIsWeb) return;
     await _ensureInitialized();
     final next = tz.TZDateTime.now(tz.local).add(Duration(days: inDays));
     await _plugin.zonedSchedule(
@@ -100,6 +108,7 @@ class NotificationService {
     required String tankName,
     int daysBeforeAlert = 7,
   }) async {
+    if (kIsWeb) return;
     await _ensureInitialized();
     final alertDate = harvestDate.subtract(Duration(days: daysBeforeAlert));
     if (alertDate.isBefore(DateTime.now())) return; // Already past
@@ -121,13 +130,16 @@ class NotificationService {
     required String body,
     int id = 9999,
   }) async {
+    if (kIsWeb) return;
     await _ensureInitialized();
     await _plugin.show(id, title, body, _androidDetails(_feedingChannelId, 'Alertas'));
   }
 
   Future<void> cancelAll() async {
+    if (kIsWeb) return;
     await _plugin.cancelAll();
   }
+
 
   // ── Private helpers ───────────────────────────────────────────────────────
 

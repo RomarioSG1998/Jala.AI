@@ -123,12 +123,19 @@
 - [x] Migração V12 aplicada: `marketplace_schema.announcement` e `ops_schema.calculator_history`
 - [x] Flyway validando e aplicando migrações automaticamente no boot
 
+### 🌐 Gateway de API e Integração E2E
+- [x] Roteamento de todos os serviços de frontend (Calculadora, Relatórios, Marketplace) unificado via API Gateway (porta 8085)
+- [x] Injeção de dependência centralizada usando o `dioProvider` para comunicação e cabeçalhos de autenticação automáticos
+- [x] Persistência segura do `farm_id` no `FlutterSecureStorage` adicionada ao DTO de resposta de autenticação do backend e atualizada nos providers de auth do frontend
+- [x] Correção de compatibilidade SQL no repositório de marketplace do backend, migrando filtros opcionais dinâmicos para filtragem robusta em memória Java
+- [x] Bateria de testes de integração ponta a ponta (`test_integration.py`) executando e passando com sucesso (Login -> Calculadora -> Histórico -> Relatório -> Marketplace)
+
 ---
 
 ## 🔄 FAZENDO
 
 ### 🧮 Fórmulas da Calculadora de Ração
-- [ ] Dissecar o APK do cliente para extrair as fórmulas exatas por espécie e faixa de peso
+- [x] Dissecar o APK do cliente para extrair as fórmulas exatas por espécie e faixa de peso (Fórmulas exatas para Tilápia, Tambaqui, Carpa, Pacu e Pirarucu migradas com sucesso para o backend e integradas ao frontend via API REST!)
 - [ ] Videoconferência com o cliente para validar as fórmulas e o fluxo da calculadora antes de finalizar
 
 ---

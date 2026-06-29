@@ -2,13 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:frontend_flutter/core/api/dio_client.dart';
 import '../data/report_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider
 // ─────────────────────────────────────────────────────────────────────────────
+final _reportServiceProvider = Provider<ReportService>((ref) {
+  final dio = ref.watch(dioProvider);
+  return ReportService(dio: dio);
+});
+
 final _reportProvider = FutureProvider.family<ReportSummary, String>((ref, farmId) async {
-  return ReportService().fetchSummary(farmId);
+  final service = ref.watch(_reportServiceProvider);
+  return service.fetchSummary(farmId);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

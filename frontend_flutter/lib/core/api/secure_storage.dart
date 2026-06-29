@@ -24,7 +24,7 @@ class TokenStorage {
     await _storage.write(key: _tokenKey, value: token);
   }
 
-  Future<void> saveUserDetails(String email, String accountType, {String? userId, String? name}) async {
+  Future<void> saveUserDetails(String email, String accountType, {String? userId, String? name, String? farmId}) async {
     await _storage.write(key: 'user_email', value: email);
     await _storage.write(key: 'user_account_type', value: accountType);
     if (userId != null) {
@@ -32,6 +32,9 @@ class TokenStorage {
     }
     if (name != null) {
       await _storage.write(key: 'user_name', value: name);
+    }
+    if (farmId != null) {
+      await _storage.write(key: 'farm_id', value: farmId);
     }
   }
 
@@ -88,6 +91,7 @@ class TokenStorage {
     await _storage.delete(key: 'user_account_type');
     await _storage.delete(key: 'user_id');
     await _storage.delete(key: 'user_name');
+    await _storage.delete(key: 'farm_id');
   }
 }
 

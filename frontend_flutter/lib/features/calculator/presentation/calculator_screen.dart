@@ -2,32 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:frontend_flutter/core/api/dio_client.dart';
+
 
 // ── Modelos de Espécie ─────────────────────────────────────────────────────
 
 class FishSpeciesData {
   final String name;
   final String emoji;
-  /// Taxa de alimentação por faixa de peso [gramas_min, gramas_max, taxa%]
-  final List<List<double>> feedRates;
-  /// Proteína recomendada por faixa de peso
-  final List<List<dynamic>> proteinRanges; // [min_g, max_g, proteína%]
-  /// Granulometria por faixa de peso (mm)
-  final List<List<dynamic>> granulometry;  // [min_g, max_g, "tamanho"]
-  /// Tratos por dia por faixa de peso
-  final List<List<dynamic>> treatmentsPerDay;
-  /// Peso médio de abate (g)
   final double harvestWeightG;
-  /// Ganho de peso médio por dia (g)
   final double dailyGainG;
 
   const FishSpeciesData({
     required this.name,
     required this.emoji,
-    required this.feedRates,
-    required this.proteinRanges,
-    required this.granulometry,
-    required this.treatmentsPerDay,
     required this.harvestWeightG,
     required this.dailyGainG,
   });
@@ -37,160 +25,34 @@ const _species = <FishSpeciesData>[
   FishSpeciesData(
     name: 'Tilápia',
     emoji: '🐟',
-    feedRates: [
-      [0, 10, 0.10],   // 10%
-      [10, 50, 0.07],  // 7%
-      [50, 150, 0.05], // 5%
-      [150, 300, 0.04],// 4%
-      [300, 600, 0.03],// 3%
-      [600, 9999, 0.02],// 2%
-    ],
-    proteinRanges: [
-      [0, 10, '45%'],
-      [10, 50, '40%'],
-      [50, 300, '32%'],
-      [300, 9999, '28%'],
-    ],
-    granulometry: [
-      [0, 10, '0,5 mm (micro)'],
-      [10, 50, '1,0 mm (pequena)'],
-      [50, 300, '2,0–3,0 mm (média)'],
-      [300, 9999, '4,0–6,0 mm (grande)'],
-    ],
-    treatmentsPerDay: [
-      [0, 50, 6],
-      [50, 200, 4],
-      [200, 9999, 3],
-    ],
     harvestWeightG: 900,
     dailyGainG: 3.5,
   ),
   FishSpeciesData(
     name: 'Tambaqui',
     emoji: '🐠',
-    feedRates: [
-      [0, 30, 0.08],
-      [30, 100, 0.06],
-      [100, 500, 0.04],
-      [500, 9999, 0.02],
-    ],
-    proteinRanges: [
-      [0, 30, '40%'],
-      [30, 200, '32%'],
-      [200, 9999, '28%'],
-    ],
-    granulometry: [
-      [0, 30, '1,0 mm'],
-      [30, 200, '3,0 mm'],
-      [200, 9999, '6,0 mm'],
-    ],
-    treatmentsPerDay: [
-      [0, 100, 4],
-      [100, 9999, 3],
-    ],
     harvestWeightG: 1500,
     dailyGainG: 4.5,
   ),
   FishSpeciesData(
     name: 'Pacu',
     emoji: '🐡',
-    feedRates: [
-      [0, 50, 0.08],
-      [50, 200, 0.05],
-      [200, 9999, 0.03],
-    ],
-    proteinRanges: [
-      [0, 50, '36%'],
-      [50, 9999, '28%'],
-    ],
-    granulometry: [
-      [0, 50, '1,0 mm'],
-      [50, 300, '3,0 mm'],
-      [300, 9999, '6,0 mm'],
-    ],
-    treatmentsPerDay: [
-      [0, 100, 4],
-      [100, 9999, 3],
-    ],
     harvestWeightG: 1200,
+    dailyGainG: 4.0,
+  ),
+  FishSpeciesData(
+    name: 'Carpa',
+    emoji: '🐟',
+    harvestWeightG: 1000,
     dailyGainG: 4.0,
   ),
   FishSpeciesData(
     name: 'Pirarucu',
     emoji: '🐟',
-    feedRates: [
-      [0, 100, 0.05],
-      [100, 500, 0.04],
-      [500, 9999, 0.02],
-    ],
-    proteinRanges: [
-      [0, 100, '45%'],
-      [100, 9999, '38%'],
-    ],
-    granulometry: [
-      [0, 100, '2,0 mm'],
-      [100, 9999, '6,0–8,0 mm'],
-    ],
-    treatmentsPerDay: [
-      [0, 200, 3],
-      [200, 9999, 2],
-    ],
     harvestWeightG: 8000,
     dailyGainG: 20.0,
   ),
-  FishSpeciesData(
-    name: 'Pintado',
-    emoji: '🐟',
-    feedRates: [
-      [0, 50, 0.06],
-      [50, 300, 0.04],
-      [300, 9999, 0.02],
-    ],
-    proteinRanges: [
-      [0, 50, '42%'],
-      [50, 9999, '32%'],
-    ],
-    granulometry: [
-      [0, 50, '1,0–2,0 mm'],
-      [50, 9999, '4,0–6,0 mm'],
-    ],
-    treatmentsPerDay: [
-      [0, 9999, 3],
-    ],
-    harvestWeightG: 1500,
-    dailyGainG: 5.0,
-  ),
 ];
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-double _getFeedRate(FishSpeciesData sp, double weightG) {
-  for (final r in sp.feedRates) {
-    if (weightG >= r[0] && weightG < r[1]) return r[2];
-  }
-  return sp.feedRates.last[2];
-}
-
-String _getProtein(FishSpeciesData sp, double weightG) {
-  for (final r in sp.proteinRanges) {
-    if (weightG >= (r[0] as num) && weightG < (r[1] as num)) return r[2] as String;
-  }
-  return sp.proteinRanges.last[2] as String;
-}
-
-String _getGranulometry(FishSpeciesData sp, double weightG) {
-  for (final r in sp.granulometry) {
-    if (weightG >= (r[0] as num) && weightG < (r[1] as num)) return r[2] as String;
-  }
-  return sp.granulometry.last[2] as String;
-}
-
-int _getTreatments(FishSpeciesData sp, double weightG) {
-  for (final r in sp.treatmentsPerDay) {
-    if (weightG >= (r[0] as num) && weightG < (r[1] as num)) return r[2] as int;
-  }
-  return sp.treatmentsPerDay.last[2] as int;
-}
 
 // ── Resultado do Cálculo ───────────────────────────────────────────────────
 
@@ -216,6 +78,22 @@ class CalcResult {
     required this.tempAlert,
     required this.growthSimulation,
   });
+
+  factory CalcResult.fromJson(Map<String, dynamic> json) {
+    var simList = json['growthSimulation'] as List? ?? [];
+    List<_GrowthStep> simulation = simList.map((e) => _GrowthStep.fromJson(e as Map<String, dynamic>)).toList();
+    return CalcResult(
+      biomassKg: (json['biomassKg'] as num?)?.toDouble() ?? 0.0,
+      dailyFeedKg: (json['dailyFeedKg'] as num?)?.toDouble() ?? 0.0,
+      feedPerTreatmentKg: (json['feedPerTreatmentKg'] as num?)?.toDouble() ?? 0.0,
+      treatmentsPerDay: json['treatmentsPerDay'] as int? ?? 1,
+      proteinLevel: json['proteinLevel'] as String? ?? '',
+      granulometry: json['granulometry'] as String? ?? '',
+      daysToHarvest: json['daysToHarvest'] as int? ?? 0,
+      tempAlert: json['tempAlert'] as bool? ?? false,
+      growthSimulation: simulation,
+    );
+  }
 }
 
 class _GrowthStep {
@@ -224,6 +102,14 @@ class _GrowthStep {
   final String phase;
 
   _GrowthStep(this.day, this.weightG, this.phase);
+
+  factory _GrowthStep.fromJson(Map<String, dynamic> json) {
+    return _GrowthStep(
+      json['day'] as int? ?? 0,
+      (json['weightG'] as num?)?.toDouble() ?? 0.0,
+      json['phase'] as String? ?? '',
+    );
+  }
 }
 
 // ── Tela ───────────────────────────────────────────────────────────────────
@@ -243,111 +129,78 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
 
   FishSpeciesData _selectedSpecies = _species[0]; // Tilápia
   CalcResult? _result;
+  bool _isLoading = false;
 
-  CalcResult _calculate({
-    required FishSpeciesData species,
-    required int quantity,
-    required double weightG,
-    required double? tempC,
-  }) {
-    final feedRate = _getFeedRate(species, weightG);
-    final biomassKg = (quantity * weightG) / 1000.0;
-    final dailyFeedKg = biomassKg * feedRate;
-    final treatments = _getTreatments(species, weightG);
-    final feedPerTreatment = dailyFeedKg / treatments;
-    final protein = _getProtein(species, weightG);
-    final granulometry = _getGranulometry(species, weightG);
-
-    // Dias até abate
-    final daysToHarvest = weightG >= species.harvestWeightG
-        ? 0
-        : ((species.harvestWeightG - weightG) / species.dailyGainG).ceil();
-
-    // Simulação de crescimento — amostragem a cada 15 dias
-    final List<_GrowthStep> simulation = [];
-    double currentWeight = weightG;
-    int day = 0;
-    while (currentWeight < species.harvestWeightG) {
-      String phase;
-      if (currentWeight < 30) {
-        phase = 'Alevino';
-      } else if (currentWeight < 100) {
-        phase = 'Juvenil';
-      } else if (currentWeight < species.harvestWeightG * 0.6) {
-        phase = 'Crescimento';
-      } else {
-        phase = 'Terminação';
-      }
-      simulation.add(_GrowthStep(day, currentWeight, phase));
-      currentWeight += species.dailyGainG * 15;
-      day += 15;
-      if (simulation.length > 30) break; // Limite de segurança
-    }
-    simulation.add(_GrowthStep(day, species.harvestWeightG, 'Abate ✅'));
-
-    return CalcResult(
-      biomassKg: biomassKg,
-      dailyFeedKg: dailyFeedKg,
-      feedPerTreatmentKg: feedPerTreatment,
-      treatmentsPerDay: treatments,
-      proteinLevel: protein,
-      granulometry: granulometry,
-      daysToHarvest: daysToHarvest,
-      tempAlert: tempC != null && tempC >= 33,
-      growthSimulation: simulation,
-    );
-  }
-
-  Future<void> _saveToBackend(CalcResult result, int quantity, double weightG, double? tempC) async {
-    try {
-      const storage = FlutterSecureStorage();
-      final token = await storage.read(key: 'auth_token');
-      final farmId = await storage.read(key: 'farm_id');
-      if (token == null || farmId == null) return;
-
-      final dio = Dio();
-      await dio.post(
-        'http://localhost:8080/api/calculator/history',
-        data: {
-          'farmId': farmId,
-          'species': _selectedSpecies.name,
-          'quantity': quantity,
-          'weightG': weightG,
-          'biomassKg': result.biomassKg,
-          'dailyFeedKg': result.dailyFeedKg,
-          'feedPerTreatmentKg': result.feedPerTreatmentKg,
-          'treatmentsPerDay': result.treatmentsPerDay,
-          'proteinLevel': result.proteinLevel,
-          'granulometry': result.granulometry,
-          'daysToHarvest': result.daysToHarvest,
-          'temperatureC': tempC,
-          'tempAlert': result.tempAlert,
-        },
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-    } catch (e) {
-      // Fail silently — calculation result is still shown locally
-      debugPrint('Calculator save error: $e');
-    }
-  }
-
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final quantity = int.tryParse(_quantityController.text) ?? 0;
     final weightG = double.tryParse(_weightController.text) ?? 0.0;
     final tempC = double.tryParse(_tempController.text);
 
-    final result = _calculate(
-      species: _selectedSpecies,
-      quantity: quantity,
-      weightG: weightG,
-      tempC: tempC,
-    );
+    setState(() {
+      _isLoading = true;
+      _result = null;
+    });
 
-    setState(() => _result = result);
+    try {
+      final dio = ref.read(dioProvider);
+      final response = await dio.post(
+        '/api/calculator/calculate',
+        data: {
+          'species': _selectedSpecies.name,
+          'quantity': quantity,
+          'weightG': weightG,
+          'temperatureC': tempC,
+        },
+      );
 
-    // Save to backend (non-blocking, fail-safe)
-    _saveToBackend(result, quantity, weightG, tempC);
+      if (response.statusCode == 200 && response.data != null) {
+        final result = CalcResult.fromJson(response.data as Map<String, dynamic>);
+        setState(() {
+          _result = result;
+        });
+
+        // Save to backend history if authenticated
+        const storage = FlutterSecureStorage();
+        final token = await storage.read(key: 'auth_token');
+        final farmId = await storage.read(key: 'farm_id');
+        if (token != null && farmId != null) {
+          await dio.post(
+            '/api/calculator/history',
+            data: {
+              'farmId': farmId,
+              'species': _selectedSpecies.name,
+              'quantity': quantity,
+              'weightG': weightG,
+              'biomassKg': result.biomassKg,
+              'dailyFeedKg': result.dailyFeedKg,
+              'feedPerTreatmentKg': result.feedPerTreatmentKg,
+              'treatmentsPerDay': result.treatmentsPerDay,
+              'proteinLevel': result.proteinLevel,
+              'granulometry': result.granulometry,
+              'daysToHarvest': result.daysToHarvest,
+              'temperatureC': tempC,
+              'tempAlert': result.tempAlert,
+            },
+          );
+        }
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro ao realizar o cálculo no servidor.')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Calculation error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro de conexão: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -476,7 +329,7 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
               const SizedBox(height: 24),
 
               ElevatedButton(
-                onPressed: _submit,
+                onPressed: _isLoading ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF13A538),
                   foregroundColor: Colors.white,
@@ -484,7 +337,13 @@ class _CalculatorScreenState extends ConsumerState<CalculatorScreen> {
                   minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Calcular Resultados', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Text('Calcular Resultados', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
 
               // ── Resultados ────────────────────────────────────────────────

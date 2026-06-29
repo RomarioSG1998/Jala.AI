@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:frontend_flutter/core/api/dio_client.dart';
 import '../data/announcement_api_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Providers
 // ─────────────────────────────────────────────────────────────────────────────
 
-final _announcementServiceProvider = Provider<AnnouncementApiService>((_) => AnnouncementApiService());
+final _announcementServiceProvider = Provider<AnnouncementApiService>((ref) {
+  final dio = ref.watch(dioProvider);
+  return AnnouncementApiService(dio: dio);
+});
 
 class CategoryNotifier extends Notifier<String?> {
   @override

@@ -8,12 +8,26 @@ import 'package:frontend_flutter/core/api/server_ping_provider.dart';
 import 'package:frontend_flutter/core/services/notification_service.dart';
 
 void main() async {
+  debugPrint('--- [main] STARTING ---');
   WidgetsFlutterBinding.ensureInitialized();
-  // Initialize local notification service (requests permissions on Android 13+)
-  await NotificationService().initialize();
-  // Schedule default daily feeding reminder at 07:00
-  await NotificationService().scheduleDailyFeeding(hour: 7, minute: 0);
+  debugPrint('--- [main] WidgetsFlutterBinding.ensureInitialized done ---');
+  
+  try {
+    debugPrint('--- [main] Initializing NotificationService ---');
+    // Initialize local notification service (requests permissions on Android 13+)
+    await NotificationService().initialize();
+    debugPrint('--- [main] NotificationService initialized ---');
+    // Schedule default daily feeding reminder at 07:00
+    await NotificationService().scheduleDailyFeeding(hour: 7, minute: 0);
+    debugPrint('--- [main] Daily feeding scheduled ---');
+  } catch (e, stack) {
+    debugPrint('Failed to initialize NotificationService: $e');
+    debugPrint(stack.toString());
+  }
+
+  debugPrint('--- [main] Getting SharedPreferences instance ---');
   final prefs = await SharedPreferences.getInstance();
+  debugPrint('--- [main] SharedPreferences instance obtained ---');
   runApp(
     ProviderScope(
       overrides: [
@@ -22,6 +36,7 @@ void main() async {
       child: const AquaSertaoApp(),
     ),
   );
+  debugPrint('--- [main] runApp called ---');
 }
 
 
@@ -119,15 +134,15 @@ class AquaSertaoApp extends ConsumerWidget {
           headerBackgroundColor: const Color(0xFF151D30),
           headerForegroundColor: Colors.white,
           backgroundColor: const Color(0xFF151D30),
-          dayForegroundColor: MaterialStateProperty.resolveWith<Color?>((states) {
-            if (states.contains(MaterialState.selected)) {
+          dayForegroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+            if (states.contains(WidgetState.selected)) {
               return Colors.black;
             }
             return Colors.white;
           }),
-          todayForegroundColor: MaterialStateProperty.all(const Color(0xFF38BDF8)),
-          yearForegroundColor: MaterialStateProperty.resolveWith<Color?>((states) {
-            if (states.contains(MaterialState.selected)) {
+          todayForegroundColor: WidgetStateProperty.all(const Color(0xFF38BDF8)),
+          yearForegroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+            if (states.contains(WidgetState.selected)) {
               return Colors.black;
             }
             return Colors.white;

@@ -36,10 +36,22 @@ public class AnnouncementService {
     }
 
     public List<AnnouncementResponseDTO> findAll(String category, String location) {
-        return announcementRepository.findFiltered(
-                        category != null && !category.isBlank() ? category.toUpperCase() : null,
-                        location != null && !location.isBlank() ? location : null)
-                .stream()
+        List<Announcement> allActive = announcementRepository.findByActiveTrue();
+        
+        return allActive.stream()
+                .filter(a -> {
+                    if (category != null && !category.isBlank()) {
+                        return category.equalsIgnoreCase(a.getCategory());
+                    }
+                    return true;
+                })
+                .filter(a -> {
+                    if (location != null && !location.isBlank()) {
+                        if (a.getSellerLocation() == null) return false;
+                        return a.getSellerLocation().toLowerCase().contains(location.toLowerCase());
+                    }
+                    return true;
+                })
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }

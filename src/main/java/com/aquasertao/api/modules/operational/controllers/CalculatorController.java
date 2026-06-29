@@ -17,6 +17,26 @@ import java.util.UUID;
 public class CalculatorController {
 
     private final CalculatorHistoryRepository calculatorHistoryRepository;
+    private final com.aquasertao.api.modules.operational.services.FeedCalculatorService feedCalculatorService;
+
+    /**
+     * POST /api/calculator/calculate
+     * Performs feed calculation using the strategy pattern.
+     */
+    @PostMapping("/calculate")
+    public ResponseEntity<com.aquasertao.api.modules.operational.services.calculator.CalculationResult> calculate(@RequestBody com.aquasertao.api.modules.operational.dtos.FeedCalculationRequestDTO dto) {
+        try {
+            com.aquasertao.api.modules.operational.services.calculator.CalculationResult result = feedCalculatorService.calculateFeed(
+                    dto.getSpecies(),
+                    dto.getQuantity(),
+                    dto.getWeightG(),
+                    dto.getTemperatureC()
+            );
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 
     /**
      * POST /api/calculator/history
