@@ -135,8 +135,9 @@
 ## 🔄 FAZENDO
 
 ### 🧮 Fórmulas da Calculadora de Ração
-- [x] Dissecar o APK do cliente para extrair as fórmulas exatas por espécie e faixa de peso (Fórmulas exatas para Tilápia, Tambaqui, Carpa, Pacu e Pirarucu migradas com sucesso para o backend e integradas ao frontend via API REST!)
-- [ ] Videoconferência com o cliente para validar as fórmulas e o fluxo da calculadora antes de finalizar
+- [x] Dissecar o APK do cliente para extrair as fórmulas exatas por espécie e faixa de peso e integrar ao backend/frontend (Fórmulas exatas para Tilápia, Tambaqui, Carpa, Pacu e Pirarucu migradas com sucesso!)
+- [x] Testar e validar a calculadora de forma ponta a ponta via testes de integração (Concluído!)
+- [ ] Videoconferência com o cliente para validar as fórmulas e o fluxo da calculadora antes de homologação final
 
 ---
 
