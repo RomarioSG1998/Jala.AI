@@ -32,4 +32,17 @@ public class SaaSPlan {
 
     @Column(name = "price_monthly", nullable = false, precision = 10, scale = 2)
     private BigDecimal priceMonthly;
+
+    @Column(name = "stripe_product_id", length = 100)
+    private String stripeProductId;
+
+    @Column(name = "stripe_price_id", length = 100)
+    private String stripePriceId;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean active = true;
 }

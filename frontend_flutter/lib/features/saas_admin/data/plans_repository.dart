@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
+import 'package:frontend_flutter/features/saas_admin/providers/saas_providers.dart';
 
 // ─── Models ──────────────────────────────────────────────────────────────────
 
@@ -10,6 +11,10 @@ class SaasPlanDetail {
   final int maxTanks;
   final int maxUsers;
   final double priceMonthly;
+  final String? stripeProductId;
+  final String? stripePriceId;
+  final String? description;
+  final bool active;
   final int activeSubscribers;
   final int totalSubscribers;
 
@@ -19,6 +24,10 @@ class SaasPlanDetail {
     required this.maxTanks,
     required this.maxUsers,
     required this.priceMonthly,
+    this.stripeProductId,
+    this.stripePriceId,
+    this.description,
+    this.active = true,
     required this.activeSubscribers,
     required this.totalSubscribers,
   });
@@ -29,6 +38,10 @@ class SaasPlanDetail {
         maxTanks: json['maxTanks'] as int? ?? 0,
         maxUsers: json['maxUsers'] as int? ?? 0,
         priceMonthly: (json['priceMonthly'] as num?)?.toDouble() ?? 0.0,
+        stripeProductId: json['stripeProductId']?.toString(),
+        stripePriceId: json['stripePriceId']?.toString(),
+        description: json['description']?.toString(),
+        active: json['active'] != false,
         activeSubscribers: json['activeSubscribers'] as int? ?? 0,
         totalSubscribers: json['totalSubscribers'] as int? ?? 0,
       );
@@ -38,6 +51,7 @@ class SaasPlanDetail {
         'maxTanks': maxTanks,
         'maxUsers': maxUsers,
         'priceMonthly': priceMonthly,
+        'description': description,
       };
 }
 
@@ -58,14 +72,15 @@ class PlansRepository {
     required int maxTanks,
     required int maxUsers,
     required double priceMonthly,
+    String? description,
   }) async {
     final response = await _dio.post('/api/saas-plans', data: {
       'name': name,
       'maxTanks': maxTanks,
       'maxUsers': maxUsers,
       'priceMonthly': priceMonthly,
+      'description': description,
     });
-    // Returned plain SaaSPlan – enrich with zero subscribers
     final json = response.data as Map<String, dynamic>;
     json['activeSubscribers'] = 0;
     json['totalSubscribers'] = 0;
@@ -78,12 +93,14 @@ class PlansRepository {
     required int maxTanks,
     required int maxUsers,
     required double priceMonthly,
+    String? description,
   }) async {
     final response = await _dio.put('/api/saas-plans/$id', data: {
       'name': name,
       'maxTanks': maxTanks,
       'maxUsers': maxUsers,
       'priceMonthly': priceMonthly,
+      'description': description,
     });
     final json = response.data as Map<String, dynamic>;
     json['activeSubscribers'] = 0;
@@ -123,6 +140,7 @@ class PlansDetailNotifier extends AsyncNotifier<List<SaasPlanDetail>> {
     required int maxTanks,
     required int maxUsers,
     required double priceMonthly,
+    String? description,
   }) async {
     try {
       await ref.read(plansRepositoryProvider).createPlan(
@@ -130,8 +148,10 @@ class PlansDetailNotifier extends AsyncNotifier<List<SaasPlanDetail>> {
             maxTanks: maxTanks,
             maxUsers: maxUsers,
             priceMonthly: priceMonthly,
+            description: description,
           );
       await refresh();
+      ref.invalidate(plansProvider);
       return null;
     } catch (e) {
       return e.toString().replaceFirst('Exception: ', '');
@@ -144,6 +164,7 @@ class PlansDetailNotifier extends AsyncNotifier<List<SaasPlanDetail>> {
     required int maxTanks,
     required int maxUsers,
     required double priceMonthly,
+    String? description,
   }) async {
     try {
       await ref.read(plansRepositoryProvider).updatePlan(
@@ -152,8 +173,10 @@ class PlansDetailNotifier extends AsyncNotifier<List<SaasPlanDetail>> {
             maxTanks: maxTanks,
             maxUsers: maxUsers,
             priceMonthly: priceMonthly,
+            description: description,
           );
       await refresh();
+      ref.invalidate(plansProvider);
       return null;
     } catch (e) {
       return e.toString().replaceFirst('Exception: ', '');
@@ -164,6 +187,7 @@ class PlansDetailNotifier extends AsyncNotifier<List<SaasPlanDetail>> {
     try {
       await ref.read(plansRepositoryProvider).deletePlan(id);
       await refresh();
+      ref.invalidate(plansProvider);
       return null;
     } catch (e) {
       return e.toString().replaceFirst('Exception: ', '');

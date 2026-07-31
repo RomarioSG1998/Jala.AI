@@ -436,6 +436,7 @@ class SaasAdminBody extends ConsumerWidget {
     final plansAsync = ref.watch(plansProvider);
     final tenantsAsync = ref.watch(tenantsProvider);
     final currencyFmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -445,6 +446,93 @@ class SaasAdminBody extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
         children: [
+          // ── Executive Banner ────────────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
+              boxShadow: [
+                BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.15), blurRadius: 16, offset: const Offset(0, 6)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD4AF37).withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFD4AF37)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.workspace_premium_rounded, color: Color(0xFFD4AF37), size: 14),
+                          SizedBox(width: 6),
+                          Text('👑 SUPERADMIN MASTER',
+                              style: TextStyle(color: Color(0xFFD4AF37), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.bolt, color: Colors.amber, size: 24),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Comando do Proprietário do SaaS',
+                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Você possui autonomia total para criar e editar os planos da plataforma, visualizar métricas globais e gerenciar todas as fazendas.',
+                  style: TextStyle(color: Colors.grey.shade400, fontSize: 13, height: 1.4),
+                ),
+                const SizedBox(height: 20),
+                // Quick Action Buttons
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => context.go('/plans'),
+                      icon: const Icon(Icons.tune_rounded, size: 16),
+                      label: const Text('Gerenciar & Sync Planos Stripe'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF13A538),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => TenantsScreen.showAddTenantModal(context, ref),
+                      icon: const Icon(Icons.add_business_rounded, size: 16, color: Colors.amber),
+                      label: const Text('Cadastrar Cliente (Tenant)', style: TextStyle(color: Colors.white)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.amber),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // ── KPIs Section ──────────────────────────────────────────────────
           tenantsAsync.when(
             data: (tenants) => plansAsync.when(
               data: (plans) {
@@ -452,17 +540,17 @@ class SaasAdminBody extends ConsumerWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('VISÃO GERAL',
+                    Text('VISÃO GERAL DO SAAS',
                         style: TextStyle(
-                            color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.black54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+                            color: isDark ? Colors.grey.shade400 : Colors.black54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
                     Row(children: [
-                      Expanded(child: _kpi(context, 'Tenants', '${tenants.length}', Icons.business, Colors.blue)),
+                      Expanded(child: _kpi(context, 'Clientes (Tenants)', '${tenants.length}', Icons.business, Colors.blue)),
                       const SizedBox(width: 12),
-                      Expanded(child: _kpi(context, 'Planos', '${plans.length}', Icons.layers, Colors.purple)),
+                      Expanded(child: _kpi(context, 'Planos Criados', '${plans.length}', Icons.layers, Colors.purple)),
                     ]),
                     const SizedBox(height: 12),
-                    _kpi(context, 'MRR Total', currencyFmt.format(totalMrr), Icons.trending_up, Colors.green, wide: true),
+                    _kpi(context, 'Receita Recorrente Est. (MRR)', currencyFmt.format(totalMrr), Icons.trending_up, Colors.green, wide: true),
                   ],
                 );
               },
@@ -472,9 +560,22 @@ class SaasAdminBody extends ConsumerWidget {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Text('$e', style: const TextStyle(color: Colors.red)),
           ),
+
           const SizedBox(height: 28),
-          Text('Planos SaaS',
-              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
+
+          // ── Plans Control Row ─────────────────────────────────────────────
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Planos do SaaS (Sincronizados Stripe)',
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
+              IconButton(
+                icon: const Icon(Icons.arrow_forward, size: 20),
+                tooltip: 'Abrir Gestor Completo de Planos',
+                onPressed: () => context.go('/plans'),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           plansAsync.when(
             data: (plans) =>
@@ -482,13 +583,26 @@ class SaasAdminBody extends ConsumerWidget {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Text('$e', style: const TextStyle(color: Colors.red)),
           ),
+
           const SizedBox(height: 28),
-          Text('Clientes Farm (Tenants)',
-              style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
+
+          // ── Tenants Control Row ───────────────────────────────────────────
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Clientes Farm (Tenants)',
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
+              IconButton(
+                icon: const Icon(Icons.person_add_alt_1, size: 20),
+                tooltip: 'Cadastrar Novo Tenant',
+                onPressed: () => TenantsScreen.showAddTenantModal(context, ref),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           tenantsAsync.when(
             data: (tenants) => tenants.isEmpty
-                ? Text('Nenhum tenant.', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white54 : Colors.black54))
+                ? Text('Nenhum tenant.', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54))
                 : Column(children: tenants.map((t) => TenantSummaryCard(tenant: t)).toList()),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Text('$e', style: const TextStyle(color: Colors.red)),
@@ -561,6 +675,12 @@ class SaasAdminBody extends ConsumerWidget {
         ])),
         Text(fmt.format(plan.priceMonthly),
             style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 15)),
+        const SizedBox(width: 8),
+        IconButton(
+          icon: const Icon(Icons.edit, size: 18),
+          tooltip: 'Editar Plano no Stripe',
+          onPressed: () => GoRouter.of(context).go('/plans'),
+        ),
       ]),
     );
   }

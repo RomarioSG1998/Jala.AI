@@ -234,6 +234,21 @@ class PlansScreen extends ConsumerWidget {
                     ? const Text('Gratuito', style: TextStyle(color: Colors.white70, fontSize: 14))
                     : Text(fmt.format(plan.priceMonthly) + '/mês',
                         style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                if (plan.stripeProductId != null && plan.stripeProductId!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(color: Colors.amber.shade900.withOpacity(0.4), borderRadius: BorderRadius.circular(6)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.bolt, color: Colors.amber, size: 12),
+                        const SizedBox(width: 4),
+                        Text('Stripe Product: ${plan.stripeProductId}', style: const TextStyle(color: Colors.white, fontSize: 10, fontFamily: 'monospace')),
+                      ],
+                    ),
+                  ),
+                ],
               ]),
             ),
             Column(children: [

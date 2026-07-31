@@ -2,15 +2,18 @@ package com.aquasertao.api.modules.billing.services;
 
 import com.aquasertao.api.modules.billing.dtos.CheckoutSessionRequestDTO;
 import com.aquasertao.api.modules.billing.dtos.CheckoutSessionResponseDTO;
+import com.aquasertao.api.modules.billing.dtos.SubscriptionDetailsDTO;
 import com.aquasertao.api.modules.billing.models.Invoice;
 import com.aquasertao.api.modules.billing.models.SaaSPlan;
 import com.aquasertao.api.modules.billing.models.Subscription;
 import com.aquasertao.api.modules.billing.repositories.InvoiceRepository;
 import com.aquasertao.api.modules.billing.repositories.SaaSPlanRepository;
 import com.aquasertao.api.modules.billing.repositories.SubscriptionRepository;
+import com.aquasertao.api.modules.marketplace.services.MarketplaceOrderService;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
+import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import com.stripe.param.checkout.SessionCreateParams;
@@ -33,6 +36,7 @@ public class StripeService {
     private final SaaSPlanRepository saasPlanRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final InvoiceRepository invoiceRepository;
+    private final MarketplaceOrderService marketplaceOrderService;
 
     @Value("${stripe.secret-key:}")
     private String secretKey;
@@ -146,9 +150,20 @@ public class StripeService {
             case "customer.subscription.deleted":
                 handleSubscriptionDeleted(event);
                 break;
+            case "payment_intent.succeeded":
+                handlePaymentIntentSucceeded(event);
+                break;
             default:
                 log.info("Evento do Stripe não tratado: {}", event.getType());
                 break;
+        }
+    }
+
+    private void handlePaymentIntentSucceeded(Event event) {
+        PaymentIntent intent = (PaymentIntent) event.getDataObjectDeserializer().getObject().orElse(null);
+        if (intent != null && intent.getId() != null) {
+            log.info("Processando payment_intent.succeeded para ID: {}", intent.getId());
+            marketplaceOrderService.handlePaymentSucceeded(intent.getId());
         }
     }
 
@@ -209,5 +224,191 @@ public class StripeService {
                         log.info("Assinatura cancelada via Stripe para farmId: {}", sub.getFarmId());
                     });
         }
+    }
+
+    @Transactional(readOnly = true)
+    public SubscriptionDetailsDTO getSubscriptionDetails(UUID farmId) {
+        RequestOptions options = getRequestOptions();
+
+        SaaSPlan freePlan = saasPlanRepository.findByName("Free")
+                .orElseGet(() -> saasPlanRepository.findAll().stream().findFirst().orElse(null));
+
+        SubscriptionDetailsDTO freeDto = SubscriptionDetailsDTO.builder()
+                .farmId(farmId)
+                .planName(freePlan != null ? freePlan.getName() : "Gratuito")
+                .maxTanks(freePlan != null ? freePlan.getMaxTanks() : 3)
+                .maxUsers(freePlan != null ? freePlan.getMaxUsers() : 2)
+                .priceMonthly(freePlan != null ? freePlan.getPriceMonthly() : BigDecimal.ZERO)
+                .status("FREE")
+                .paymentMethodType("N/A")
+                .cancelAtPeriodEnd(false)
+                .build();
+
+        Subscription sub = subscriptionRepository.findByFarmIdAndStatus(farmId, "ACTIVE")
+                .orElseGet(() -> subscriptionRepository.findFirstByFarmIdOrderByStartDateDesc(farmId).orElse(null));
+
+        if (sub == null || sub.getStripeSubscriptionId() == null || sub.getStripeSubscriptionId().isBlank()) {
+            return freeDto;
+        }
+
+        SaaSPlan plan = saasPlanRepository.findById(sub.getPlanId()).orElse(null);
+
+        SubscriptionDetailsDTO.SubscriptionDetailsDTOBuilder builder = SubscriptionDetailsDTO.builder()
+                .subscriptionId(sub.getId())
+                .farmId(sub.getFarmId())
+                .planId(sub.getPlanId())
+                .planName(plan != null ? plan.getName() : "Plano Ativo")
+                .maxTanks(plan != null ? plan.getMaxTanks() : 3)
+                .maxUsers(plan != null ? plan.getMaxUsers() : 2)
+                .priceMonthly(plan != null ? plan.getPriceMonthly() : BigDecimal.ZERO)
+                .status(sub.getStatus())
+                .startDate(sub.getStartDate() != null ? sub.getStartDate().toString() : null)
+                .endDate(sub.getEndDate() != null ? sub.getEndDate().toString() : null)
+                .nextBillingDate(sub.getEndDate() != null ? sub.getEndDate().toString() : null)
+                .stripeCustomerId(sub.getStripeCustomerId())
+                .stripeSubscriptionId(sub.getStripeSubscriptionId())
+                .cancelAtPeriodEnd("CANCELLED".equalsIgnoreCase(sub.getStatus()));
+
+        // Query Stripe API in real-time
+        try {
+            com.stripe.model.Subscription stripeSub = com.stripe.model.Subscription.retrieve(
+                    sub.getStripeSubscriptionId(),
+                    options
+            );
+
+                if (stripeSub != null) {
+                    if (stripeSub.getCurrentPeriodEnd() != null) {
+                        java.time.LocalDate periodEnd = java.time.Instant.ofEpochSecond(stripeSub.getCurrentPeriodEnd())
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .toLocalDate();
+                        builder.nextBillingDate(periodEnd.toString());
+                        builder.endDate(periodEnd.toString());
+                    }
+
+                    builder.cancelAtPeriodEnd(Boolean.TRUE.equals(stripeSub.getCancelAtPeriodEnd()));
+
+                    if (stripeSub.getStatus() != null) {
+                        String stripeStatus = stripeSub.getStatus().toUpperCase();
+                        if ("CANCELED".equals(stripeStatus)) {
+                            builder.status("CANCELLED");
+                        } else if ("ACTIVE".equals(stripeStatus)) {
+                            builder.status("ACTIVE");
+                        }
+                    }
+
+                    if (stripeSub.getDefaultPaymentMethod() != null) {
+                        try {
+                            com.stripe.model.PaymentMethod pm = com.stripe.model.PaymentMethod.retrieve(
+                                    stripeSub.getDefaultPaymentMethod(),
+                                    options
+                            );
+                            if (pm != null && pm.getCard() != null) {
+                                builder.paymentMethodType("card");
+                                builder.cardBrand(pm.getCard().getBrand());
+                                builder.cardLast4(pm.getCard().getLast4());
+                            }
+                        } catch (Exception pmEx) {
+                            log.warn("Could not retrieve Stripe PaymentMethod: {}", pmEx.getMessage());
+                        }
+                    }
+                }
+        } catch (Exception e) {
+            log.warn("Failed to fetch real-time Stripe subscription info: {}", e.getMessage());
+            return freeDto;
+        }
+
+        SubscriptionDetailsDTO result = builder.build();
+        if (result.getPaymentMethodType() == null) {
+            result.setPaymentMethodType("Stripe Checkout");
+        }
+
+        return result;
+    }
+
+    @Transactional
+    public SubscriptionDetailsDTO cancelSubscription(UUID farmId) {
+        RequestOptions options = getRequestOptions();
+
+        Subscription sub = subscriptionRepository.findByFarmIdAndStatus(farmId, "ACTIVE")
+                .orElseGet(() -> subscriptionRepository.findFirstByFarmIdOrderByStartDateDesc(farmId)
+                        .orElseThrow(() -> new IllegalArgumentException("Nenhuma assinatura ativa encontrada para cancelamento.")));
+
+        if (sub.getStripeSubscriptionId() != null && !sub.getStripeSubscriptionId().isBlank()) {
+            try {
+                com.stripe.model.Subscription stripeSub = com.stripe.model.Subscription.retrieve(
+                        sub.getStripeSubscriptionId(),
+                        options
+                );
+                if (stripeSub != null) {
+                    stripeSub.cancel(com.stripe.param.SubscriptionCancelParams.builder().build(), options);
+                    log.info("Assinatura do Stripe cancelada: {}", sub.getStripeSubscriptionId());
+                }
+            } catch (Exception e) {
+                log.error("Erro ao cancelar assinatura no Stripe: {}", e.getMessage());
+            }
+        }
+
+        sub.setStatus("CANCELLED");
+        subscriptionRepository.save(sub);
+
+        return getSubscriptionDetails(farmId);
+    }
+
+    /**
+     * Sincroniza a criação/edição de um plano de SaaS com o Stripe em tempo real.
+     * Gera um Product e um Price mensal em BRL na API do Stripe.
+     */
+    public SaaSPlan syncPlanWithStripe(SaaSPlan plan) {
+        try {
+            RequestOptions options = getRequestOptions();
+            if (options.getApiKey() == null || options.getApiKey().isBlank()) {
+                log.warn("Chave do Stripe não configurada. Atribuindo IDs simulados para o plano {}.", plan.getName());
+                plan.setStripeProductId("prod_simulated_" + UUID.randomUUID().toString().substring(0, 8));
+                plan.setStripePriceId("price_simulated_" + UUID.randomUUID().toString().substring(0, 8));
+                return plan;
+            }
+
+            // 1. Criar ou reutilizar Produto no Stripe
+            String productId = plan.getStripeProductId();
+            if (productId == null || productId.isBlank() || productId.startsWith("prod_simulated_")) {
+                com.stripe.param.ProductCreateParams productParams = com.stripe.param.ProductCreateParams.builder()
+                        .setName("AquaGestor " + plan.getName())
+                        .setDescription((plan.getDescription() != null && !plan.getDescription().isBlank())
+                                ? plan.getDescription()
+                                : "Plano " + plan.getName() + " do AquaGestor SaaS - Limite de " + plan.getMaxTanks() + " tanques.")
+                        .build();
+
+                com.stripe.model.Product stripeProduct = com.stripe.model.Product.create(productParams, options);
+                productId = stripeProduct.getId();
+                plan.setStripeProductId(productId);
+            }
+
+            // 2. Criar Tabela de Preço no Stripe
+            long amountCents = plan.getPriceMonthly().multiply(BigDecimal.valueOf(100)).longValue();
+            com.stripe.param.PriceCreateParams priceParams = com.stripe.param.PriceCreateParams.builder()
+                    .setProduct(productId)
+                    .setUnitAmount(amountCents)
+                    .setCurrency("brl")
+                    .setRecurring(
+                            com.stripe.param.PriceCreateParams.Recurring.builder()
+                                    .setInterval(com.stripe.param.PriceCreateParams.Recurring.Interval.MONTH)
+                                    .build()
+                    )
+                    .build();
+
+            com.stripe.model.Price stripePrice = com.stripe.model.Price.create(priceParams, options);
+            plan.setStripePriceId(stripePrice.getId());
+            log.info("Plano {} sincronizado no Stripe com Sucesso! Product: {}, Price: {}", plan.getName(), productId, stripePrice.getId());
+
+        } catch (Exception e) {
+            log.error("Erro ao sincronizar plano com o Stripe API: {}", e.getMessage(), e);
+            if (plan.getStripeProductId() == null) {
+                plan.setStripeProductId("prod_fallback_" + UUID.randomUUID().toString().substring(0, 8));
+            }
+            if (plan.getStripePriceId() == null) {
+                plan.setStripePriceId("price_fallback_" + UUID.randomUUID().toString().substring(0, 8));
+            }
+        }
+        return plan;
     }
 }

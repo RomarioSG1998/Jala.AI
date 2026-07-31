@@ -79,6 +79,10 @@ public class BillingService {
                         .maxTanks(plan.getMaxTanks())
                         .maxUsers(plan.getMaxUsers())
                         .priceMonthly(plan.getPriceMonthly())
+                        .stripeProductId(plan.getStripeProductId())
+                        .stripePriceId(plan.getStripePriceId())
+                        .description(plan.getDescription())
+                        .active(plan.getActive())
                         .activeSubscribers(subscriptionRepository.countByPlanIdAndStatus(plan.getId(), "ACTIVE"))
                         .totalSubscribers(subscriptionRepository.findByPlanId(plan.getId()).size())
                         .build())
@@ -91,6 +95,7 @@ public class BillingService {
 
     public PlanDetailsDTO getFarmActivePlan(UUID farmId) {
         return subscriptionRepository.findByFarmIdAndStatus(farmId, "ACTIVE")
+                .filter(sub -> sub.getStripeSubscriptionId() != null && !sub.getStripeSubscriptionId().isBlank())
                 .flatMap(sub -> saasPlanRepository.findById(sub.getPlanId()))
                 .map(plan -> PlanDetailsDTO.builder()
                         .id(plan.getId())

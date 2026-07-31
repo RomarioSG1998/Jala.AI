@@ -18,6 +18,10 @@ public class PlanDetailsDTO {
     private Integer maxTanks;
     private Integer maxUsers;
     private BigDecimal priceMonthly;
+    private String stripeProductId;
+    private String stripePriceId;
+    private String description;
+    private Boolean active;
     private long activeSubscribers;
     private long totalSubscribers;
 }

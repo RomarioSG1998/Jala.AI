@@ -3,6 +3,7 @@ package com.aquasertao.api.modules.billing.controllers;
 import com.aquasertao.api.modules.billing.dtos.CheckoutSessionRequestDTO;
 import com.aquasertao.api.modules.billing.dtos.CheckoutSessionResponseDTO;
 import com.aquasertao.api.modules.billing.dtos.PlanDetailsDTO;
+import com.aquasertao.api.modules.billing.dtos.SubscriptionDetailsDTO;
 import com.aquasertao.api.modules.billing.dtos.SubscriptionRequestDTO;
 import com.aquasertao.api.modules.billing.dtos.SubscriptionResponseDTO;
 import com.aquasertao.api.modules.billing.services.BillingService;
@@ -57,5 +58,15 @@ public class BillingController {
     @GetMapping("/farm/{farmId}/plan")
     public ResponseEntity<PlanDetailsDTO> getFarmActivePlan(@PathVariable UUID farmId) {
         return ResponseEntity.ok(billingService.getFarmActivePlan(farmId));
+    }
+
+    @GetMapping("/subscription-details/{farmId}")
+    public ResponseEntity<SubscriptionDetailsDTO> getSubscriptionDetails(@PathVariable UUID farmId) {
+        return ResponseEntity.ok(stripeService.getSubscriptionDetails(farmId));
+    }
+
+    @PostMapping("/cancel-subscription/{farmId}")
+    public ResponseEntity<SubscriptionDetailsDTO> cancelSubscription(@PathVariable UUID farmId) {
+        return ResponseEntity.ok(stripeService.cancelSubscription(farmId));
     }
 }

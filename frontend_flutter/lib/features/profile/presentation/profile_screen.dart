@@ -363,8 +363,8 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
                   ],
 
-                  // Subscription Section
-                  if (authState.accountType != null) ...[
+                  // Subscription Section for Farmers / Customers
+                  if (authState.accountType != null && authState.accountType != 'SAAS_ADMIN') ...[
                     _buildSectionTitle(context, 'Assinatura'),
                     _buildInfoCard(context, [
                       ListTile(
@@ -390,6 +390,30 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                         trailing: const Icon(Icons.chevron_right, color: Colors.grey),
                         onTap: () => _showPlansSelectionBottomSheet(context, ref),
+                      ),
+                    ]),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Master SaaS Owner Executive Card
+                  if (authState.accountType == 'SAAS_ADMIN') ...[
+                    _buildSectionTitle(context, 'Credenciais do Dono do SaaS'),
+                    _buildInfoCard(context, [
+                      ListTile(
+                        leading: const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 28),
+                        title: const Text(
+                          'Proprietário do SaaS (SuperAdmin)',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: const Text(
+                          'Você é o usuário máximo do sistema. Possui autonomia total para criar/modificar planos no Stripe e gerenciar clientes.',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(color: Colors.amber.shade800, borderRadius: BorderRadius.circular(8)),
+                          child: const Text('MASTER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
+                        ),
                       ),
                     ]),
                     const SizedBox(height: 24),

@@ -38,6 +38,7 @@ public class TankService {
     /** Returns the max tanks allowed for this farm based on its active plan. FREE default = 3. */
     private int getMaxTanksAllowed(UUID farmId) {
         return subscriptionRepository.findByFarmIdAndStatus(farmId, "ACTIVE")
+                .filter(sub -> sub.getStripeSubscriptionId() != null && !sub.getStripeSubscriptionId().isBlank())
                 .map(sub -> saasPlanRepository.findById(sub.getPlanId())
                         .map(plan -> plan.getMaxTanks())
                         .orElse(3))

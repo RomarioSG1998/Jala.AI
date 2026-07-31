@@ -20,4 +20,5 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
     long countByStatus(String status);
     Optional<Subscription> findByStripeCheckoutSessionId(String checkoutSessionId);
     Optional<Subscription> findByStripeSubscriptionId(String stripeSubscriptionId);
+    Optional<Subscription> findFirstByFarmIdOrderByStartDateDesc(UUID farmId);
 }

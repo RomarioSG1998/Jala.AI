@@ -10,26 +10,24 @@ class SaasAdminRepository {
 
   Future<List<SaasPlan>> getPlans() async {
     try {
-      final response = await _dio.get('/api/billing/plans/details');
-      if (response.data is List && (response.data as List).isNotEmpty) {
+      final response = await _dio.get('/api/saas-plans');
+      if (response.data is List) {
         final List<dynamic> data = response.data;
-        return data.map((json) => SaasPlan.fromJson(json)).toList();
+        return data.map((json) => SaasPlan.fromJson(json as Map<String, dynamic>)).toList();
       }
     } catch (_) {}
 
     try {
-      final response = await _dio.get('/api/saas-plans');
-      if (response.data is List && (response.data as List).isNotEmpty) {
+      final response = await _dio.get('/api/billing/plans/details');
+      if (response.data is List) {
         final List<dynamic> data = response.data;
-        return data.map((json) => SaasPlan.fromJson(json)).toList();
+        return data.map((json) => SaasPlan.fromJson(json as Map<String, dynamic>)).toList();
       }
-    } catch (_) {}
+    } catch (e) {
+      throw Exception('Erro ao carregar planos atualizados do backend: $e');
+    }
 
-    return [
-      SaasPlan(id: 'free', name: 'Plano Gratuito', maxTanks: 3, maxUsers: 2, priceMonthly: 0.0),
-      SaasPlan(id: 'starter', name: 'Plano Starter', maxTanks: 10, maxUsers: 5, priceMonthly: 29.90),
-      SaasPlan(id: 'pro', name: 'Plano Profissional', maxTanks: 30, maxUsers: 15, priceMonthly: 59.90),
-    ];
+    return [];
   }
 
   // Returns ALL tenants from the system (global admin view)

@@ -51,6 +51,24 @@ public class Announcement {
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
+    @Column(name = "stock_quantity")
+    @Builder.Default
+    private Integer stockQuantity = 100;
+
+    @Column(name = "unit_measure", length = 50)
+    @Builder.Default
+    private String unitMeasure = "Unidade";
+
+    @Column(name = "min_order_quantity")
+    @Builder.Default
+    private Integer minOrderQuantity = 1;
+
+    @Column(name = "delivery_terms", length = 255)
+    private String deliveryTerms;
+
+    @Column(columnDefinition = "TEXT")
+    private String specifications;
+
     @Column(name = "active")
     @Builder.Default
     private Boolean active = true;

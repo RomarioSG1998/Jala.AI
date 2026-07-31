@@ -13,6 +13,11 @@ class AnnouncementModel {
   final String sellerPhone;
   final String sellerLocation;
   final String? imageUrl;
+  final int stockQuantity;
+  final String unitMeasure;
+  final int minOrderQuantity;
+  final String? deliveryTerms;
+  final String? specifications;
   final bool active;
 
   AnnouncementModel({
@@ -26,6 +31,11 @@ class AnnouncementModel {
     required this.sellerPhone,
     required this.sellerLocation,
     this.imageUrl,
+    this.stockQuantity = 100,
+    this.unitMeasure = 'Unidade',
+    this.minOrderQuantity = 1,
+    this.deliveryTerms,
+    this.specifications,
     required this.active,
   });
 
@@ -40,6 +50,11 @@ class AnnouncementModel {
         sellerPhone: j['sellerPhone'] ?? '',
         sellerLocation: j['sellerLocation'] ?? '',
         imageUrl: j['imageUrl'],
+        stockQuantity: (j['stockQuantity'] as num?)?.toInt() ?? 100,
+        unitMeasure: j['unitMeasure']?.toString() ?? 'Unidade',
+        minOrderQuantity: (j['minOrderQuantity'] as num?)?.toInt() ?? 1,
+        deliveryTerms: j['deliveryTerms']?.toString(),
+        specifications: j['specifications']?.toString(),
         active: j['active'] ?? true,
       );
 
@@ -53,6 +68,11 @@ class AnnouncementModel {
         'sellerPhone': sellerPhone,
         'sellerLocation': sellerLocation,
         'imageUrl': imageUrl,
+        'stockQuantity': stockQuantity,
+        'unitMeasure': unitMeasure,
+        'minOrderQuantity': minOrderQuantity,
+        'deliveryTerms': deliveryTerms,
+        'specifications': specifications,
       };
 }
 

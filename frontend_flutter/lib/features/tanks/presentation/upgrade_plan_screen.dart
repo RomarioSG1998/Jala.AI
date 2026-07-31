@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
 import 'package:frontend_flutter/core/api/secure_storage.dart';
@@ -50,6 +51,74 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _startStripeCheckout(widget.initialPlanId!);
       });
+    }
+  }
+
+  Future<void> _cancelSubscription() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 28),
+            SizedBox(width: 8),
+            Text('Cancelar Assinatura', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'Tem certeza de que deseja cancelar a renovação da sua assinatura no Stripe?\n\n'
+          'Seu acesso continuará garantido até o final do período de cobrança atual.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Manter Assinatura', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Confirmar Cancelamento', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final dio = ref.read(dioProvider);
+      final tokenStorage = ref.read(tokenStorageProvider);
+      final farmId = (await tokenStorage.getFarmId()) ?? '55555555-5555-5555-5555-555555555555';
+
+      await dio.post('/api/billing/cancel-subscription/$farmId');
+      ref.invalidate(activeSubscriptionDetailsProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Assinatura cancelada com sucesso. Seu acesso continuará até o fim do período.'),
+            backgroundColor: Colors.deepOrange,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao cancelar assinatura: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -126,10 +195,206 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
     }
   }
 
+  Widget _buildActiveSubscriptionDashboardCard(
+    BuildContext context,
+    WidgetRef ref,
+    SubscriptionDetails sub,
+    bool isDark,
+    NumberFormat currencyFmt,
+  ) {
+    final isActive = sub.status.toUpperCase() == 'ACTIVE';
+    final isCancelled = sub.status.toUpperCase() == 'CANCELLED';
+
+    Color statusColor = Colors.grey;
+    String statusText = 'Plano Gratuito';
+    IconData statusIcon = Icons.info_outline;
+
+    if (isActive) {
+      statusColor = const Color(0xFF13A538);
+      statusText = 'Assinatura Ativa (Renovação Automática)';
+      statusIcon = Icons.check_circle_rounded;
+    } else if (isCancelled) {
+      statusColor = Colors.deepOrange;
+      statusText = 'Assinatura Cancelada';
+      statusIcon = Icons.cancel_outlined;
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: statusColor.withOpacity(0.4),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: statusColor.withOpacity(0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(statusIcon, color: statusColor, size: 22),
+                  const SizedBox(width: 8),
+                  Text(
+                    statusText,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  sub.planName,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _subDetailItem(
+                  context,
+                  Icons.calendar_today_rounded,
+                  'Próxima Cobrança / Vencimento',
+                  sub.nextBillingDate ?? sub.endDate ?? 'N/A',
+                  isDark,
+                ),
+              ),
+              Expanded(
+                child: _subDetailItem(
+                  context,
+                  Icons.payment_rounded,
+                  'Forma de Pagamento',
+                  sub.cardLast4 != null
+                      ? '${sub.cardBrand?.toUpperCase() ?? "Cartão"} •••• ${sub.cardLast4}'
+                      : (sub.paymentMethodType ?? 'Stripe Checkout'),
+                  isDark,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _subDetailItem(
+                  context,
+                  Icons.attach_money_rounded,
+                  'Valor Mensal',
+                  sub.priceMonthly > 0 ? '${currencyFmt.format(sub.priceMonthly)}/mês' : 'R\$ 0,00 (Grátis)',
+                  isDark,
+                ),
+              ),
+              Expanded(
+                child: _subDetailItem(
+                  context,
+                  Icons.water_drop_rounded,
+                  'Recursos Liberados',
+                  'Até ${sub.maxTanks} tanques · ${sub.maxUsers} usuários',
+                  isDark,
+                ),
+              ),
+            ],
+          ),
+          if (isActive) ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.cancel_outlined, size: 18, color: Colors.redAccent),
+                label: const Text('Cancelar Assinatura Stripe', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.redAccent),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: _isLoading ? null : _cancelSubscription,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _subDetailItem(BuildContext context, IconData icon, String title, String value, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 14, color: Colors.grey),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _handleBack(BuildContext context) {
+    if (widget.onUpgrade != null) {
+      widget.onUpgrade!();
+      return;
+    }
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/tanks');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final plansAsync = ref.watch(plansProvider);
+    final subAsync = ref.watch(activeSubscriptionDetailsProvider);
     final currencyFmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
     return Scaffold(
@@ -137,6 +402,10 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
         title: const Text('Upgrade & Assinatura Stripe'),
         centerTitle: true,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => _handleBack(context),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -180,6 +449,19 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
+
+              // ── Real-Time Stripe Subscription Dashboard ─────────────────────
+              subAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (subDetails) => _buildActiveSubscriptionDashboardCard(
+                  context,
+                  ref,
+                  subDetails,
+                  isDark,
+                  currencyFmt,
+                ),
+              ),
 
               // ── Direct Stripe Manual Link Banner (if generated) ──────────────
               if (_manualCheckoutUrl != null) ...[
@@ -364,14 +646,15 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
                   );
                 },
               ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  if (mounted && Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
-                },
-                child: const Text('Voltar', style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 20),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.arrow_back, size: 18),
+                label: const Text('Voltar para Tanques', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () => _handleBack(context),
               ),
             ],
           ),
