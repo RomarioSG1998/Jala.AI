@@ -15,11 +15,11 @@ class SaasPlan {
 
   factory SaasPlan.fromJson(Map<String, dynamic> json) {
     return SaasPlan(
-      id: json['id'],
-      name: json['name'],
-      maxTanks: json['maxTanks'] ?? 0,
-      maxUsers: json['maxUsers'] ?? 0,
-      priceMonthly: (json['priceMonthly'] as num).toDouble(),
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? 'Plano',
+      maxTanks: (json['maxTanks'] as num?)?.toInt() ?? 3,
+      maxUsers: (json['maxUsers'] as num?)?.toInt() ?? 2,
+      priceMonthly: (json['priceMonthly'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
 import 'employee_model.dart';
 
+import 'package:frontend_flutter/features/tanks/data/tank_repository.dart';
+
 class EmployeeRepository {
   final Dio _dio;
   final String _farmId = '55555555-5555-5555-5555-555555555555';
@@ -32,6 +34,11 @@ class EmployeeRepository {
       );
       return Employee.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
+      if (e is DioException && e.response?.statusCode == 402) {
+        final data = e.response?.data;
+        final maxAllowed = (data is Map && data['maxAllowed'] != null) ? (data['maxAllowed'] as num).toInt() : 2;
+        throw PlanLimitException(maxAllowed);
+      }
       throw Exception('Failed to register employee: $e');
     }
   }

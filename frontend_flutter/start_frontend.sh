@@ -2,17 +2,15 @@
 # ------------------------------------------------------------------
 # AquaSertão Frontend Startup Script
 # 
-# Description: Starts the Flutter app in web-server mode.
-# Because of snap environment bugs with Linux Desktop builds on Ubuntu,
-# we use the web-server to reliably test the application.
-# 
-# Usage: ./start_frontend.sh
-# Then open: http://localhost:8082 in your browser.
-# Press F12 -> Ctrl+Shift+M to simulate the mobile experience!
+# Serves the production Flutter Web bundle statically.
 # ------------------------------------------------------------------
 
-echo "🚀 Starting AquaSertão Frontend on Web Server..."
-echo "👉 Open http://localhost:8082 in Chrome/Edge."
-echo "📱 Remember to press F12 and toggle Device Toolbar for the Cellphone view!"
+cd "$(dirname "$0")"
 
-flutter run -d web-server --web-port 8082
+if [ ! -d "build/web" ]; then
+    echo "🚀 Building AquaSertão Web Production Bundle..."
+    flutter build web --release
+fi
+
+echo "👉 Serving AquaSertão Frontend on http://localhost:8082..."
+python3 -m http.server 8082 --directory build/web

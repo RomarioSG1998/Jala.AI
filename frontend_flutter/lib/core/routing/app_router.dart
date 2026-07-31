@@ -31,6 +31,10 @@ import 'package:frontend_flutter/features/marketplace/presentation/marketplace_s
 import 'package:frontend_flutter/features/library/presentation/library_screen.dart';
 import 'package:frontend_flutter/features/weather/presentation/weather_screen.dart';
 
+import 'package:frontend_flutter/features/billing/presentation/payment_success_screen.dart';
+import 'package:frontend_flutter/features/billing/presentation/payment_cancel_screen.dart';
+import 'package:frontend_flutter/features/tanks/presentation/upgrade_plan_screen.dart';
+
 // ─── RouterNotifier: Listenable wrapper for Riverpod Auth State ──────────────
 class RouterNotifier extends ChangeNotifier {
   final Ref _ref;
@@ -56,7 +60,14 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: routerNotifier,
     redirect: (context, state) {
       final authState = ref.read(authNotifierProvider);
-      final isGoingToLogin = state.matchedLocation == '/login';
+      final location = state.matchedLocation;
+
+      final isPaymentRoute = location == '/payment-success' || location == '/payment-cancel';
+      if (isPaymentRoute) return null;
+
+      if (location == '/') return authState.isAuthenticated ? '/dashboard' : '/login';
+
+      final isGoingToLogin = location == '/login';
       if (!authState.isAuthenticated && !isGoingToLogin) return '/login';
 
       if (authState.isAuthenticated) {
@@ -90,12 +101,28 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
+        path: '/payment-success',
+        builder: (context, state) => const PaymentSuccessScreen(),
+      ),
+      GoRoute(
+        path: '/payment-cancel',
+        builder: (context, state) => const PaymentCancelScreen(),
+      ),
+      GoRoute(
         path: '/supplier-dev',
         builder: (context, state) => const SupplierDevScreen(),
       ),
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/upgrade-plan',
+        builder: (context, state) {
+          final currentTanks = int.tryParse(state.uri.queryParameters['currentTanks'] ?? '') ?? 1;
+          final maxAllowed = int.tryParse(state.uri.queryParameters['maxAllowed'] ?? '') ?? 3;
+          return UpgradePlanScreen(currentTanks: currentTanks, maxAllowed: maxAllowed);
+        },
       ),
       // ── Shell permanente com Bottom Navigation ─────────────────────────
       StatefulShellRoute.indexedStack(

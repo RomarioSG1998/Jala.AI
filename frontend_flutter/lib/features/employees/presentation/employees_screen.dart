@@ -6,6 +6,7 @@ import '../providers/employee_permissions_provider.dart';
 import '../data/employee_model.dart';
 import '../data/employee_permission_model.dart';
 import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
+import 'package:frontend_flutter/features/tanks/presentation/upgrade_plan_screen.dart';
 
 // Hardcoded test farm ID (matches seed data)
 const _kFarmId = '55555555-5555-5555-5555-555555555555';
@@ -414,9 +415,22 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
           SnackBar(content: Text(_isEditing ? 'Funcionário atualizado!' : 'Funcionário cadastrado!')),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao salvar. Verifique os dados.')),
-        );
+        final notifier = ref.read(employeesProvider.notifier);
+        if (notifier.lastPlanLimitError != null) {
+          final err = notifier.lastPlanLimitError!;
+          final nav = Navigator.of(context, rootNavigator: true);
+          nav.pop();
+          nav.push(MaterialPageRoute(
+            builder: (_) => UpgradePlanScreen(
+              currentTanks: (ref.read(employeesProvider).value ?? []).length,
+              maxAllowed: err.maxAllowed,
+            ),
+          ));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erro ao salvar. Verifique os dados.')),
+          );
+        }
       }
     }
   }

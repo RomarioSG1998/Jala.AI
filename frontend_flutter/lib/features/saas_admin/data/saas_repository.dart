@@ -10,12 +10,26 @@ class SaasAdminRepository {
 
   Future<List<SaasPlan>> getPlans() async {
     try {
+      final response = await _dio.get('/api/billing/plans/details');
+      if (response.data is List && (response.data as List).isNotEmpty) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => SaasPlan.fromJson(json)).toList();
+      }
+    } catch (_) {}
+
+    try {
       final response = await _dio.get('/api/saas-plans');
-      final List<dynamic> data = response.data;
-      return data.map((json) => SaasPlan.fromJson(json)).toList();
-    } catch (e) {
-      throw Exception('Failed to load plans: $e');
-    }
+      if (response.data is List && (response.data as List).isNotEmpty) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => SaasPlan.fromJson(json)).toList();
+      }
+    } catch (_) {}
+
+    return [
+      SaasPlan(id: 'free', name: 'Plano Gratuito', maxTanks: 3, maxUsers: 2, priceMonthly: 0.0),
+      SaasPlan(id: 'starter', name: 'Plano Starter', maxTanks: 10, maxUsers: 5, priceMonthly: 29.90),
+      SaasPlan(id: 'pro', name: 'Plano Profissional', maxTanks: 30, maxUsers: 15, priceMonthly: 59.90),
+    ];
   }
 
   // Returns ALL tenants from the system (global admin view)

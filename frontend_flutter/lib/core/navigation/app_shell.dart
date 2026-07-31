@@ -31,6 +31,7 @@ import 'package:frontend_flutter/features/feeding_records/presentation/feeding_r
 import 'package:frontend_flutter/features/employees/presentation/employees_screen.dart';
 import 'package:frontend_flutter/features/mortality/presentation/mortality_screen.dart';
 import 'package:frontend_flutter/features/tanks/presentation/biometrics_screen.dart';
+import 'package:frontend_flutter/features/tanks/presentation/upgrade_plan_screen.dart';
 
 // Dashboard Screen containing SaasAdminBody
 import 'package:frontend_flutter/features/dashboard/presentation/dashboard_screen.dart';
@@ -1094,6 +1095,9 @@ class AppDrawer extends ConsumerWidget {
 
                 if (role == 'FARM_OWNER' || role == 'CLIENT') ...[
                   _section(context, 'Gestão'),
+                  _tile(context, Icons.workspace_premium_rounded, 'Meu Plano & Assinatura 🚀', const Color(0xFF13A538), () {
+                    Navigator.pop(context); context.go('/upgrade-plan');
+                  }),
                   _tile(context, Icons.build, 'Manutenção', Colors.grey.shade700, () {
                     Navigator.pop(context); context.go('/maintenance');
                   }),

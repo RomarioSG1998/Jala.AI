@@ -10,7 +10,7 @@ String _getEffectiveBaseUrl() {
     return envUrl;
   }
   if (kIsWeb) {
-    return 'http://localhost:8085';
+    return 'http://localhost:8081';
   }
   return 'https://jala-ai.onrender.com';
 }

@@ -35,13 +35,13 @@ public class TankService {
     private final SubscriptionRepository subscriptionRepository;
     private final SaaSPlanRepository saasPlanRepository;
 
-    /** Returns the max tanks allowed for this farm based on its active plan. FREE default = 1. */
+    /** Returns the max tanks allowed for this farm based on its active plan. FREE default = 3. */
     private int getMaxTanksAllowed(UUID farmId) {
         return subscriptionRepository.findByFarmIdAndStatus(farmId, "ACTIVE")
                 .map(sub -> saasPlanRepository.findById(sub.getPlanId())
                         .map(plan -> plan.getMaxTanks())
-                        .orElse(1))
-                .orElse(1);
+                        .orElse(3))
+                .orElse(3);
     }
 
     public TankResponseDTO createTank(TankRequestDTO requestDTO) {

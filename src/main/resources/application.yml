@@ -28,3 +28,7 @@ server:
   tomcat:
     max-http-form-post-size: 50MB
     max-swallow-size: 50MB
+
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY: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}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_test}

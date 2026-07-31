@@ -54,11 +54,15 @@ class TankRepository {
     } on DioException catch (e) {
       // HTTP 402 = plan limit exceeded
       if (e.response?.statusCode == 402) {
-        final maxAllowed = (e.response?.data['maxAllowed'] as int?) ?? 1;
+        final data = e.response?.data;
+        final maxAllowed = (data is Map && data['maxAllowed'] != null)
+            ? (data['maxAllowed'] as num).toInt()
+            : 3;
         throw PlanLimitException(maxAllowed);
       }
       throw Exception('Failed to create tank: ${e.message}');
     } catch (e) {
+      if (e is PlanLimitException) rethrow;
       throw Exception('Failed to create tank: $e');
     }
   }

@@ -57,10 +57,19 @@ class TanksNotifier extends AsyncNotifier<List<Tank>> {
       }
       return true;
     } on PlanLimitException catch (e) {
-      // Propagate plan limit so UI can show upgrade screen
       lastPlanLimitError = e;
       return false;
     } catch (e) {
+      if (e is PlanLimitException || e.toString().contains('PlanLimitException') || (e is DioException && e.response?.statusCode == 402)) {
+        int maxAllowed = 3;
+        if (e is PlanLimitException) {
+          maxAllowed = e.maxAllowed;
+        } else if (e is DioException && e.response?.data is Map && e.response?.data['maxAllowed'] != null) {
+          maxAllowed = (e.response?.data['maxAllowed'] as num).toInt();
+        }
+        lastPlanLimitError = PlanLimitException(maxAllowed);
+        return false;
+      }
       if (e is DioException) {
         print('TanksNotifier.createTank: Error: ${e.message} (status: ${e.response?.statusCode})');
       } else {

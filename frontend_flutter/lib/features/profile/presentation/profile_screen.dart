@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:frontend_flutter/features/saas_admin/providers/saas_providers.dart';
 import 'package:frontend_flutter/features/saas_admin/data/saas_models.dart';
 import 'package:frontend_flutter/features/profile/providers/subscription_provider.dart';
+import 'package:frontend_flutter/features/tanks/presentation/upgrade_plan_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -380,8 +381,8 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                         subtitle: Text(
                           currentPlan == UserSubscriptionPlan.pro
-                              ? 'Plano Profissional (R\$ 19,90) · Ativo'
-                              : 'Plano Gratuito (até 1 tanque) · Ativo',
+                              ? 'Plano Profissional (R\$ 59,90/mês · até 30 tanques) · Ativo'
+                              : 'Plano Gratuito (R\$ 0,00 · até 3 tanques) · Ativo',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Colors.grey,
@@ -893,15 +894,8 @@ class ProfileScreen extends ConsumerWidget {
                     onPressed: isCurrent
                         ? null
                         : () {
-                            final newPlan = plan.priceMonthly > 0 ? UserSubscriptionPlan.pro : UserSubscriptionPlan.free;
-                            ref.read(userSubscriptionProvider.notifier).selectPlan(newPlan);
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Plano alterado para ${plan.name}!'),
-                                backgroundColor: _kGreen,
-                              ),
-                            );
+                            UpgradePlanScreen.startDirectStripeCheckout(context, ref, plan.id);
                           },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: accentColor,

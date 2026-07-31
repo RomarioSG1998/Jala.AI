@@ -18,4 +18,6 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
     List<Subscription> findByPlanId(UUID planId);
     long countByPlanIdAndStatus(UUID planId, String status);
     long countByStatus(String status);
+    Optional<Subscription> findByStripeCheckoutSessionId(String checkoutSessionId);
+    Optional<Subscription> findByStripeSubscriptionId(String stripeSubscriptionId);
 }

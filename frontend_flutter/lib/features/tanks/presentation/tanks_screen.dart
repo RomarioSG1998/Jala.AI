@@ -522,48 +522,6 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Verificar limite do plano
-    final tanks = ref.read(tanksProvider).value ?? [];
-    final currentPlan = ref.read(userSubscriptionProvider);
-    if (currentPlan == UserSubscriptionPlan.free && tanks.isNotEmpty) {
-      Navigator.of(context).pop();
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.workspace_premium, color: Colors.amber, size: 28),
-              SizedBox(width: 8),
-              Text('Limite do Plano Atingido', style: TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
-          content: const Text(
-            'Você está no Plano Gratuito, que permite gerenciar apenas 1 tanque.\n\n'
-            'Atualize para o Plano Pro por apenas R\$ 19,90/mês para cadastrar tanques ilimitados!',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF13A538),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              onPressed: () {
-                Navigator.pop(ctx);
-                GoRouter.of(context).push('/profile');
-              },
-              child: const Text('Upgrade por R\$ 19,90', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
     setState(() => _isLoading = true);
     final stockingQty = int.parse(_initialStockingQtyController.text.trim());
     final notifier = ref.read(tanksProvider.notifier);
@@ -582,15 +540,45 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
       if (success) {
         Navigator.of(context).pop();
       } else if (notifier.lastPlanLimitError != null) {
-        // Backend returned HTTP 402 — show upgrade screen
         final err = notifier.lastPlanLimitError!;
-        Navigator.of(context).pop();
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => UpgradePlanScreen(
-            currentTanks: (ref.read(tanksProvider).value ?? []).length,
-            maxAllowed: err.maxAllowed,
+        final router = GoRouter.of(context);
+        final currentTanksCount = (ref.read(tanksProvider).value ?? []).length;
+
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.workspace_premium, color: Colors.amber, size: 28),
+                SizedBox(width: 8),
+                Text('Limite do Plano Atingido', style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: Text(
+              'Sua propriedade atingiu o limite máximo de ${err.maxAllowed} tanque(s) permitido(s) pelo seu plano atual.\n\n'
+              'Faça o upgrade da sua assinatura para cadastrar mais tanques e liberar recursos ilimitados!',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF13A538),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.of(context).pop();
+                  router.push('/upgrade-plan?currentTanks=$currentTanksCount&maxAllowed=${err.maxAllowed}');
+                },
+                child: const Text('Ver Planos & Assinar 💳', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
-        ));
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Falha ao criar tanque')));
       }

@@ -58,6 +58,10 @@ class TokenStorage {
     return await _storage.read(key: 'user_id');
   }
 
+  Future<String?> getFarmId() async {
+    return await _storage.read(key: 'farm_id');
+  }
+
   Future<void> saveRememberMeCredentials(String email, String password) async {
     await _storage.write(key: 'remember_email', value: email);
     await _storage.write(key: 'remember_password', value: password);

@@ -36,3 +36,8 @@ build/
 .env
 *.log
 
+# Scratch analysis files
+apk_para_dissecar/
+login_screenshot.png
+
+

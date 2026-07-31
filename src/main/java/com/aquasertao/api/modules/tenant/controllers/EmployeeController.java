@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import com.aquasertao.api.modules.billing.repositories.SubscriptionRepository;
+import com.aquasertao.api.modules.billing.repositories.SaaSPlanRepository;
+import com.aquasertao.api.modules.operational.services.TankService.PlanLimitExceededException;
 import java.util.stream.Collectors;
 
 @RestController
@@ -34,6 +37,8 @@ public class EmployeeController {
     private final UserFarmLinkRepository userFarmLinkRepository;
     private final EmployeeModulePermissionRepository permissionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SubscriptionRepository subscriptionRepository;
+    private final SaaSPlanRepository saasPlanRepository;
 
     // ── List employees ────────────────────────────────────────────────────────
 
@@ -60,6 +65,16 @@ public class EmployeeController {
     @PostMapping
     @Transactional
     public ResponseEntity<?> createEmployee(@RequestBody EmployeeRequestDTO requestDTO) {
+        List<UserFarmLink> existingLinks = userFarmLinkRepository.findByFarmId(requestDTO.getFarmId());
+        int maxUsersAllowed = subscriptionRepository.findByFarmIdAndStatus(requestDTO.getFarmId(), "ACTIVE")
+                .map(sub -> saasPlanRepository.findById(sub.getPlanId())
+                        .map(plan -> plan.getMaxUsers())
+                        .orElse(2))
+                .orElse(2);
+        if (existingLinks.size() >= maxUsersAllowed) {
+            throw new PlanLimitExceededException(maxUsersAllowed);
+        }
+
         if (globalUserRepository.findByEmail(requestDTO.getEmail()).isPresent()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Email already registered.");

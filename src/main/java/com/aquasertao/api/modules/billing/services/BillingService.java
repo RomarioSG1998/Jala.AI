@@ -89,6 +89,32 @@ public class BillingService {
         return subscriptionRepository.countByStatus("ACTIVE");
     }
 
+    public PlanDetailsDTO getFarmActivePlan(UUID farmId) {
+        return subscriptionRepository.findByFarmIdAndStatus(farmId, "ACTIVE")
+                .flatMap(sub -> saasPlanRepository.findById(sub.getPlanId()))
+                .map(plan -> PlanDetailsDTO.builder()
+                        .id(plan.getId())
+                        .name(plan.getName())
+                        .maxTanks(plan.getMaxTanks())
+                        .maxUsers(plan.getMaxUsers())
+                        .priceMonthly(plan.getPriceMonthly())
+                        .build())
+                .orElseGet(() -> saasPlanRepository.findByName("Free")
+                        .map(plan -> PlanDetailsDTO.builder()
+                                .id(plan.getId())
+                                .name(plan.getName())
+                                .maxTanks(plan.getMaxTanks())
+                                .maxUsers(plan.getMaxUsers())
+                                .priceMonthly(plan.getPriceMonthly())
+                                .build())
+                        .orElse(PlanDetailsDTO.builder()
+                                .name("Free")
+                                .maxTanks(3)
+                                .maxUsers(2)
+                                .priceMonthly(java.math.BigDecimal.ZERO)
+                                .build()));
+    }
+
     private SubscriptionResponseDTO toResponseDTO(Subscription s) {
         return SubscriptionResponseDTO.builder()
                 .id(s.getId())

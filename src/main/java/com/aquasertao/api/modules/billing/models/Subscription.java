@@ -35,4 +35,13 @@ public class Subscription {
 
     @Column(nullable = false, length = 20)
     private String status; // ACTIVE, EXPIRED, CANCELLED
+
+    @Column(name = "stripe_customer_id")
+    private String stripeCustomerId;
+
+    @Column(name = "stripe_subscription_id")
+    private String stripeSubscriptionId;
+
+    @Column(name = "stripe_checkout_session_id")
+    private String stripeCheckoutSessionId;
 }
