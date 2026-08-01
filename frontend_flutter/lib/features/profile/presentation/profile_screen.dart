@@ -13,6 +13,19 @@ import 'package:frontend_flutter/features/saas_admin/data/saas_models.dart';
 import 'package:frontend_flutter/features/profile/providers/subscription_provider.dart';
 import 'package:frontend_flutter/features/tanks/presentation/upgrade_plan_screen.dart';
 
+ImageProvider? _getProfileImageProvider(String? profileImage) {
+  if (profileImage == null || profileImage.trim().isEmpty) return null;
+  final img = profileImage.trim();
+  if (img.startsWith('http://') || img.startsWith('https://')) {
+    return NetworkImage(img);
+  }
+  try {
+    return MemoryImage(base64Decode(img));
+  } catch (_) {
+    return null;
+  }
+}
+
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -176,10 +189,8 @@ class ProfileScreen extends ConsumerWidget {
                         child: CircleAvatar(
                           radius: 54,
                           backgroundColor: Colors.white.withOpacity(0.2),
-                          backgroundImage: profileImage != null
-                              ? MemoryImage(base64Decode(profileImage))
-                              : null,
-                          child: profileImage == null
+                          backgroundImage: _getProfileImageProvider(profileImage),
+                          child: _getProfileImageProvider(profileImage) == null
                               ? Text(
                                   initials,
                                   style: const TextStyle(
@@ -379,14 +390,18 @@ class ProfileScreen extends ConsumerWidget {
                             color: isDark ? Colors.white : Colors.black87,
                           ),
                         ),
-                        subtitle: Text(
-                          currentPlan == UserSubscriptionPlan.pro
-                              ? 'Plano Profissional (R\$ 59,90/mês · até 30 tanques) · Ativo'
-                              : 'Plano Gratuito (R\$ 0,00 · até 3 tanques) · Ativo',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
+                        subtitle: ref.watch(activeSubscriptionDetailsProvider).when(
+                          data: (sub) => Text(
+                            sub.priceMonthly > 0 && sub.status == 'ACTIVE'
+                                ? '${sub.planName} (R\$ ${sub.priceMonthly.toStringAsFixed(2)}/mês · até ${sub.maxTanks} tanques) · Ativo'
+                                : 'Plano Gratuito (R\$ 0,00 · até 3 tanques) · Ativo',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
+                          loading: () => const Text('Carregando plano...', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          error: (_, __) => const Text('Plano Gratuito (R\$ 0,00 · até 3 tanques)', style: TextStyle(fontSize: 12, color: Colors.grey)),
                         ),
                         trailing: const Icon(Icons.chevron_right, color: Colors.grey),
                         onTap: () => _showPlansSelectionBottomSheet(context, ref),
@@ -406,7 +421,7 @@ class ProfileScreen extends ConsumerWidget {
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: const Text(
-                          'Você é o usuário máximo do sistema. Possui autonomia total para criar/modificar planos no Stripe e gerenciar clientes.',
+                          'Você é o usuário máximo do sistema. Possui autonomia total para criar/modificar planos e gerenciar clientes.',
                           style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                         trailing: Container(

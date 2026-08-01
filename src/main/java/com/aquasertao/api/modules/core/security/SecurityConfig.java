@@ -25,7 +25,7 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/saas-plans/**", "/api/billing/webhook", "/api/billing/create-checkout-session", "/api/billing/plans/**", "/api/billing/farm/**", "/api/billing/subscription-details/**", "/api/billing/cancel-subscription/**", "/api/marketplace/orders/**", "/api/marketplace/suppliers/**", "/api/saas/master/**", "/error").permitAll()
+                .requestMatchers("/api/auth/**", "/api/suppliers/**", "/api/saas-plans/**", "/api/billing/webhook", "/api/billing/create-checkout-session", "/api/billing/plans/**", "/api/billing/farm/**", "/api/billing/subscription-details/**", "/api/billing/cancel-subscription/**", "/api/marketplace/orders/**", "/api/marketplace/suppliers/**", "/api/saas/master/**", "/error").permitAll()
                 .requestMatchers(
                     "/v3/api-docs",
                     "/v3/api-docs/**",

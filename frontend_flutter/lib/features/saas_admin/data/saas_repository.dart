@@ -30,10 +30,6 @@ class SaasAdminRepository {
     return [];
   }
 
-  // Returns ALL tenants from the system (global admin view)
-  // NOTE: Backend currently only supports querying by ownerId.
-  // As a temporary workaround for the admin view, we return John's farm.
-  // In a production system, a dedicated admin endpoint would return all farms.
   Future<List<FarmTenant>> getAllTenants() async {
     try {
       const johnUserId = '44444444-4444-4444-4444-444444444444';
@@ -64,6 +60,37 @@ class SaasAdminRepository {
     } catch (e) {
       return false;
     }
+  }
+
+  Future<SaasMasterOverview> getMasterOverview() async {
+    try {
+      final response = await _dio.get('/api/saas/master/overview');
+      if (response.data != null && response.data is Map<String, dynamic>) {
+        return SaasMasterOverview.fromJson(response.data);
+      }
+    } catch (_) {}
+    return SaasMasterOverview(
+      totalFarms: 0,
+      activeSubscriptions: 0,
+      totalTanks: 0,
+      estimatedMRR: 0.0,
+      estimatedARR: 0.0,
+      upToDateTenantsCount: 0,
+      pastDueTenantsCount: 0,
+      freeTenantsCount: 0,
+      b2bEscrowVolume: 0.0,
+    );
+  }
+
+  Future<List<TenantFinancialStatus>> getTenantsFinancialReport() async {
+    try {
+      final response = await _dio.get('/api/saas/master/financial-report');
+      if (response.data is List) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => TenantFinancialStatus.fromJson(json as Map<String, dynamic>)).toList();
+      }
+    } catch (_) {}
+    return [];
   }
 }
 

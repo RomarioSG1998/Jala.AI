@@ -244,7 +244,7 @@ class PlansScreen extends ConsumerWidget {
                       children: [
                         const Icon(Icons.bolt, color: Colors.amber, size: 12),
                         const SizedBox(width: 4),
-                        Text('Stripe Product: ${plan.stripeProductId}', style: const TextStyle(color: Colors.white, fontSize: 10, fontFamily: 'monospace')),
+                        Text('ID do Produto: ${plan.stripeProductId}', style: const TextStyle(color: Colors.white, fontSize: 10, fontFamily: 'monospace')),
                       ],
                     ),
                   ),

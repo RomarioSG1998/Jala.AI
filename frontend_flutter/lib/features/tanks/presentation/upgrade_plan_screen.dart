@@ -67,7 +67,7 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
           ],
         ),
         content: const Text(
-          'Tem certeza de que deseja cancelar a renovação da sua assinatura no Stripe?\n\n'
+          'Tem certeza de que deseja cancelar a renovação da sua assinatura?\n\n'
           'Seu acesso continuará garantido até o final do período de cobrança atual.',
         ),
         actions: [
@@ -180,7 +180,7 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao iniciar pagamento no Stripe: $e'),
+            content: Text('Erro ao iniciar pagamento: $e'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -296,7 +296,7 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
                   'Forma de Pagamento',
                   sub.cardLast4 != null
                       ? '${sub.cardBrand?.toUpperCase() ?? "Cartão"} •••• ${sub.cardLast4}'
-                      : (sub.paymentMethodType ?? 'Stripe Checkout'),
+                      : (sub.paymentMethodType ?? 'Cartão / Pix'),
                   isDark,
                 ),
               ),
@@ -333,7 +333,7 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
               width: double.infinity,
               child: OutlinedButton.icon(
                 icon: const Icon(Icons.cancel_outlined, size: 18, color: Colors.redAccent),
-                label: const Text('Cancelar Assinatura Stripe', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                label: const Text('Cancelar Assinatura', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.redAccent),
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -399,7 +399,7 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Upgrade & Assinatura Stripe'),
+        title: const Text('Upgrade & Assinatura de Planos'),
         centerTitle: true,
         elevation: 0,
         leading: IconButton(
@@ -444,7 +444,7 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Atualmente você possui ${widget.currentTanks} tanque${widget.currentTanks > 1 ? 's' : ''} cadastrado${widget.currentTanks > 1 ? 's' : ''} (Limite Atual: ${widget.maxAllowed}).\nFaça o upgrade agora via Stripe para liberar mais recursos e tanques!',
+                'Atualmente você possui ${widget.currentTanks} tanque${widget.currentTanks > 1 ? 's' : ''} cadastrado${widget.currentTanks > 1 ? 's' : ''} (Limite Atual: ${widget.maxAllowed}).\nFaça o upgrade agora para liberar mais recursos e tanques!',
                 style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600, fontSize: 13, height: 1.4),
                 textAlign: TextAlign.center,
               ),
@@ -490,7 +490,7 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
                       ElevatedButton.icon(
                         icon: const Icon(Icons.payment, color: Colors.white),
                         label: const Text(
-                          'Ir para Checkout Stripe agora 💳',
+                          'Ir para o Pagamento 💳',
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                         ),
                         style: ElevatedButton.styleFrom(
@@ -633,7 +633,7 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
                                       : Text(
                                           isFree
                                               ? 'Plano Atual (Básico)'
-                                              : 'Assinar Plano ${plan.name} via Stripe 💳',
+                                              : 'Assinar Plano ${plan.name} 💳',
                                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                         ),
                                 ),
@@ -733,7 +733,7 @@ class _StripeCheckoutDialogState extends ConsumerState<_StripeCheckoutDialog> {
         children: [
           const Icon(Icons.payment, color: Color(0xFF13A538)),
           const SizedBox(width: 10),
-          const Text('Checkout Stripe'),
+          const Text('Pagamento Seguro'),
         ],
       ),
       content: SingleChildScrollView(
@@ -743,7 +743,7 @@ class _StripeCheckoutDialogState extends ConsumerState<_StripeCheckoutDialog> {
             if (_isLoading) ...[
               const CircularProgressIndicator(color: Color(0xFF13A538)),
               const SizedBox(height: 16),
-              const Text('Conectando ao Stripe Checkout...', textAlign: TextAlign.center),
+              const Text('Conectando ao servidor de pagamento...', textAlign: TextAlign.center),
             ] else if (_error != null) ...[
               const Icon(Icons.error_outline, color: Colors.red, size: 40),
               const SizedBox(height: 12),
@@ -755,7 +755,7 @@ class _StripeCheckoutDialogState extends ConsumerState<_StripeCheckoutDialog> {
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 icon: const Icon(Icons.open_in_new, color: Colors.white),
-                label: const Text('Ir para Checkout Stripe agora 💳', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                label: const Text('Ir para o Pagamento agora 💳', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF13A538), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
                 onPressed: () {
                   launchUrl(

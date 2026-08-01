@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:frontend_flutter/features/auth/providers/auth_provider.dart';
 import 'package:frontend_flutter/core/theme/theme_provider.dart';
 import 'package:frontend_flutter/core/api/server_ping_provider.dart';
 import 'package:frontend_flutter/core/api/secure_storage.dart';
+import 'package:frontend_flutter/core/utils/google_auth_web_helper.dart';
+
+final GoogleSignIn _googleSignIn = GoogleSignIn(
+  clientId: '60186836539-9ouq8mu9mn7ulcl0qjucioefc4gqthtt.apps.googleusercontent.com',
+  scopes: ['email', 'profile'],
+);
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -67,6 +76,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     // Hide keyboard
     FocusScope.of(context).unfocus();
 
+    bool success = false;
     if (_isLoginMode) {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
@@ -78,18 +88,94 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         await storage.clearRememberMeCredentials();
       }
 
-      await ref.read(authNotifierProvider.notifier).login(email, password);
+      success = await ref.read(authNotifierProvider.notifier).login(email, password);
     } else {
       if (_passwordController.text != _confirmPasswordController.text) {
         ref.read(authNotifierProvider.notifier).state =
             ref.read(authNotifierProvider.notifier).state.copyWith(error: 'As senhas não coincidem!');
         return;
       }
-      await ref.read(authNotifierProvider.notifier).register(
+      success = await ref.read(authNotifierProvider.notifier).register(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
         accountType: _selectedAccountType,
+      );
+    }
+
+    if (success && mounted) {
+      final role = ref.read(authNotifierProvider).accountType;
+      if (role == 'SUPPLIER') {
+        context.go('/supplier-dev');
+      } else {
+        context.go('/dashboard');
+      }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    try {
+      String? email;
+      String? name;
+      String? photoUrl;
+      String? idToken;
+
+      if (kIsWeb) {
+        final webUserData = await triggerGoogleSignInWeb();
+        if (webUserData == null) return;
+        email = webUserData['email']?.toString();
+        name = webUserData['name']?.toString();
+        photoUrl = webUserData['picture']?.toString();
+        idToken = webUserData['idToken']?.toString();
+      } else {
+        final account = await _googleSignIn.signIn();
+        if (account == null) return;
+        final authentication = await account.authentication;
+        email = account.email;
+        name = account.displayName;
+        photoUrl = account.photoUrl;
+        idToken = authentication.idToken;
+      }
+
+      if (email == null || email.trim().isEmpty) return;
+
+      final authResult = await ref.read(authNotifierProvider.notifier).loginWithGoogle(
+        email: email,
+        name: name ?? 'Usuário Google',
+        photoUrl: photoUrl,
+        idToken: idToken,
+        accountType: _selectedAccountType,
+      );
+
+      if (authResult != null && mounted) {
+        final isNewUser = authResult['isNewUser'] == true;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isNewUser
+                  ? '🎉 Cadastro via Google realizado com sucesso! Bem-vindo(a), $email!'
+                  : 'Bem-vindo(a) de volta via Google: $email!',
+            ),
+            backgroundColor: const Color(0xFF13A538),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+
+        final role = ref.read(authNotifierProvider).accountType;
+        if (role == 'SUPPLIER') {
+          context.go('/supplier-dev');
+        } else {
+          context.go('/dashboard');
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro na autenticação do Google: ${e.toString().replaceAll("Exception: ", "")}'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -582,14 +668,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 24),
                     OutlinedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('A autenticação com o Google está em fase de implementação!'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      },
+                      onPressed: authState.isLoading ? null : _handleGoogleSignIn,
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         side: BorderSide(

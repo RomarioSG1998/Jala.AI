@@ -549,7 +549,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
               const SizedBox(height: 24),
               const Divider(),
               const SizedBox(height: 16),
-              const Text('Comprar com Pagamento em Custódia (Stripe)',
+              const Text('Comprar com Pagamento Seguro em Custódia',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               Row(children: [
@@ -1701,7 +1701,7 @@ class _EscrowCheckoutDialogState extends ConsumerState<_EscrowCheckoutDialog> {
               ] else if (_isLoading) ...[
                 const Center(child: CircularProgressIndicator(color: Color(0xFF13A538))),
                 const SizedBox(height: 16),
-                const Center(child: Text('Gerando pedido e chave Pix em custódia no Stripe...', textAlign: TextAlign.center)),
+                const Center(child: Text('Gerando pedido e chave Pix em custódia...', textAlign: TextAlign.center)),
               ] else if (_error != null) ...[
                 const Center(child: Icon(Icons.error_outline, color: Colors.red, size: 40)),
                 const SizedBox(height: 12),

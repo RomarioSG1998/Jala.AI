@@ -95,6 +95,63 @@ public class AuthService {
                 .build();
     }
 
+    public AuthResponseDTO loginWithGoogle(com.aquasertao.api.modules.core.dtos.GoogleAuthRequestDTO request) {
+        String email = request.getEmail();
+        String name = request.getName();
+        String photoUrl = request.getPhotoUrl();
+
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("E-mail do Google não informado.");
+        }
+
+        final String finalEmail = email.toLowerCase().trim();
+        final String finalName = (name != null && !name.trim().isEmpty()) ? name.trim() : "Usuário Google";
+        final String requestedAccountType = "SUPPLIER".equalsIgnoreCase(request.getAccountType()) ? "SUPPLIER" : "CLIENT";
+
+        java.util.Optional<GlobalUser> existingUserOpt = repository.findByEmail(finalEmail);
+        boolean isNewUser = existingUserOpt.isEmpty();
+
+        GlobalUser user = existingUserOpt.orElseGet(() -> {
+            GlobalUser newUser = GlobalUser.builder()
+                    .name(finalName)
+                    .email(finalEmail)
+                    .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                    .accountType(requestedAccountType)
+                    .profileImage(photoUrl)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            GlobalUser saved = repository.save(newUser);
+
+            if ("CLIENT".equals(requestedAccountType)) {
+                UUID defaultFarmId = UUID.fromString("55555555-5555-5555-5555-555555555555");
+                UserFarmLink link = UserFarmLink.builder()
+                        .userId(saved.getId())
+                        .farmId(defaultFarmId)
+                        .accessRole("FARM_OWNER")
+                        .build();
+                userFarmLinkRepository.save(link);
+            }
+            return saved;
+        });
+
+        if ((user.getProfileImage() == null || user.getProfileImage().isBlank()) && photoUrl != null && !photoUrl.isBlank()) {
+            user.setProfileImage(photoUrl);
+            user = repository.save(user);
+        }
+
+        var jwtToken = jwtService.generateToken(user);
+
+        return AuthResponseDTO.builder()
+                .token(jwtToken)
+                .email(user.getEmail())
+                .name(user.getName())
+                .accountType(user.getAccountType())
+                .userId(user.getId())
+                .farmId(getUserFarmId(user.getId()))
+                .isNewUser(isNewUser)
+                .build();
+    }
+
      public ProfileImageDTO getProfileImage(UUID userId) {
          var user = repository.findById(userId)
                  .orElseThrow(() -> new IllegalArgumentException("User not found."));

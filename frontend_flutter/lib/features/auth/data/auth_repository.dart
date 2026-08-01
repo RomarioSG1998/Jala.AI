@@ -17,7 +17,6 @@ class AuthRepository {
         },
       );
       
-      // Returns { "token": "...", "email": "...", "accountType": "..." }
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       if (e.response != null) {
@@ -49,6 +48,33 @@ class AuthRepository {
         throw Exception(e.response?.data['message'] ?? 'Registration failed.');
       }
       throw Exception('Network error. Please try again later.');
+    }
+  }
+
+  Future<Map<String, dynamic>> loginWithGoogle({
+    required String email,
+    required String name,
+    String? photoUrl,
+    String? idToken,
+    String accountType = 'CLIENT',
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/api/auth/google',
+        data: {
+          'email': email,
+          'name': name,
+          'photoUrl': photoUrl,
+          'idToken': idToken,
+          'accountType': accountType,
+        },
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(e.response?.data['message'] ?? 'Falha ao autenticar com a Conta Google.');
+      }
+      throw Exception('Erro de conexão ao entrar com o Google.');
     }
   }
 

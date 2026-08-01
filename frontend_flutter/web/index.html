@@ -1,39 +1,88 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="/">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="AquaGestor - Gestão Aquícola Inteligente">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="frontend_flutter">
+  <meta name="apple-mobile-web-app-title" content="AquaGestor">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <!-- Google Sign-In Client ID -->
+  <meta name="google-signin-client_id" content="60186836539-9ouq8mu9mn7ulcl0qjucioefc4gqthtt.apps.googleusercontent.com">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    window.googleSignInSuccessCallback = null;
 
-  <title>frontend_flutter</title>
+    function handleCredentialResponse(response) {
+      if (response && response.credential) {
+        try {
+          const base64Url = response.credential.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+          const payload = JSON.parse(jsonPayload);
+          
+          if (window.googleSignInSuccessCallback) {
+            window.googleSignInSuccessCallback(JSON.stringify({
+              idToken: response.credential,
+              email: payload.email,
+              name: payload.name,
+              picture: payload.picture
+            }));
+          }
+        } catch (e) {
+          console.error("Error decoding Google credential:", e);
+        }
+      }
+    }
+
+    function triggerGoogleSignInWeb(callback) {
+      window.googleSignInSuccessCallback = callback;
+      if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+        triggerGoogleOAuth2Popup();
+      } else {
+        alert("O serviço de login do Google está sendo carregado. Tente novamente em 2 segundos.");
+      }
+    }
+
+    function triggerGoogleOAuth2Popup() {
+      if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+        const tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: '60186836539-9ouq8mu9mn7ulcl0qjucioefc4gqthtt.apps.googleusercontent.com',
+          scope: 'email profile',
+          callback: (tokenResponse) => {
+            if (tokenResponse && tokenResponse.access_token) {
+              fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+              }).then(res => res.json()).then(userInfo => {
+                if (window.googleSignInSuccessCallback) {
+                  window.googleSignInSuccessCallback(JSON.stringify({
+                    idToken: tokenResponse.access_token,
+                    email: userInfo.email,
+                    name: userInfo.name,
+                    picture: userInfo.picture
+                  }));
+                }
+              });
+            }
+          }
+        });
+        tokenClient.requestAccessToken();
+      }
+    }
+  </script>
+
+  <title>AquaGestor</title>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
-
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

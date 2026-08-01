@@ -43,7 +43,7 @@ class PaymentCancelScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'O processo de pagamento no Stripe foi cancelado. Nenhuma cobrança foi efetuada na sua conta.',
+                  'O processo de pagamento foi cancelado. Nenhuma cobrança foi efetuada na sua conta.',
                   style: TextStyle(
                     fontSize: 15,
                     color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,

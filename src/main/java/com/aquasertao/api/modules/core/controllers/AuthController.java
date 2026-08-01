@@ -31,6 +31,13 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponseDTO> loginWithGoogle(
+            @RequestBody com.aquasertao.api.modules.core.dtos.GoogleAuthRequestDTO request
+    ) {
+        return ResponseEntity.ok(authService.loginWithGoogle(request));
+    }
+
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("OK");

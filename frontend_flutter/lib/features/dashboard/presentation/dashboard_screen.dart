@@ -506,7 +506,7 @@ class SaasAdminBody extends ConsumerWidget {
                     ElevatedButton.icon(
                       onPressed: () => context.go('/plans'),
                       icon: const Icon(Icons.tune_rounded, size: 16),
-                      label: const Text('Gerenciar & Sync Planos Stripe'),
+                      label: const Text('Gerenciar Planos'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF13A538),
                         foregroundColor: Colors.white,
@@ -532,33 +532,28 @@ class SaasAdminBody extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          // ── KPIs Section ──────────────────────────────────────────────────
-          tenantsAsync.when(
-            data: (tenants) => plansAsync.when(
-              data: (plans) {
-                final totalMrr = plans.fold<double>(0, (s, p) => s + p.priceMonthly);
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('VISÃO GERAL DO SAAS',
-                        style: TextStyle(
-                            color: isDark ? Colors.grey.shade400 : Colors.black54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      Expanded(child: _kpi(context, 'Clientes (Tenants)', '${tenants.length}', Icons.business, Colors.blue)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _kpi(context, 'Planos Criados', '${plans.length}', Icons.layers, Colors.purple)),
-                    ]),
-                    const SizedBox(height: 12),
-                    _kpi(context, 'Receita Recorrente Est. (MRR)', currencyFmt.format(totalMrr), Icons.trending_up, Colors.green, wide: true),
-                  ],
-                );
-              },
-              loading: () => const CircularProgressIndicator(),
-              error: (e, _) => Text('$e', style: const TextStyle(color: Colors.red)),
-            ),
+          // ── KPIs Section (Real Stripe Data) ────────────────────────────────
+          ref.watch(masterOverviewProvider).when(
+            data: (overview) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('VISÃO GERAL DO SAAS (STRIPE)',
+                      style: TextStyle(
+                          color: isDark ? Colors.grey.shade400 : Colors.black54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    Expanded(child: _kpi(context, 'Clientes (Tenants)', '${overview.totalFarms}', Icons.business, Colors.blue)),
+                    const SizedBox(width: 12),
+                    Expanded(child: _kpi(context, 'Assinaturas Ativas', '${overview.upToDateTenantsCount}', Icons.check_circle, Colors.green)),
+                  ]),
+                  const SizedBox(height: 12),
+                  _kpi(context, 'Receita Recorrente Mensal (MRR Real)', currencyFmt.format(overview.estimatedMRR), Icons.trending_up, const Color(0xFF13A538), wide: true),
+                ],
+              );
+            },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text('$e', style: const TextStyle(color: Colors.red)),
+            error: (e, _) => Text('Erro ao carregar MRR: $e', style: const TextStyle(color: Colors.red)),
           ),
 
           const SizedBox(height: 28),
@@ -567,7 +562,7 @@ class SaasAdminBody extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Planos do SaaS (Sincronizados Stripe)',
+              Text('Planos do SaaS',
                   style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
               IconButton(
                 icon: const Icon(Icons.arrow_forward, size: 20),
@@ -678,7 +673,7 @@ class SaasAdminBody extends ConsumerWidget {
         const SizedBox(width: 8),
         IconButton(
           icon: const Icon(Icons.edit, size: 18),
-          tooltip: 'Editar Plano no Stripe',
+          tooltip: 'Editar Plano',
           onPressed: () => GoRouter.of(context).go('/plans'),
         ),
       ]),

@@ -985,6 +985,19 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 }
 
+ImageProvider? _getProfileImageProvider(String? profileImage) {
+  if (profileImage == null || profileImage.trim().isEmpty) return null;
+  final img = profileImage.trim();
+  if (img.startsWith('http://') || img.startsWith('https://')) {
+    return NetworkImage(img);
+  }
+  try {
+    return MemoryImage(base64Decode(img));
+  } catch (_) {
+    return null;
+  }
+}
+
 class AppDrawer extends ConsumerWidget {
   final String role;
   const AppDrawer({super.key, required this.role});
@@ -1015,10 +1028,8 @@ class AppDrawer extends ConsumerWidget {
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: Colors.white12,
-                  backgroundImage: profileImage != null
-                      ? MemoryImage(base64Decode(profileImage))
-                      : null,
-                  child: profileImage == null
+                  backgroundImage: _getProfileImageProvider(profileImage),
+                  child: _getProfileImageProvider(profileImage) == null
                       ? const Icon(Icons.person, color: Colors.white, size: 26)
                       : null,
                 ),

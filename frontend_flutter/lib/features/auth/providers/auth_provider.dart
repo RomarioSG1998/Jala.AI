@@ -52,7 +52,6 @@ class AuthNotifier extends Notifier<AuthState> {
   AuthState build() {
     _repository = ref.watch(authRepositoryProvider);
     _tokenStorage = ref.watch(tokenStorageProvider);
-    // Check auth state in background — router starts at /login immediately
     _checkInitialAuth();
     return AuthState();
   }
@@ -63,12 +62,10 @@ class AuthNotifier extends Notifier<AuthState> {
       final email = await _tokenStorage.getEmail();
       final userId = await _tokenStorage.getUserId();
       final name = await _tokenStorage.getName();
-      // Prefer accountType from JWT payload (authoritative), fall back to stored value
       String? accountType = _extractAccountTypeFromToken(token);
       accountType ??= await _tokenStorage.getAccountType();
 
       if (token != null && !_isTokenExpired(token)) {
-        // Sync storage with JWT value if needed
         if (accountType != null) {
           await _tokenStorage.saveUserDetails(email ?? '', accountType, userId: userId, name: name);
         }
@@ -83,15 +80,13 @@ class AuthNotifier extends Notifier<AuthState> {
         return;
       }
 
-      // Clear stale/invalid session data to avoid "logged-in but unauthorized" requests.
       if (token != null) {
         await _tokenStorage.clearAll();
       }
     } catch (e) {
-      // Storage unavailable (e.g. browser blocks IndexedDB in incognito) — treat as logged out.
+      // Storage unavailable
     }
 
-    // Auth check complete — not authenticated
     state = AuthState(isLoading: false, isAuthenticated: false);
   }
 
@@ -139,7 +134,6 @@ class AuthNotifier extends Notifier<AuthState> {
       final resAccountType = response['accountType'];
 
       if (token != null) {
-        // Always clear any stale session before writing new credentials
         await _tokenStorage.clearAll();
         await _tokenStorage.saveToken(token);
         await _tokenStorage.saveUserDetails(
@@ -220,6 +214,59 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  Future<Map<String, dynamic>?> loginWithGoogle({
+    required String email,
+    required String name,
+    String? photoUrl,
+    String? idToken,
+    String accountType = 'CLIENT',
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final response = await _repository.loginWithGoogle(
+        email: email,
+        name: name,
+        photoUrl: photoUrl,
+        idToken: idToken,
+        accountType: accountType,
+      );
+
+      final token = response['token'];
+      final resEmail = response['email'];
+      final resName = response['name'];
+      final resAccountType = response['accountType'];
+
+      if (token != null) {
+        await _tokenStorage.clearAll();
+        await _tokenStorage.saveToken(token);
+        await _tokenStorage.saveUserDetails(
+          resEmail ?? email,
+          resAccountType ?? accountType,
+          userId: response['userId']?.toString(),
+          name: resName ?? name,
+          farmId: response['farmId']?.toString(),
+        );
+
+        state = state.copyWith(
+          isLoading: false,
+          isAuthenticated: true,
+          email: resEmail ?? email,
+          name: resName ?? name,
+          accountType: resAccountType ?? accountType,
+          userId: response['userId']?.toString(),
+        );
+        return response;
+      } else {
+        state = state.copyWith(isLoading: false, error: 'Resposta inválida do servidor ao autenticar com Google.');
+        return null;
+      }
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
+      return null;
+    }
+  }
+
   Future<bool> updateProfile({
     required String name,
     required String email,
@@ -276,7 +323,6 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> logout() async {
     await _tokenStorage.clearAll();
-    // Reset state entirely
     state = AuthState();
   }
 

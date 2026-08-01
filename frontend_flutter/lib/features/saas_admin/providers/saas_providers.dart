@@ -50,6 +50,14 @@ final tenantsProvider =
     AsyncNotifierProvider<TenantsNotifier, List<FarmTenant>>(
         () => TenantsNotifier());
 
+final masterOverviewProvider = FutureProvider<SaasMasterOverview>((ref) async {
+  return ref.watch(saasAdminRepositoryProvider).getMasterOverview();
+});
+
+final tenantsFinancialReportProvider = FutureProvider<List<TenantFinancialStatus>>((ref) async {
+  return ref.watch(saasAdminRepositoryProvider).getTenantsFinancialReport();
+});
+
 final activeSubscriptionDetailsProvider = FutureProvider<SubscriptionDetails>((ref) async {
   final dio = ref.watch(dioProvider);
   final tokenStorage = ref.watch(tokenStorageProvider);

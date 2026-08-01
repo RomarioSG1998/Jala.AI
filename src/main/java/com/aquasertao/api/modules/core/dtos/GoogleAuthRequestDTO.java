@@ -5,18 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthResponseDTO {
-    private String token;
+public class GoogleAuthRequestDTO {
+    private String idToken;
     private String email;
     private String name;
+    private String photoUrl;
     private String accountType;
-    private UUID userId;
-    private UUID farmId;
-    private boolean isNewUser;
 }
