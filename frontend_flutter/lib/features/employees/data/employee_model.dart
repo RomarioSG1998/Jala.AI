@@ -3,12 +3,14 @@ class Employee {
   final String name;
   final String email;
   final String accountType;
+  final String? farmId;
 
   Employee({
     required this.id,
     required this.name,
     required this.email,
     required this.accountType,
+    this.farmId,
   });
 
   factory Employee.fromJson(Map<String, dynamic> json) {
@@ -17,6 +19,7 @@ class Employee {
       name: json['name'] as String,
       email: json['email'] as String,
       accountType: json['accountType'] as String,
+      farmId: json['farmId'] as String?,
     );
   }
 
@@ -26,6 +29,7 @@ class Employee {
       'name': name,
       'email': email,
       'accountType': accountType,
+      if (farmId != null) 'farmId': farmId,
     };
   }
 }
