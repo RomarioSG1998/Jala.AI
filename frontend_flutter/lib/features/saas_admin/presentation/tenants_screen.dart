@@ -274,6 +274,7 @@ class _AddTenantFormState extends ConsumerState<_AddTenantForm> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

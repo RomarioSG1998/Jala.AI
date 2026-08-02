@@ -513,10 +513,10 @@ class _PlanFormState extends ConsumerState<_PlanForm> {
             child: _loading
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                 : Text(isEdit ? 'Salvar Alterações' : 'Criar Plano', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-          ),
         ]),
       ),
-    );
+    ),
+  );
   }
 
   Widget _field(

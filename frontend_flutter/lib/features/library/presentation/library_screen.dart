@@ -690,6 +690,7 @@ class _CheckoutModalState extends ConsumerState<_CheckoutModal> {
                   ),
                 ],
               ),
+        ),
       ),
     );
   }

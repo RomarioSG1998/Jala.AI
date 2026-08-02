@@ -341,6 +341,7 @@ class _AddSupplierFormState extends ConsumerState<_AddSupplierForm> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

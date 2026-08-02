@@ -1132,6 +1132,7 @@ class _EditTransactionFormState extends ConsumerState<_EditTransactionForm> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

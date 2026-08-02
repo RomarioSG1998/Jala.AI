@@ -265,7 +265,8 @@ class EmployeePermissionsSheet extends ConsumerWidget {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -536,6 +537,7 @@ class _AddEmployeeFormState extends ConsumerState<AddEmployeeForm> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

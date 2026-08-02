@@ -388,7 +388,8 @@ class _LogHarvestFormState extends ConsumerState<LogHarvestForm> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -536,6 +537,7 @@ class _EditHarvestFormState extends ConsumerState<EditHarvestForm> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }

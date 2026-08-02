@@ -437,7 +437,8 @@ class _AddMaintenanceTaskFormState
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
@@ -592,6 +593,7 @@ class _EditMaintenanceTaskFormState
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
