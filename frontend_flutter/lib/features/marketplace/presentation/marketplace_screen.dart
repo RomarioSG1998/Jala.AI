@@ -1024,7 +1024,9 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
           children: [
             Icon(Icons.check_circle_rounded, color: Color(0xFF13A538), size: 28),
             SizedBox(width: 8),
-            Text('Confirmar Entrega', style: TextStyle(fontWeight: FontWeight.bold)),
+            Expanded(
+              child: Text('Confirmar Entrega', style: TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+            ),
           ],
         ),
         content: Text(
@@ -1106,12 +1108,17 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
             children: [
               const Icon(Icons.storefront, color: Color(0xFF003366)),
               const SizedBox(width: 10),
-              Text(profile != null ? 'Editar Perfil do Fornecedor' : 'Credenciamento de Fornecedor'),
+              Expanded(
+                child: Text(
+                  profile != null ? 'Editar Perfil do Fornecedor' : 'Credenciamento de Fornecedor',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
           content: SingleChildScrollView(
-            child: SizedBox(
-              width: 460,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 460),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1299,12 +1306,14 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
             children: [
               Icon(Icons.add_shopping_cart, color: Color(0xFF13A538)),
               SizedBox(width: 10),
-              Text('Novo Anúncio Profissional'),
+              Expanded(
+                child: Text('Novo Anúncio Profissional', overflow: TextOverflow.ellipsis),
+              ),
             ],
           ),
           content: SingleChildScrollView(
-            child: SizedBox(
-              width: 480,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 480),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 DropdownButtonFormField<String>(
                   value: selectedCategory,
@@ -1555,12 +1564,17 @@ class _EscrowCheckoutDialogState extends ConsumerState<_EscrowCheckoutDialog> {
         children: [
           const Icon(Icons.security_rounded, color: Color(0xFF13A538)),
           const SizedBox(width: 10),
-          Text(_step == 1 ? 'Endereço & Quantidade' : 'Pagamento em Custódia'),
+          Expanded(
+            child: Text(
+              _step == 1 ? 'Endereço & Quantidade' : 'Pagamento em Custódia',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
       content: SingleChildScrollView(
-        child: SizedBox(
-          width: 440,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 440),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,

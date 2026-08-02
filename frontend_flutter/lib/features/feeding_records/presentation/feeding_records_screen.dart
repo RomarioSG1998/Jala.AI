@@ -307,6 +307,9 @@ class _AddFeedingRecordFormState extends ConsumerState<_AddFeedingRecordForm> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
       ),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       padding: EdgeInsets.only(
         left: 24,
         right: 24,
@@ -323,9 +326,12 @@ class _AddFeedingRecordFormState extends ConsumerState<_AddFeedingRecordForm> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Registrar Trato / Alimentação',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _kNavyBlue),
+                  const Expanded(
+                    child: Text(
+                      'Registrar Trato / Alimentação',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _kNavyBlue),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),

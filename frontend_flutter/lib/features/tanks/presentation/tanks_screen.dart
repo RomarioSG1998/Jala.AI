@@ -552,7 +552,9 @@ class _AddTankFormState extends ConsumerState<AddTankForm> {
               children: [
                 Icon(Icons.workspace_premium, color: Colors.amber, size: 28),
                 SizedBox(width: 8),
-                Text('Limite do Plano Atingido', style: TextStyle(fontWeight: FontWeight.bold)),
+                Expanded(
+                  child: Text('Limite do Plano Atingido', style: TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                ),
               ],
             ),
             content: Text(

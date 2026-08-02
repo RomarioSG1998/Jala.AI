@@ -219,9 +219,13 @@ class _AddTenantFormState extends ConsumerState<_AddTenantForm> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Container(
-        padding: const EdgeInsets.all(24),
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      child: SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(

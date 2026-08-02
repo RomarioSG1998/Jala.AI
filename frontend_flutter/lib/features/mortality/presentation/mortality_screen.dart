@@ -482,6 +482,9 @@ class _AddMortalityRecordFormState extends ConsumerState<_AddMortalityRecordForm
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -498,12 +501,15 @@ class _AddMortalityRecordFormState extends ConsumerState<_AddMortalityRecordForm
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Registrar Mortalidade',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : _kNavyBlue,
+                  Expanded(
+                    child: Text(
+                      'Registrar Mortalidade',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : _kNavyBlue,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   IconButton(
@@ -788,6 +794,9 @@ class _EditMortalityRecordFormState extends ConsumerState<_EditMortalityRecordFo
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -804,12 +813,15 @@ class _EditMortalityRecordFormState extends ConsumerState<_EditMortalityRecordFo
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Editar Registro de Mortalidade',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : _kNavyBlue,
+                  Expanded(
+                    child: Text(
+                      'Editar Registro de Mortalidade',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : _kNavyBlue,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   IconButton(

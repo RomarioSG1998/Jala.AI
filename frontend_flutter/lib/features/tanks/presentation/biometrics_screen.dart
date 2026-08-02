@@ -568,6 +568,9 @@ class _AddBiometricsFormState extends ConsumerState<_AddBiometricsForm> {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -584,12 +587,15 @@ class _AddBiometricsFormState extends ConsumerState<_AddBiometricsForm> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Registrar Peso Médio',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : _kNavyBlue,
+                  Expanded(
+                    child: Text(
+                      'Registrar Peso Médio',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : _kNavyBlue,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   IconButton(

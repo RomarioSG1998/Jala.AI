@@ -1021,6 +1021,9 @@ class ProfileScreen extends ConsumerWidget {
                 bottom: MediaQuery.of(context).viewInsets.bottom,
               ),
               child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.85,
+                ),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),

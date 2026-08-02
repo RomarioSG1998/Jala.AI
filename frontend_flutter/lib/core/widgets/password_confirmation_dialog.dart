@@ -89,44 +89,48 @@ class _PasswordConfirmationDialogState extends State<PasswordConfirmationDialog>
         children: [
           Icon(Icons.lock_outline, color: Colors.red),
           SizedBox(width: 8),
-          Text('Confirmar Exclusão'),
+          Expanded(
+            child: Text('Confirmar Exclusão', overflow: TextOverflow.ellipsis),
+          ),
         ],
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Por motivos de segurança, confirme sua senha de acesso para autorizar a exclusão.',
-            style: TextStyle(
-              fontSize: 13,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.grey.shade300
-                  : Colors.black54,
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _passwordController,
-            obscureText: _obscureText,
-            decoration: InputDecoration(
-              labelText: 'Sua Senha',
-              errorText: _errorMessage,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              prefixIcon: const Icon(Icons.password),
-              suffixIcon: IconButton(
-                icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
-                onPressed: () => setState(() => _obscureText = !_obscureText),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Por motivos de segurança, confirme sua senha de acesso para autorizar a exclusão.',
+              style: TextStyle(
+                fontSize: 13,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey.shade300
+                    : Colors.black54,
               ),
             ),
-            onSubmitted: (_) => _confirm,
-          ),
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.only(top: 12),
-              child: Center(child: CircularProgressIndicator()),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _passwordController,
+              obscureText: _obscureText,
+              decoration: InputDecoration(
+                labelText: 'Sua Senha',
+                errorText: _errorMessage,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.password),
+                suffixIcon: IconButton(
+                  icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
+                  onPressed: () => setState(() => _obscureText = !_obscureText),
+                ),
+              ),
+              onSubmitted: (_) => _confirm,
             ),
-        ],
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.only(top: 12),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+          ],
+        ),
       ),
       actions: [
         TextButton(

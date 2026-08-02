@@ -593,46 +593,52 @@ class _CheckoutModalState extends ConsumerState<_CheckoutModal> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        height: 520,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E293B) : Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
-        child: _loading
-            ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(color: Color(0xFF003366)),
-                    SizedBox(height: 16),
-                    Text('Processando pagamento...', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: SingleChildScrollView(
+          child: _loading
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Detalhes da Compra',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                      ),
+                      CircularProgressIndicator(color: Color(0xFF003366)),
+                      SizedBox(height: 16),
+                      Text('Processando pagamento...', style: TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  const Divider(),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      backgroundColor: widget.product.color.withOpacity(0.15),
-                      child: Icon(widget.product.icon, color: widget.product.color),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Detalhes da Compra',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
                     ),
+                    const Divider(),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        backgroundColor: widget.product.color.withOpacity(0.15),
+                        child: Icon(widget.product.icon, color: widget.product.color),
+                      ),
                     title: Text(widget.product.title, style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text('Acesso vitalício ao conteúdo'),
                     trailing: Text(
@@ -669,9 +675,7 @@ class _CheckoutModalState extends ConsumerState<_CheckoutModal> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Expanded(
-                    child: _paymentMethod == 0 ? _buildPixPayment() : _buildCardPayment(),
-                  ),
+                  _paymentMethod == 0 ? _buildPixPayment() : _buildCardPayment(),
                   ElevatedButton(
                     onPressed: _processPayment,
                     style: ElevatedButton.styleFrom(
