@@ -1,16 +1,26 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
+import 'package:frontend_flutter/core/api/secure_storage.dart';
 import 'package:frontend_flutter/features/feeding_records/data/feeding_record_model.dart';
 
 class FeedingRecordRepository {
   final Dio _dio;
+  final TokenStorage _tokenStorage;
 
-  FeedingRecordRepository(this._dio);
+  FeedingRecordRepository(this._dio, this._tokenStorage);
 
-  // Hardcoded test IDs matching database seeding
-  final String _farmId = '55555555-5555-5555-5555-555555555555';
-  final String _userId = '11111111-1111-1111-1111-111111111111';
+  Future<String> _getFarmId() async {
+    final farmId = await _tokenStorage.getFarmId();
+    if (farmId == null || farmId.isEmpty) {
+      return '55555555-5555-5555-5555-555555555555';
+    }
+    return farmId;
+  }
+
+  Future<String?> _getUserId() async {
+    return await _tokenStorage.getUserId();
+  }
 
   List<dynamic> _extractCollection(dynamic data) {
     if (data is Map<String, dynamic> && data['content'] is List) {
@@ -24,7 +34,8 @@ class FeedingRecordRepository {
 
   Future<List<FeedingRecord>> getRecords() async {
     try {
-      final response = await _dio.get('/api/feeding-records/farm/$_farmId');
+      final farmId = await _getFarmId();
+      final response = await _dio.get('/api/feeding-records/farm/$farmId');
       final rawItems = _extractCollection(response.data);
       return rawItems
           .whereType<Map<String, dynamic>>()
@@ -39,8 +50,10 @@ class FeedingRecordRepository {
 
   Future<FeedingRecord> createRecord(Map<String, dynamic> data) async {
     try {
-      data['farmId'] = _farmId;
-      data['userId'] ??= _userId;
+      final farmId = await _getFarmId();
+      final userId = await _getUserId();
+      data['farmId'] = farmId;
+      data['userId'] ??= userId;
       final response = await _dio.post('/api/feeding-records', data: data);
       return FeedingRecord.fromJson(response.data);
     } on DioException catch (e) {
@@ -52,8 +65,10 @@ class FeedingRecordRepository {
 
   Future<FeedingRecord> updateRecord(String id, Map<String, dynamic> data) async {
     try {
-      data['farmId'] = _farmId;
-      data['userId'] ??= _userId;
+      final farmId = await _getFarmId();
+      final userId = await _getUserId();
+      data['farmId'] = farmId;
+      data['userId'] ??= userId;
       final response = await _dio.put('/api/feeding-records/$id', data: data);
       return FeedingRecord.fromJson(response.data);
     } on DioException catch (e) {
@@ -65,7 +80,8 @@ class FeedingRecordRepository {
 
   Future<void> deleteRecord(String id) async {
     try {
-      await _dio.delete('/api/feeding-records/$id?farmId=$_farmId');
+      final farmId = await _getFarmId();
+      await _dio.delete('/api/feeding-records/$id?farmId=$farmId');
     } on DioException catch (e) {
       throw Exception(e.response?.data?['message'] ?? 'Failed to delete feeding record');
     } catch (e) {
@@ -76,5 +92,6 @@ class FeedingRecordRepository {
 
 final feedingRecordRepositoryProvider = Provider<FeedingRecordRepository>((ref) {
   final dio = ref.watch(dioProvider);
-  return FeedingRecordRepository(dio);
+  final tokenStorage = ref.watch(tokenStorageProvider);
+  return FeedingRecordRepository(dio, tokenStorage);
 });

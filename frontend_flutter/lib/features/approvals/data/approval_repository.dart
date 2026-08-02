@@ -1,15 +1,22 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
+import 'package:frontend_flutter/core/api/secure_storage.dart';
 import 'package:frontend_flutter/features/approvals/data/approval_model.dart';
 
 class ApprovalRepository {
   final Dio _dio;
+  final TokenStorage _tokenStorage;
 
-  ApprovalRepository(this._dio);
+  ApprovalRepository(this._dio, this._tokenStorage);
 
-  // Consistent with the rest of the application's mock farm ID
-  final String _farmId = '55555555-5555-5555-5555-555555555555';
+  Future<String> _getFarmId() async {
+    final farmId = await _tokenStorage.getFarmId();
+    if (farmId == null || farmId.isEmpty) {
+      return '55555555-5555-5555-5555-555555555555';
+    }
+    return farmId;
+  }
 
   List<dynamic> _extractCollection(dynamic data) {
     if (data is Map<String, dynamic> && data['content'] is List) {
@@ -23,7 +30,8 @@ class ApprovalRepository {
 
   Future<List<ApprovalRequestModel>> getApprovalRequests() async {
     try {
-      final response = await _dio.get('/api/approvals/farm/$_farmId');
+      final farmId = await _getFarmId();
+      final response = await _dio.get('/api/approvals/farm/$farmId');
       final rawItems = _extractCollection(response.data);
       return rawItems
           .whereType<Map<String, dynamic>>()
@@ -53,5 +61,6 @@ class ApprovalRepository {
 
 final approvalRepositoryProvider = Provider<ApprovalRepository>((ref) {
   final dio = ref.watch(dioProvider);
-  return ApprovalRepository(dio);
+  final tokenStorage = ref.watch(tokenStorageProvider);
+  return ApprovalRepository(dio, tokenStorage);
 });

@@ -1,14 +1,22 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
+import 'package:frontend_flutter/core/api/secure_storage.dart';
 import 'package:frontend_flutter/features/harvests/data/harvest_model.dart';
 
 class HarvestRepository {
   final Dio _dio;
+  final TokenStorage _tokenStorage;
 
-  HarvestRepository(this._dio);
+  HarvestRepository(this._dio, this._tokenStorage);
 
-  final String _farmId = '55555555-5555-5555-5555-555555555555';
+  Future<String> _getFarmId() async {
+    final farmId = await _tokenStorage.getFarmId();
+    if (farmId == null || farmId.isEmpty) {
+      return '55555555-5555-5555-5555-555555555555';
+    }
+    return farmId;
+  }
 
   List<dynamic> _extractCollection(dynamic data) {
     if (data is Map<String, dynamic> && data['content'] is List) {
@@ -22,7 +30,8 @@ class HarvestRepository {
 
   Future<List<Harvest>> getHarvests() async {
     try {
-      final response = await _dio.get('/api/harvests/farm/$_farmId');
+      final farmId = await _getFarmId();
+      final response = await _dio.get('/api/harvests/farm/$farmId');
       final rawItems = _extractCollection(response.data);
       return rawItems
           .whereType<Map<String, dynamic>>()
@@ -37,7 +46,8 @@ class HarvestRepository {
 
   Future<Harvest> logHarvest(Map<String, dynamic> data) async {
     try {
-      data['farmId'] = _farmId;
+      final farmId = await _getFarmId();
+      data['farmId'] = farmId;
       final response = await _dio.post('/api/harvests', data: data);
       return Harvest.fromJson(response.data);
     } catch (e) {
@@ -47,7 +57,8 @@ class HarvestRepository {
 
   Future<Harvest> updateHarvest(String id, Map<String, dynamic> data) async {
     try {
-      data['farmId'] = _farmId;
+      final farmId = await _getFarmId();
+      data['farmId'] = farmId;
       final response = await _dio.put('/api/harvests/$id', data: data);
       return Harvest.fromJson(response.data);
     } catch (e) {
@@ -57,7 +68,8 @@ class HarvestRepository {
 
   Future<void> deleteHarvest(String harvestId) async {
     try {
-      await _dio.delete('/api/harvests/$harvestId?farmId=$_farmId');
+      final farmId = await _getFarmId();
+      await _dio.delete('/api/harvests/$harvestId?farmId=$farmId');
     } catch (e) {
       throw Exception('Failed to delete harvest: $e');
     }
@@ -66,5 +78,6 @@ class HarvestRepository {
 
 final harvestRepositoryProvider = Provider<HarvestRepository>((ref) {
   final dio = ref.watch(dioProvider);
-  return HarvestRepository(dio);
+  final tokenStorage = ref.watch(tokenStorageProvider);
+  return HarvestRepository(dio, tokenStorage);
 });

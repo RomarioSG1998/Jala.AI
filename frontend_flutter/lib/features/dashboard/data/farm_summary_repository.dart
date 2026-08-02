@@ -1,17 +1,26 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
+import 'package:frontend_flutter/core/api/secure_storage.dart';
 import 'package:frontend_flutter/features/dashboard/data/farm_summary_model.dart';
 
 class FarmSummaryRepository {
   final Dio _dio;
+  final TokenStorage _tokenStorage;
 
-  FarmSummaryRepository(this._dio);
+  FarmSummaryRepository(this._dio, this._tokenStorage);
 
-  final String _farmId = '55555555-5555-5555-5555-555555555555';
+  Future<String> _getFarmId() async {
+    final farmId = await _tokenStorage.getFarmId();
+    if (farmId == null || farmId.isEmpty) {
+      return '55555555-5555-5555-5555-555555555555';
+    }
+    return farmId;
+  }
 
   Future<FarmSummary> getSummary() async {
-    return getSummaryForFarm(_farmId);
+    final farmId = await _getFarmId();
+    return getSummaryForFarm(farmId);
   }
 
   Future<FarmSummary> getSummaryForFarm(String farmId) async {
@@ -26,5 +35,6 @@ class FarmSummaryRepository {
 
 final farmSummaryRepositoryProvider = Provider<FarmSummaryRepository>((ref) {
   final dio = ref.watch(dioProvider);
-  return FarmSummaryRepository(dio);
+  final tokenStorage = ref.watch(tokenStorageProvider);
+  return FarmSummaryRepository(dio, tokenStorage);
 });

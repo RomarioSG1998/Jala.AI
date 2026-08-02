@@ -48,16 +48,16 @@ public class AuthService {
         GlobalUser savedUser = repository.save(user);
 
         UUID farmId = null;
-        // Link user to default farm tenant only if accountType is CLIENT
+        // Create unique isolated farm tenant for CLIENT user
         if ("CLIENT".equals(accountType)) {
-            UUID defaultFarmId = UUID.fromString("55555555-5555-5555-5555-555555555555");
+            UUID userFarmId = UUID.randomUUID();
             UserFarmLink link = UserFarmLink.builder()
                     .userId(savedUser.getId())
-                    .farmId(defaultFarmId)
+                    .farmId(userFarmId)
                     .accessRole("FARM_OWNER")
                     .build();
             userFarmLinkRepository.save(link);
-            farmId = defaultFarmId;
+            farmId = userFarmId;
         }
 
         var jwtToken = jwtService.generateToken(savedUser);
@@ -123,10 +123,10 @@ public class AuthService {
             GlobalUser saved = repository.save(newUser);
 
             if ("CLIENT".equals(requestedAccountType)) {
-                UUID defaultFarmId = UUID.fromString("55555555-5555-5555-5555-555555555555");
+                UUID userFarmId = UUID.randomUUID();
                 UserFarmLink link = UserFarmLink.builder()
                         .userId(saved.getId())
-                        .farmId(defaultFarmId)
+                        .farmId(userFarmId)
                         .accessRole("FARM_OWNER")
                         .build();
                 userFarmLinkRepository.save(link);
@@ -203,6 +203,15 @@ public class AuthService {
          return userFarmLinkRepository.findByUserId(userId).stream()
                  .map(UserFarmLink::getFarmId)
                  .findFirst()
-                 .orElse(null);
+                 .orElseGet(() -> {
+                     UUID newFarmId = UUID.randomUUID();
+                     UserFarmLink link = UserFarmLink.builder()
+                             .userId(userId)
+                             .farmId(newFarmId)
+                             .accessRole("FARM_OWNER")
+                             .build();
+                     userFarmLinkRepository.save(link);
+                     return newFarmId;
+                 });
      }
 }

@@ -1,15 +1,22 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
+import 'package:frontend_flutter/core/api/secure_storage.dart';
 import 'package:frontend_flutter/features/water_quality/data/water_quality_model.dart';
 
 class WaterQualityRepository {
   final Dio _dio;
+  final TokenStorage _tokenStorage;
 
-  WaterQualityRepository(this._dio);
+  WaterQualityRepository(this._dio, this._tokenStorage);
 
-  // Hardcoded test farm ID for now.
-  final String _farmId = '55555555-5555-5555-5555-555555555555';
+  Future<String> _getFarmId() async {
+    final farmId = await _tokenStorage.getFarmId();
+    if (farmId == null || farmId.isEmpty) {
+      return '55555555-5555-5555-5555-555555555555';
+    }
+    return farmId;
+  }
 
   List<dynamic> _extractCollection(dynamic data) {
     if (data is Map<String, dynamic> && data['content'] is List) {
@@ -23,7 +30,8 @@ class WaterQualityRepository {
 
   Future<List<WaterQuality>> getRecords() async {
     try {
-      final response = await _dio.get('/api/water-quality/farm/$_farmId');
+      final farmId = await _getFarmId();
+      final response = await _dio.get('/api/water-quality/farm/$farmId');
       final rawItems = _extractCollection(response.data);
       return rawItems
           .whereType<Map<String, dynamic>>()
@@ -38,20 +46,21 @@ class WaterQualityRepository {
 
   Future<WaterQuality?> getLatestByTankId(String tankId) async {
     try {
-      final response = await _dio.get('/api/water-quality/tank/$tankId/latest?farmId=$_farmId');
+      final farmId = await _getFarmId();
+      final response = await _dio.get('/api/water-quality/tank/$tankId/latest?farmId=$farmId');
       if (response.data != null) {
         return WaterQuality.fromJson(response.data);
       }
       return null;
     } catch (e) {
-      // Return null if not found (e.g., 400/404/500 on no reading)
       return null;
     }
   }
 
   Future<WaterQuality> createRecord(Map<String, dynamic> logData) async {
     try {
-      logData['farmId'] = _farmId;
+      final farmId = await _getFarmId();
+      logData['farmId'] = farmId;
       final response = await _dio.post('/api/water-quality', data: logData);
       return WaterQuality.fromJson(response.data);
     } catch (e) {
@@ -72,10 +81,11 @@ class WaterQualityRepository {
     double? solids,
   }) async {
     try {
+      final farmId = await _getFarmId();
       final response = await _dio.put(
         '/api/water-quality/$id',
         data: {
-          'farmId': _farmId,
+          'farmId': farmId,
           'tankId': tankId,
           'ph': ph,
           'temperature': temperature,
@@ -97,7 +107,8 @@ class WaterQualityRepository {
 
   Future<void> deleteRecord(String logId) async {
     try {
-      await _dio.delete('/api/water-quality/$logId?farmId=$_farmId');
+      final farmId = await _getFarmId();
+      await _dio.delete('/api/water-quality/$logId?farmId=$farmId');
     } catch (e) {
       throw Exception('Failed to delete water quality record: $e');
     }
@@ -106,5 +117,6 @@ class WaterQualityRepository {
 
 final waterQualityRepositoryProvider = Provider<WaterQualityRepository>((ref) {
   final dio = ref.watch(dioProvider);
-  return WaterQualityRepository(dio);
+  final tokenStorage = ref.watch(tokenStorageProvider);
+  return WaterQualityRepository(dio, tokenStorage);
 });

@@ -9,6 +9,7 @@ import 'package:frontend_flutter/features/employees/data/employee_repository.dar
 import 'package:frontend_flutter/features/inventory/data/inventory_repository.dart';
 import 'package:frontend_flutter/features/finances/data/transaction_repository.dart';
 import 'package:frontend_flutter/features/suppliers/data/supplier_repository.dart';
+import 'package:frontend_flutter/core/api/secure_storage.dart';
 
 class MockDio implements Dio {
   final Future<Response<dynamic>> Function(String path, {dynamic data, Map<String, dynamic>? queryParameters}) onRequest;
@@ -41,6 +42,15 @@ class MockDio implements Dio {
   }
 }
 
+class FakeTokenStorage implements TokenStorage {
+  @override
+  Future<String?> getFarmId() async => '55555555-5555-5555-5555-555555555555';
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final fakeTokenStorage = FakeTokenStorage();
+
 void main() {
   group('TankRepository Tests', () {
     test('getTanks parses paginated content correctly', () async {
@@ -65,7 +75,7 @@ void main() {
         );
       });
 
-      final repo = TankRepository(dio);
+      final repo = TankRepository(dio, fakeTokenStorage);
       final list = await repo.getTanks();
       expect(list.length, 1);
       expect(list[0].id, 't1');
@@ -93,7 +103,7 @@ void main() {
         );
       });
 
-      final repo = TankRepository(dio);
+      final repo = TankRepository(dio, fakeTokenStorage);
       final tank = await repo.createTank({'name': 'New Tank'});
       expect(tank.id, 't2');
       expect(tank.name, 'New Tank');
@@ -120,7 +130,7 @@ void main() {
         );
       });
 
-      final repo = WaterQualityRepository(dio);
+      final repo = WaterQualityRepository(dio, fakeTokenStorage);
       final list = await repo.getRecords();
       expect(list.length, 1);
       expect(list[0].id, 'wq1');
@@ -150,7 +160,7 @@ void main() {
         );
       });
 
-      final repo = FeedingRecordRepository(dio);
+      final repo = FeedingRecordRepository(dio, fakeTokenStorage);
       final list = await repo.getRecords();
       expect(list.length, 1);
       expect(list[0].id, 'fr1');
@@ -179,7 +189,7 @@ void main() {
         );
       });
 
-      final repo = HarvestRepository(dio);
+      final repo = HarvestRepository(dio, fakeTokenStorage);
       final list = await repo.getHarvests();
       expect(list.length, 1);
       expect(list[0].id, 'h1');
@@ -206,7 +216,7 @@ void main() {
         );
       });
 
-      final repo = MaintenanceRepository(dio);
+      final repo = MaintenanceRepository(dio, fakeTokenStorage);
       final list = await repo.getTasks();
       expect(list.length, 1);
       expect(list[0].id, 'm1');
@@ -234,7 +244,7 @@ void main() {
         );
       });
 
-      final repo = MaintenanceRepository(dio);
+      final repo = MaintenanceRepository(dio, fakeTokenStorage);
       final task = await repo.updateTask('m1', {
         'tankId': 't1',
         'description': 'Clean filter',
@@ -265,7 +275,7 @@ void main() {
         );
       });
 
-      final repo = EmployeeRepository(dio);
+      final repo = EmployeeRepository(dio, fakeTokenStorage);
       final list = await repo.getEmployees();
       expect(list.length, 1);
       expect(list[0].id, 'e1');
@@ -294,7 +304,7 @@ void main() {
         );
       });
 
-      final repo = InventoryRepository(dio);
+      final repo = InventoryRepository(dio, fakeTokenStorage);
       final list = await repo.getItems();
       expect(list.length, 1);
       expect(list[0].id, 'i1');
@@ -320,7 +330,7 @@ void main() {
         );
       });
 
-      final repo = TransactionRepository(dio);
+      final repo = TransactionRepository(dio, fakeTokenStorage);
       final list = await repo.getTransactions();
       expect(list.length, 1);
       expect(list[0].id, 'tr1');

@@ -1,14 +1,22 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
+import 'package:frontend_flutter/core/api/secure_storage.dart';
 import 'package:frontend_flutter/features/finances/data/transaction_model.dart';
 
 class TransactionRepository {
   final Dio _dio;
+  final TokenStorage _tokenStorage;
 
-  TransactionRepository(this._dio);
+  TransactionRepository(this._dio, this._tokenStorage);
 
-  final String _farmId = '55555555-5555-5555-5555-555555555555';
+  Future<String> _getFarmId() async {
+    final farmId = await _tokenStorage.getFarmId();
+    if (farmId == null || farmId.isEmpty) {
+      return '55555555-5555-5555-5555-555555555555';
+    }
+    return farmId;
+  }
 
   List<dynamic> _extractCollection(dynamic data) {
     if (data is Map<String, dynamic> && data['content'] is List) {
@@ -22,7 +30,8 @@ class TransactionRepository {
 
   Future<List<FinancialTransaction>> getTransactions() async {
     try {
-      final response = await _dio.get('/api/finances/farm/$_farmId');
+      final farmId = await _getFarmId();
+      final response = await _dio.get('/api/finances/farm/$farmId');
       final rawList = _extractCollection(response.data);
       return rawList
           .whereType<Map<String, dynamic>>()
@@ -45,10 +54,11 @@ class TransactionRepository {
     String? transactionDate,
   }) async {
     try {
+      final farmId = await _getFarmId();
       final response = await _dio.post(
         '/api/finances',
         data: {
-          'farmId': _farmId,
+          'farmId': farmId,
           'type': type,
           'amount': amount,
           'category': category,
@@ -75,10 +85,11 @@ class TransactionRepository {
     String? transactionDate,
   }) async {
     try {
+      final farmId = await _getFarmId();
       final response = await _dio.put(
         '/api/finances/$id',
         data: {
-          'farmId': _farmId,
+          'farmId': farmId,
           'type': type,
           'amount': amount,
           'category': category,
@@ -96,7 +107,8 @@ class TransactionRepository {
 
   Future<void> deleteTransaction(String id) async {
     try {
-      await _dio.delete('/api/finances/$id?farmId=$_farmId');
+      final farmId = await _getFarmId();
+      await _dio.delete('/api/finances/$id?farmId=$farmId');
     } catch (e) {
       throw Exception('Failed to delete transaction: $e');
     }
@@ -105,5 +117,6 @@ class TransactionRepository {
 
 final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
   final dio = ref.watch(dioProvider);
-  return TransactionRepository(dio);
+  final tokenStorage = ref.watch(tokenStorageProvider);
+  return TransactionRepository(dio, tokenStorage);
 });

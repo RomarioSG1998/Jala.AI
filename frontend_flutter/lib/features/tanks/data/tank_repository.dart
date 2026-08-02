@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
+import 'package:frontend_flutter/core/api/secure_storage.dart';
 import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
 import 'package:frontend_flutter/features/tanks/data/biometrics_model.dart';
 
@@ -14,12 +15,17 @@ class PlanLimitException implements Exception {
 
 class TankRepository {
   final Dio _dio;
+  final TokenStorage _tokenStorage;
 
-  TankRepository(this._dio);
+  TankRepository(this._dio, this._tokenStorage);
 
-  // Hardcoded test farm ID for now.
-  // In a real application, this would be fetched from AuthProvider state.
-  final String _farmId = '55555555-5555-5555-5555-555555555555';
+  Future<String> _getFarmId() async {
+    final farmId = await _tokenStorage.getFarmId();
+    if (farmId == null || farmId.isEmpty) {
+      return '55555555-5555-5555-5555-555555555555';
+    }
+    return farmId;
+  }
 
   List<dynamic> _extractCollection(dynamic data) {
     if (data is Map<String, dynamic> && data['content'] is List) {
@@ -33,7 +39,8 @@ class TankRepository {
 
   Future<List<Tank>> getTanks() async {
     try {
-      final response = await _dio.get('/api/tanks/farm/$_farmId');
+      final farmId = await _getFarmId();
+      final response = await _dio.get('/api/tanks/farm/$farmId');
       final rawItems = _extractCollection(response.data);
       return rawItems
           .whereType<Map<String, dynamic>>()
@@ -48,7 +55,8 @@ class TankRepository {
 
   Future<Tank> createTank(Map<String, dynamic> tankData) async {
     try {
-      tankData['farmId'] = _farmId; // Inject required farmId
+      final farmId = await _getFarmId();
+      tankData['farmId'] = farmId; // Inject user's farmId
       final response = await _dio.post('/api/tanks', data: tankData);
       return Tank.fromJson(response.data);
     } on DioException catch (e) {
@@ -69,7 +77,8 @@ class TankRepository {
 
   Future<Tank> updateTank(String tankId, Map<String, dynamic> tankData) async {
     try {
-      tankData['farmId'] = _farmId; // Inject required farmId
+      final farmId = await _getFarmId();
+      tankData['farmId'] = farmId;
       final response = await _dio.put('/api/tanks/$tankId', data: tankData);
       return Tank.fromJson(response.data);
     } catch (e) {
@@ -79,7 +88,8 @@ class TankRepository {
 
   Future<void> deleteTank(String tankId) async {
     try {
-      await _dio.delete('/api/tanks/$tankId?farmId=$_farmId');
+      final farmId = await _getFarmId();
+      await _dio.delete('/api/tanks/$tankId?farmId=$farmId');
     } catch (e) {
       throw Exception('Failed to delete tank: $e');
     }
@@ -88,7 +98,8 @@ class TankRepository {
   // ─── Biometrics Endpoints ───
   Future<List<BiometricsRecord>> getBiometrics(String tankId) async {
     try {
-      final response = await _dio.get('/api/biometrics/tank/$tankId?farmId=$_farmId');
+      final farmId = await _getFarmId();
+      final response = await _dio.get('/api/biometrics/tank/$tankId?farmId=$farmId');
       final rawItems = _extractCollection(response.data);
       return rawItems
           .whereType<Map<String, dynamic>>()
@@ -101,8 +112,9 @@ class TankRepository {
 
   Future<BiometricsRecord> createBiometricsRecord(String tankId, int weightG, [String? recordDate]) async {
     try {
+      final farmId = await _getFarmId();
       final response = await _dio.post('/api/biometrics', data: {
-        'farmId': _farmId,
+        'farmId': farmId,
         'tankId': tankId,
         'weightG': weightG,
         'recordDate': recordDate,
@@ -115,7 +127,8 @@ class TankRepository {
 
   Future<void> deleteBiometricsRecord(String id) async {
     try {
-      await _dio.delete('/api/biometrics/$id?farmId=$_farmId');
+      final farmId = await _getFarmId();
+      await _dio.delete('/api/biometrics/$id?farmId=$farmId');
     } catch (e) {
       throw Exception('Failed to delete biometrics record: $e');
     }
@@ -124,5 +137,6 @@ class TankRepository {
 
 final tankRepositoryProvider = Provider<TankRepository>((ref) {
   final dio = ref.watch(dioProvider);
-  return TankRepository(dio);
+  final tokenStorage = ref.watch(tokenStorageProvider);
+  return TankRepository(dio, tokenStorage);
 });

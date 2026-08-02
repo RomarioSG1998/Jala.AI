@@ -1,14 +1,22 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
+import 'package:frontend_flutter/core/api/secure_storage.dart';
 import 'package:frontend_flutter/features/inventory/data/inventory_model.dart';
 
 class InventoryRepository {
   final Dio _dio;
+  final TokenStorage _tokenStorage;
 
-  InventoryRepository(this._dio);
+  InventoryRepository(this._dio, this._tokenStorage);
 
-  final String _farmId = '55555555-5555-5555-5555-555555555555';
+  Future<String> _getFarmId() async {
+    final farmId = await _tokenStorage.getFarmId();
+    if (farmId == null || farmId.isEmpty) {
+      return '55555555-5555-5555-5555-555555555555';
+    }
+    return farmId;
+  }
 
   List<dynamic> _extractCollection(dynamic data) {
     if (data is Map<String, dynamic> && data['content'] is List) {
@@ -22,7 +30,8 @@ class InventoryRepository {
 
   Future<List<InventoryItem>> getItems() async {
     try {
-      final response = await _dio.get('/api/inventory/farm/$_farmId');
+      final farmId = await _getFarmId();
+      final response = await _dio.get('/api/inventory/farm/$farmId');
       final rawItems = _extractCollection(response.data);
       return rawItems
           .whereType<Map<String, dynamic>>()
@@ -37,7 +46,8 @@ class InventoryRepository {
 
   Future<InventoryItem> createItem(Map<String, dynamic> itemData) async {
     try {
-      itemData['farmId'] = _farmId;
+      final farmId = await _getFarmId();
+      itemData['farmId'] = farmId;
       final response = await _dio.post('/api/inventory', data: itemData);
       return InventoryItem.fromJson(response.data);
     } catch (e) {
@@ -47,7 +57,8 @@ class InventoryRepository {
 
   Future<InventoryItem> updateItem(String id, Map<String, dynamic> data) async {
     try {
-      data['farmId'] = _farmId;
+      final farmId = await _getFarmId();
+      data['farmId'] = farmId;
       final response = await _dio.put('/api/inventory/$id', data: data);
       return InventoryItem.fromJson(response.data);
     } catch (e) {
@@ -57,7 +68,8 @@ class InventoryRepository {
 
   Future<void> deleteItem(String itemId) async {
     try {
-      await _dio.delete('/api/inventory/$itemId?farmId=$_farmId');
+      final farmId = await _getFarmId();
+      await _dio.delete('/api/inventory/$itemId?farmId=$farmId');
     } catch (e) {
       throw Exception('Failed to delete inventory item: $e');
     }
@@ -66,5 +78,6 @@ class InventoryRepository {
 
 final inventoryRepositoryProvider = Provider<InventoryRepository>((ref) {
   final dio = ref.watch(dioProvider);
-  return InventoryRepository(dio);
+  final tokenStorage = ref.watch(tokenStorageProvider);
+  return InventoryRepository(dio, tokenStorage);
 });

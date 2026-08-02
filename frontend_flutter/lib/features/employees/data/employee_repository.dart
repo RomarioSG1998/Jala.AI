@@ -1,19 +1,28 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
+import 'package:frontend_flutter/core/api/secure_storage.dart';
 import 'employee_model.dart';
-
 import 'package:frontend_flutter/features/tanks/data/tank_repository.dart';
 
 class EmployeeRepository {
   final Dio _dio;
-  final String _farmId = '55555555-5555-5555-5555-555555555555';
+  final TokenStorage _tokenStorage;
 
-  EmployeeRepository(this._dio);
+  EmployeeRepository(this._dio, this._tokenStorage);
+
+  Future<String> _getFarmId() async {
+    final farmId = await _tokenStorage.getFarmId();
+    if (farmId == null || farmId.isEmpty) {
+      return '55555555-5555-5555-5555-555555555555';
+    }
+    return farmId;
+  }
 
   Future<List<Employee>> getEmployees() async {
     try {
-      final response = await _dio.get('/api/employees/farm/$_farmId');
+      final farmId = await _getFarmId();
+      final response = await _dio.get('/api/employees/farm/$farmId');
       final list = response.data as List<dynamic>;
       return list.map((item) => Employee.fromJson(item as Map<String, dynamic>)).toList();
     } catch (e) {
@@ -23,13 +32,14 @@ class EmployeeRepository {
 
   Future<Employee> registerEmployee(String name, String email, String password) async {
     try {
+      final farmId = await _getFarmId();
       final response = await _dio.post(
         '/api/employees',
         data: {
           'name': name,
           'email': email,
           'password': password,
-          'farmId': _farmId,
+          'farmId': farmId,
         },
       );
       return Employee.fromJson(response.data as Map<String, dynamic>);
@@ -45,13 +55,14 @@ class EmployeeRepository {
 
   Future<Employee> updateEmployee(String id, String name, String email, String? password) async {
     try {
+      final farmId = await _getFarmId();
       final response = await _dio.put(
         '/api/employees/$id',
         data: {
           'name': name,
           'email': email,
           if (password != null && password.isNotEmpty) 'password': password,
-          'farmId': _farmId,
+          'farmId': farmId,
         },
       );
       return Employee.fromJson(response.data as Map<String, dynamic>);
@@ -62,7 +73,8 @@ class EmployeeRepository {
 
   Future<void> deleteEmployee(String id) async {
     try {
-      await _dio.delete('/api/employees/$id/farm/$_farmId');
+      final farmId = await _getFarmId();
+      await _dio.delete('/api/employees/$id/farm/$farmId');
     } catch (e) {
       throw Exception('Failed to delete employee: $e');
     }
@@ -71,5 +83,6 @@ class EmployeeRepository {
 
 final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {
   final dio = ref.watch(dioProvider);
-  return EmployeeRepository(dio);
+  final tokenStorage = ref.watch(tokenStorageProvider);
+  return EmployeeRepository(dio, tokenStorage);
 });

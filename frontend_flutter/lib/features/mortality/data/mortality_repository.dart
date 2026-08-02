@@ -1,14 +1,22 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/dio_client.dart';
+import 'package:frontend_flutter/core/api/secure_storage.dart';
 import 'package:frontend_flutter/features/mortality/data/mortality_model.dart';
 
 class MortalityRepository {
   final Dio _dio;
+  final TokenStorage _tokenStorage;
 
-  MortalityRepository(this._dio);
+  MortalityRepository(this._dio, this._tokenStorage);
 
-  final String _farmId = '55555555-5555-5555-5555-555555555555';
+  Future<String> _getFarmId() async {
+    final farmId = await _tokenStorage.getFarmId();
+    if (farmId == null || farmId.isEmpty) {
+      return '55555555-5555-5555-5555-555555555555';
+    }
+    return farmId;
+  }
 
   List<dynamic> _extractCollection(dynamic data) {
     if (data is Map<String, dynamic> && data['content'] is List) {
@@ -22,7 +30,8 @@ class MortalityRepository {
 
   Future<List<MortalityRecord>> getRecords() async {
     try {
-      final response = await _dio.get('/api/mortality/farm/$_farmId');
+      final farmId = await _getFarmId();
+      final response = await _dio.get('/api/mortality/farm/$farmId');
       final rawItems = _extractCollection(response.data);
       return rawItems
           .whereType<Map<String, dynamic>>()
@@ -37,7 +46,8 @@ class MortalityRepository {
 
   Future<List<MortalityRecord>> getRecordsByTank(String tankId) async {
     try {
-      final response = await _dio.get('/api/mortality/tank/$tankId?farmId=$_farmId');
+      final farmId = await _getFarmId();
+      final response = await _dio.get('/api/mortality/tank/$tankId?farmId=$farmId');
       final rawItems = _extractCollection(response.data);
       return rawItems
           .whereType<Map<String, dynamic>>()
@@ -52,7 +62,8 @@ class MortalityRepository {
 
   Future<MortalityRecord> createRecord(Map<String, dynamic> data) async {
     try {
-      data['farmId'] = _farmId;
+      final farmId = await _getFarmId();
+      data['farmId'] = farmId;
       final response = await _dio.post('/api/mortality', data: data);
       return MortalityRecord.fromJson(response.data);
     } on DioException catch (e) {
@@ -64,7 +75,8 @@ class MortalityRepository {
 
   Future<MortalityRecord> updateRecord(String id, Map<String, dynamic> data) async {
     try {
-      data['farmId'] = _farmId;
+      final farmId = await _getFarmId();
+      data['farmId'] = farmId;
       final response = await _dio.put('/api/mortality/$id', data: data);
       return MortalityRecord.fromJson(response.data);
     } on DioException catch (e) {
@@ -76,7 +88,8 @@ class MortalityRepository {
 
   Future<void> deleteRecord(String id) async {
     try {
-      await _dio.delete('/api/mortality/$id?farmId=$_farmId');
+      final farmId = await _getFarmId();
+      await _dio.delete('/api/mortality/$id?farmId=$farmId');
     } on DioException catch (e) {
       throw Exception(e.response?.data?['message'] ?? 'Failed to delete mortality record');
     } catch (e) {
@@ -87,5 +100,6 @@ class MortalityRepository {
 
 final mortalityRepositoryProvider = Provider<MortalityRepository>((ref) {
   final dio = ref.watch(dioProvider);
-  return MortalityRepository(dio);
+  final tokenStorage = ref.watch(tokenStorageProvider);
+  return MortalityRepository(dio, tokenStorage);
 });
