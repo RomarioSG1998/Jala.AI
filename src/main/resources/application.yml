@@ -30,8 +30,8 @@ server:
     max-swallow-size: 50MB
 
 stripe:
-  secret-key: ${STRIPE_SECRET_KEY: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}
-  webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_test}
+  secret-key: ${STRIPE_SECRET_KEY:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
 
 google:
   client-id: ${GOOGLE_CLIENT_ID:60186836539-9ouq8mu9mn7ulcl0qjucioefc4gqthtt.apps.googleusercontent.com}
