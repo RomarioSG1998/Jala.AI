@@ -1,6 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/core/api/secure_storage.dart';
 import 'package:frontend_flutter/features/auth/data/auth_repository.dart';
+import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
+import 'package:frontend_flutter/features/dashboard/providers/farm_summary_provider.dart';
+import 'package:frontend_flutter/features/feeding_records/providers/feeding_record_provider.dart';
+import 'package:frontend_flutter/features/water_quality/providers/water_quality_provider.dart';
+import 'package:frontend_flutter/features/inventory/providers/inventory_provider.dart';
+import 'package:frontend_flutter/features/finances/providers/transaction_provider.dart';
+import 'package:frontend_flutter/features/harvests/providers/harvest_provider.dart';
+import 'package:frontend_flutter/features/maintenance/providers/maintenance_provider.dart';
+import 'package:frontend_flutter/features/mortality/providers/mortality_provider.dart';
+import 'package:frontend_flutter/features/employees/providers/employees_provider.dart';
+import 'package:frontend_flutter/features/suppliers/providers/supplier_provider.dart';
+import 'package:frontend_flutter/features/approvals/providers/approval_provider.dart';
 import 'dart:convert';
 
 // Represents the authentication state of the app
@@ -144,6 +156,7 @@ class AuthNotifier extends Notifier<AuthState> {
           farmId: response['farmId']?.toString(),
         );
 
+        _invalidateAllUserData();
         state = state.copyWith(
           isLoading: false,
           isAuthenticated: true,
@@ -195,6 +208,7 @@ class AuthNotifier extends Notifier<AuthState> {
           farmId: response['farmId']?.toString(),
         );
 
+        _invalidateAllUserData();
         state = state.copyWith(
           isLoading: false,
           isAuthenticated: true,
@@ -248,6 +262,7 @@ class AuthNotifier extends Notifier<AuthState> {
           farmId: response['farmId']?.toString(),
         );
 
+        _invalidateAllUserData();
         state = state.copyWith(
           isLoading: false,
           isAuthenticated: true,
@@ -321,8 +336,24 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  void _invalidateAllUserData() {
+    ref.invalidate(tanksProvider);
+    ref.invalidate(farmSummaryProvider);
+    ref.invalidate(feedingRecordProvider);
+    ref.invalidate(waterQualityProvider);
+    ref.invalidate(inventoryProvider);
+    ref.invalidate(transactionProvider);
+    ref.invalidate(harvestProvider);
+    ref.invalidate(maintenanceProvider);
+    ref.invalidate(mortalityProvider);
+    ref.invalidate(employeesProvider);
+    ref.invalidate(supplierProvider);
+    ref.invalidate(approvalNotifierProvider);
+  }
+
   Future<void> logout() async {
     await _tokenStorage.clearAll();
+    _invalidateAllUserData();
     state = AuthState();
   }
 

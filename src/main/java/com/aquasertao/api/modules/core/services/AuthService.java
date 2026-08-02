@@ -18,6 +18,7 @@ import com.aquasertao.api.modules.core.dtos.ProfileImageDTO;
 import com.aquasertao.api.modules.core.dtos.UpdateProfileRequestDTO;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -200,18 +201,35 @@ public class AuthService {
      }
 
      private UUID getUserFarmId(UUID userId) {
-         return userFarmLinkRepository.findByUserId(userId).stream()
-                 .map(UserFarmLink::getFarmId)
-                 .findFirst()
-                 .orElseGet(() -> {
-                     UUID newFarmId = UUID.randomUUID();
-                     UserFarmLink link = UserFarmLink.builder()
-                             .userId(userId)
-                             .farmId(newFarmId)
-                             .accessRole("FARM_OWNER")
-                             .build();
-                     userFarmLinkRepository.save(link);
-                     return newFarmId;
-                 });
+         UUID defaultFarmId = UUID.fromString("55555555-5555-5555-5555-555555555555");
+         List<UserFarmLink> links = userFarmLinkRepository.findByUserId(userId);
+         if (links.isEmpty()) {
+             UUID newFarmId = UUID.randomUUID();
+             UserFarmLink link = UserFarmLink.builder()
+                     .userId(userId)
+                     .farmId(newFarmId)
+                     .accessRole("FARM_OWNER")
+                     .build();
+             userFarmLinkRepository.save(link);
+             return newFarmId;
+         }
+
+         UserFarmLink existingLink = links.get(0);
+
+         // CRITICAL: If the user is linked to the legacy default farm ID ('55555555-5555-5555-5555-555555555555'),
+         // migrate them to their OWN private isolated farm ID so no two accounts share data!
+         if (defaultFarmId.equals(existingLink.getFarmId())) {
+             userFarmLinkRepository.delete(existingLink);
+             UUID newFarmId = UUID.randomUUID();
+             UserFarmLink newLink = UserFarmLink.builder()
+                     .userId(userId)
+                     .farmId(newFarmId)
+                     .accessRole("FARM_OWNER")
+                     .build();
+             userFarmLinkRepository.save(newLink);
+             return newFarmId;
+         }
+
+         return existingLink.getFarmId();
      }
 }

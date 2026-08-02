@@ -167,7 +167,7 @@ class EmployeePermissionsSheet extends ConsumerWidget {
   final Employee employee;
   const EmployeePermissionsSheet({super.key, required this.employee});
 
-  String get _key => '${employee.id}:$_kFarmId';
+  String get _key => '${employee.id}:${employee.farmId}';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
