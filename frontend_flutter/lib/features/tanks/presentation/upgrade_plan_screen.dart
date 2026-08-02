@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -122,6 +123,35 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
     }
   }
 
+  Future<bool> _safeLaunchUrl(String urlString) async {
+    try {
+      final uri = Uri.parse(urlString);
+      if (kIsWeb) {
+        return await launchUrl(
+          uri,
+          mode: LaunchMode.platformDefault,
+          webOnlyWindowName: '_self',
+        );
+      } else {
+        return await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+      }
+    } catch (e) {
+      debugPrint('[Stripe] Error in launchUrl: $e');
+      try {
+        return await launchUrl(
+          Uri.parse(urlString),
+          mode: LaunchMode.externalApplication,
+        );
+      } catch (e2) {
+        debugPrint('[Stripe] Fallback launchUrl error: $e2');
+        return false;
+      }
+    }
+  }
+
   Future<void> _startStripeCheckout(String planId) async {
     if (!mounted) return;
     setState(() {
@@ -137,13 +167,20 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
       final storedFarmId = await tokenStorage.getFarmId();
       final farmId = storedFarmId ?? '55555555-5555-5555-5555-555555555555';
 
+      final successUrl = kIsWeb
+          ? 'http://localhost:8082/#/payment-success'
+          : 'https://jala-ai.onrender.com/api/billing/webhook';
+      final cancelUrl = kIsWeb
+          ? 'http://localhost:8082/#/payment-cancel'
+          : 'https://jala-ai.onrender.com/api/billing/webhook';
+
       final response = await dio.post(
         '/api/billing/create-checkout-session',
         data: {
           'farmId': farmId,
           'planId': planId,
-          'successUrl': 'http://localhost:8082/#/payment-success',
-          'cancelUrl': 'http://localhost:8082/#/payment-cancel',
+          'successUrl': successUrl,
+          'cancelUrl': cancelUrl,
         },
       );
 
@@ -156,12 +193,7 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
         });
 
         debugPrint('[Stripe] Redirecionando para URL: $checkoutUrl');
-        final uri = Uri.parse(checkoutUrl);
-        final launched = await launchUrl(
-          uri,
-          mode: LaunchMode.platformDefault,
-          webOnlyWindowName: '_self',
-        );
+        final launched = await _safeLaunchUrl(checkoutUrl);
 
         debugPrint('[Stripe] Resultado do launchUrl: $launched');
         if (!launched && mounted) {
@@ -241,19 +273,26 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(statusIcon, color: statusColor, size: 22),
-                  const SizedBox(width: 8),
-                  Text(
-                    statusText,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                  Icon(statusIcon, color: statusColor, size: 20),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      statusText,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -499,13 +538,7 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        onPressed: () {
-                          launchUrl(
-                            Uri.parse(_manualCheckoutUrl!),
-                            mode: LaunchMode.platformDefault,
-                            webOnlyWindowName: '_self',
-                          );
-                        },
+                        onPressed: () => _safeLaunchUrl(_manualCheckoutUrl!),
                       ),
                     ],
                   ),
@@ -549,39 +582,42 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              Wrap(
+                                alignment: WrapAlignment.spaceBetween,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 8,
+                                runSpacing: 6,
                                 children: [
-                                  Expanded(
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          plan.name,
-                                          style: const TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
+                                  Wrap(
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    spacing: 6,
+                                    runSpacing: 4,
+                                    children: [
+                                      Text(
+                                        plan.name,
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      if (plan.name.toLowerCase().contains('pro') || plan.priceMonthly == 59.90) ...[
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF13A538).withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: const Text(
+                                            'RECOMENDADO 🚀',
+                                            style: TextStyle(
+                                              color: Color(0xFF13A538),
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
-                                        if (plan.name.toLowerCase().contains('pro') || plan.priceMonthly == 59.90) ...[
-                                          const SizedBox(width: 8),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF13A538).withOpacity(0.15),
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: const Text(
-                                              'RECOMENDADO 🚀',
-                                              style: TextStyle(
-                                                color: Color(0xFF13A538),
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
                                       ],
-                                    ),
+                                    ],
                                   ),
                                   Text(
                                     isFree ? 'Grátis' : '${currencyFmt.format(plan.priceMonthly)}/mês',
@@ -594,14 +630,15 @@ class _UpgradePlanScreenState extends ConsumerState<UpgradePlanScreen> {
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              Row(
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
                                 children: [
                                   Chip(
                                     avatar: const Icon(Icons.water_drop, size: 16, color: Colors.blue),
                                     label: Text('Até ${plan.maxTanks} tanques'),
                                     backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.blue.shade50,
                                   ),
-                                  const SizedBox(width: 8),
                                   Chip(
                                     avatar: const Icon(Icons.people, size: 16, color: Colors.purple),
                                     label: Text('Até ${plan.maxUsers} usuários'),
@@ -708,11 +745,18 @@ class _StripeCheckoutDialogState extends ConsumerState<_StripeCheckoutDialog> {
         });
 
         // Launch immediately
-        await launchUrl(
-          Uri.parse(url),
-          mode: LaunchMode.platformDefault,
-          webOnlyWindowName: '_self',
-        );
+        if (kIsWeb) {
+          await launchUrl(
+            Uri.parse(url),
+            mode: LaunchMode.platformDefault,
+            webOnlyWindowName: '_self',
+          );
+        } else {
+          await launchUrl(
+            Uri.parse(url),
+            mode: LaunchMode.externalApplication,
+          );
+        }
       } else {
         throw Exception('URL de pagamento nula.');
       }
@@ -758,11 +802,18 @@ class _StripeCheckoutDialogState extends ConsumerState<_StripeCheckoutDialog> {
                 label: const Text('Ir para o Pagamento agora 💳', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF13A538), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
                 onPressed: () {
-                  launchUrl(
-                    Uri.parse(_checkoutUrl!),
-                    mode: LaunchMode.platformDefault,
-                    webOnlyWindowName: '_self',
-                  );
+                  if (kIsWeb) {
+                    launchUrl(
+                      Uri.parse(_checkoutUrl!),
+                      mode: LaunchMode.platformDefault,
+                      webOnlyWindowName: '_self',
+                    );
+                  } else {
+                    launchUrl(
+                      Uri.parse(_checkoutUrl!),
+                      mode: LaunchMode.externalApplication,
+                    );
+                  }
                 },
               ),
             ],
