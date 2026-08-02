@@ -458,7 +458,8 @@ class _AddInventoryItemFormState
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
