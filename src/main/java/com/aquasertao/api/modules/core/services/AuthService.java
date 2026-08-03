@@ -31,8 +31,10 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserFarmLinkRepository userFarmLinkRepository;
 
+    @Transactional
     public AuthResponseDTO register(RegisterRequestDTO request) {
-        if (repository.findByEmail(request.getEmail()).isPresent()) {
+        String cleanEmail = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
+        if (repository.findByEmailIgnoreCase(cleanEmail).isPresent()) {
             throw new IllegalArgumentException("Email already registered.");
         }
 
@@ -40,7 +42,7 @@ public class AuthService {
 
         var user = GlobalUser.builder()
                 .name(request.getName())
-                .email(request.getEmail())
+                .email(cleanEmail)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .accountType(accountType)
                 .createdAt(LocalDateTime.now())
@@ -73,16 +75,19 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional
     public AuthResponseDTO login(LoginRequestDTO request) {
+        String cleanEmail = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
+        GlobalUser user = repository.findByEmailIgnoreCase(cleanEmail)
+                .orElseGet(() -> repository.findByEmail(request.getEmail())
+                        .orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas.")));
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
+                        user.getEmail(),
                         request.getPassword()
                 )
         );
-        
-        var user = repository.findByEmail(request.getEmail())
-                .orElseThrow();
         
         var jwtToken = jwtService.generateToken(user);
         
@@ -96,6 +101,7 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional
     public AuthResponseDTO loginWithGoogle(com.aquasertao.api.modules.core.dtos.GoogleAuthRequestDTO request) {
         String email = request.getEmail();
         String name = request.getName();
@@ -109,7 +115,7 @@ public class AuthService {
         final String finalName = (name != null && !name.trim().isEmpty()) ? name.trim() : "Usuário Google";
         final String requestedAccountType = "SUPPLIER".equalsIgnoreCase(request.getAccountType()) ? "SUPPLIER" : "CLIENT";
 
-        java.util.Optional<GlobalUser> existingUserOpt = repository.findByEmail(finalEmail);
+        java.util.Optional<GlobalUser> existingUserOpt = repository.findByEmailIgnoreCase(finalEmail);
         boolean isNewUser = existingUserOpt.isEmpty();
 
         GlobalUser user = existingUserOpt.orElseGet(() -> {
@@ -200,6 +206,7 @@ public class AuthService {
                  .build();
      }
 
+     @Transactional
      private UUID getUserFarmId(UUID userId) {
          UUID defaultFarmId = UUID.fromString("55555555-5555-5555-5555-555555555555");
          List<UserFarmLink> links = userFarmLinkRepository.findByUserId(userId);
@@ -219,7 +226,7 @@ public class AuthService {
          // CRITICAL: If the user is linked to the legacy default farm ID ('55555555-5555-5555-5555-555555555555'),
          // migrate them to their OWN private isolated farm ID so no two accounts share data!
          if (defaultFarmId.equals(existingLink.getFarmId())) {
-             userFarmLinkRepository.delete(existingLink);
+             userFarmLinkRepository.deleteByUserIdAndFarmId(userId, defaultFarmId);
              UUID newFarmId = UUID.randomUUID();
              UserFarmLink newLink = UserFarmLink.builder()
                      .userId(userId)
