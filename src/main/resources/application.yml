@@ -21,6 +21,11 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+  rabbitmq:
+    listener:
+      type: simple
+      simple:
+        auto-startup: false
 
 server:
   port: 8081

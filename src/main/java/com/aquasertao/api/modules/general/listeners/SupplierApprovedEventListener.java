@@ -18,7 +18,7 @@ public class SupplierApprovedEventListener {
 
     private final NotificationRepository notificationRepository;
 
-    @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME)
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, autoStartup = "${spring.rabbitmq.listener.simple.auto-startup:false}")
     public void handleSupplierApproved(SupplierApprovedEvent event) {
         log.info("Received SupplierApprovedEvent for supplier: {}", event.getCompanyName());
 
