@@ -39,4 +39,13 @@ public class GlobalExceptionHandler {
                 "timestamp", LocalDateTime.now().toString()
         ));
     }
+
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthenticationException(org.springframework.security.core.AuthenticationException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                "error", "UNAUTHORIZED",
+                "message", "E-mail ou senha incorretos. Verifique suas credenciais.",
+                "timestamp", LocalDateTime.now().toString()
+        ));
+    }
 }

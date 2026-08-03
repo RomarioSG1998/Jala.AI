@@ -44,8 +44,9 @@ final dioProvider = Provider<Dio>((ref) {
     onError: (DioException e, handler) async {
       final statusCode = e.response?.statusCode;
 
-      // Token expirado ou inválido → fazer logout automático
-      if (statusCode == 401 || statusCode == 403) {
+      // Token expirado ou inválido em rotas protegidas (EXCETO /api/auth/) → fazer logout automático
+      final isAuthEndpoint = e.requestOptions.path.contains('/api/auth/');
+      if (!isAuthEndpoint && (statusCode == 401 || statusCode == 403)) {
         try {
           await ref.read(authNotifierProvider.notifier).logout();
         } catch (_) {
