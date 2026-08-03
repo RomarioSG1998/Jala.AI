@@ -32,9 +32,12 @@ final dioProvider = Provider<Dio>((ref) {
 
   dio.interceptors.add(InterceptorsWrapper(
     onRequest: (options, handler) async {
-      final token = await tokenStorage.getToken();
-      if (token != null) {
-        options.headers['Authorization'] = 'Bearer $token';
+      final isAuthEndpoint = options.path.contains('/api/auth/');
+      if (!isAuthEndpoint) {
+        final token = await tokenStorage.getToken();
+        if (token != null && token.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
       }
       return handler.next(options);
     },
