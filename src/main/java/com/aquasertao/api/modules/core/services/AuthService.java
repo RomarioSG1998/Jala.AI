@@ -6,7 +6,9 @@ import com.aquasertao.api.modules.core.dtos.RegisterRequestDTO;
 import com.aquasertao.api.modules.core.models.GlobalUser;
 import com.aquasertao.api.modules.core.repositories.GlobalUserRepository;
 import com.aquasertao.api.modules.core.security.JwtService;
+import com.aquasertao.api.modules.tenant.models.FarmTenant;
 import com.aquasertao.api.modules.tenant.models.UserFarmLink;
+import com.aquasertao.api.modules.tenant.repositories.FarmTenantRepository;
 import com.aquasertao.api.modules.tenant.repositories.UserFarmLinkRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,6 +32,27 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final UserFarmLinkRepository userFarmLinkRepository;
+    private final FarmTenantRepository farmTenantRepository;
+
+    private UUID createFarmTenantForUser(GlobalUser user) {
+        String cleanName = (user.getName() != null && !user.getName().isBlank()) ? user.getName() : "Fazenda";
+        String uniqueSuffix = UUID.randomUUID().toString().replace("-", "").substring(0, 14);
+        FarmTenant tenant = FarmTenant.builder()
+                .name("Fazenda de " + cleanName)
+                .cnpj("FT-" + uniqueSuffix)
+                .ownerId(user.getId())
+                .createdAt(LocalDateTime.now())
+                .build();
+        FarmTenant savedTenant = farmTenantRepository.saveAndFlush(tenant);
+
+        UserFarmLink link = UserFarmLink.builder()
+                .userId(user.getId())
+                .farmId(savedTenant.getId())
+                .accessRole("FARM_OWNER")
+                .build();
+        userFarmLinkRepository.save(link);
+        return savedTenant.getId();
+    }
 
     @Transactional
     public AuthResponseDTO register(RegisterRequestDTO request) {
@@ -53,14 +76,7 @@ public class AuthService {
         UUID farmId = null;
         // Create unique isolated farm tenant for CLIENT user
         if ("CLIENT".equals(accountType)) {
-            UUID userFarmId = UUID.randomUUID();
-            UserFarmLink link = UserFarmLink.builder()
-                    .userId(savedUser.getId())
-                    .farmId(userFarmId)
-                    .accessRole("FARM_OWNER")
-                    .build();
-            userFarmLinkRepository.save(link);
-            farmId = userFarmId;
+            farmId = createFarmTenantForUser(savedUser);
         }
 
         var jwtToken = jwtService.generateToken(savedUser);
@@ -130,13 +146,7 @@ public class AuthService {
             GlobalUser saved = repository.save(newUser);
 
             if ("CLIENT".equals(requestedAccountType)) {
-                UUID userFarmId = UUID.randomUUID();
-                UserFarmLink link = UserFarmLink.builder()
-                        .userId(saved.getId())
-                        .farmId(userFarmId)
-                        .accessRole("FARM_OWNER")
-                        .build();
-                userFarmLinkRepository.save(link);
+                createFarmTenantForUser(saved);
             }
             return saved;
         });
@@ -208,33 +218,27 @@ public class AuthService {
 
      @Transactional
      private UUID getUserFarmId(UUID userId) {
+         GlobalUser user = repository.findById(userId).orElse(null);
+         if (user == null) {
+             return null;
+         }
+
+         if (!"CLIENT".equalsIgnoreCase(user.getAccountType())) {
+             return null;
+         }
+
          UUID defaultFarmId = UUID.fromString("55555555-5555-5555-5555-555555555555");
          List<UserFarmLink> links = userFarmLinkRepository.findByUserId(userId);
          if (links.isEmpty()) {
-             UUID newFarmId = UUID.randomUUID();
-             UserFarmLink link = UserFarmLink.builder()
-                     .userId(userId)
-                     .farmId(newFarmId)
-                     .accessRole("FARM_OWNER")
-                     .build();
-             userFarmLinkRepository.save(link);
-             return newFarmId;
+             return createFarmTenantForUser(user);
          }
 
          UserFarmLink existingLink = links.get(0);
 
-         // CRITICAL: If the user is linked to the legacy default farm ID ('55555555-5555-5555-5555-555555555555'),
-         // migrate them to their OWN private isolated farm ID so no two accounts share data!
-         if (defaultFarmId.equals(existingLink.getFarmId())) {
-             userFarmLinkRepository.deleteByUserIdAndFarmId(userId, defaultFarmId);
-             UUID newFarmId = UUID.randomUUID();
-             UserFarmLink newLink = UserFarmLink.builder()
-                     .userId(userId)
-                     .farmId(newFarmId)
-                     .accessRole("FARM_OWNER")
-                     .build();
-             userFarmLinkRepository.save(newLink);
-             return newFarmId;
+         // CRITICAL: If the user is linked to the legacy default farm ID or a non-existent farm, create farm tenant and update link
+         if (defaultFarmId.equals(existingLink.getFarmId()) || !farmTenantRepository.existsById(existingLink.getFarmId())) {
+             userFarmLinkRepository.deleteByUserIdAndFarmId(userId, existingLink.getFarmId());
+             return createFarmTenantForUser(user);
          }
 
          return existingLink.getFarmId();

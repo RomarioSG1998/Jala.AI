@@ -45,13 +45,22 @@ public class StripeService {
     private String webhookSecret;
 
     private RequestOptions getRequestOptions() {
-        String key = (secretKey != null && !secretKey.trim().isEmpty())
-                ? secretKey.trim()
-                : com.stripe.Stripe.apiKey;
-        if (key != null && !key.trim().isEmpty()) {
-            com.stripe.Stripe.apiKey = key.trim();
+        String key = (secretKey != null && !secretKey.trim().isEmpty()) ? secretKey.trim() : null;
+        if (key == null || key.isEmpty()) {
+            key = System.getProperty("STRIPE_SECRET_KEY");
         }
-        return RequestOptions.builder().setApiKey(key).build();
+        if (key == null || key.trim().isEmpty()) {
+            key = System.getenv("STRIPE_SECRET_KEY");
+        }
+        if (key == null || key.trim().isEmpty()) {
+            key = com.stripe.Stripe.apiKey;
+        }
+        if (key != null && !key.trim().isEmpty()) {
+            key = key.trim();
+            com.stripe.Stripe.apiKey = key;
+            return RequestOptions.builder().setApiKey(key).build();
+        }
+        return RequestOptions.builder().build();
     }
 
     @Transactional

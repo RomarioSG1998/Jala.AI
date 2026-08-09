@@ -48,4 +48,13 @@ public class GlobalExceptionHandler {
                 "timestamp", LocalDateTime.now().toString()
         ));
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGeneralException(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "error", "INTERNAL_SERVER_ERROR",
+                "message", ex.getMessage() != null ? ex.getMessage() : "Erro interno no servidor.",
+                "timestamp", LocalDateTime.now().toString()
+        ));
+    }
 }
