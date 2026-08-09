@@ -219,29 +219,30 @@ public class AuthService {
 
      @Transactional
      private UUID getUserFarmId(UUID userId) {
-         GlobalUser user = repository.findById(userId).orElse(null);
-         if (user == null) {
+         try {
+             GlobalUser user = repository.findById(userId).orElse(null);
+             if (user == null || user.getAccountType() == null || !"CLIENT".equalsIgnoreCase(user.getAccountType().trim())) {
+                 return null;
+             }
+
+             UUID defaultFarmId = UUID.fromString("55555555-5555-5555-5555-555555555555");
+             List<UserFarmLink> links = userFarmLinkRepository.findByUserId(userId);
+             if (links == null || links.isEmpty()) {
+                 return createFarmTenantForUser(user);
+             }
+
+             UserFarmLink existingLink = links.get(0);
+
+             // CRITICAL: If the user is linked to the legacy default farm ID or a non-existent farm, create farm tenant and update link
+             if (defaultFarmId.equals(existingLink.getFarmId()) || !farmTenantRepository.existsById(existingLink.getFarmId())) {
+                 userFarmLinkRepository.deleteByUserIdAndFarmId(userId, existingLink.getFarmId());
+                 return createFarmTenantForUser(user);
+             }
+
+             return existingLink.getFarmId();
+         } catch (Exception e) {
+             log.warn("Could not retrieve farmId for userId {}: {}", userId, e.getMessage());
              return null;
          }
-
-         if (!"CLIENT".equalsIgnoreCase(user.getAccountType())) {
-             return null;
-         }
-
-         UUID defaultFarmId = UUID.fromString("55555555-5555-5555-5555-555555555555");
-         List<UserFarmLink> links = userFarmLinkRepository.findByUserId(userId);
-         if (links.isEmpty()) {
-             return createFarmTenantForUser(user);
-         }
-
-         UserFarmLink existingLink = links.get(0);
-
-         // CRITICAL: If the user is linked to the legacy default farm ID or a non-existent farm, create farm tenant and update link
-         if (defaultFarmId.equals(existingLink.getFarmId()) || !farmTenantRepository.existsById(existingLink.getFarmId())) {
-             userFarmLinkRepository.deleteByUserIdAndFarmId(userId, existingLink.getFarmId());
-             return createFarmTenantForUser(user);
-         }
-
-         return existingLink.getFarmId();
      }
 }
