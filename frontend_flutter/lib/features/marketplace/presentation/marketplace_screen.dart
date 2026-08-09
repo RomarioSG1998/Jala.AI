@@ -564,24 +564,7 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                     ),
                     onPressed: () {
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Row(
-                            children: [
-                              Icon(Icons.info_outline, color: Colors.white),
-                              SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'Olha, está sendo implementado, logo mais teremos opções de pagamento via Pix',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
-                          ),
-                          backgroundColor: Color(0xFF009688),
-                          duration: Duration(seconds: 4),
-                        ),
-                      );
+                      _showPixComingSoonDialog(context, item);
                     },
                   ),
                 ),
@@ -624,8 +607,62 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
     );
   }
 
+  void _showPixComingSoonDialog(BuildContext ctx, AnnouncementModel item) {
+    showDialog(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.pix_rounded, color: Color(0xFF009688), size: 28),
+            SizedBox(width: 10),
+            Text('Pagamento via Pix', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'O método de pagamento via Pix está em fase de homologação final e estará disponível em breve.',
+              style: TextStyle(fontSize: 14, height: 1.4),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Para concluir seu pedido com total segurança e garantia de custódia pelo AquaGestor, utilize a opção de pagamento por Cartão.',
+              style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.4),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Entendido', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.credit_card, color: Colors.white, size: 18),
+            label: const Text('Pagar com Cartão', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2196F3),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            onPressed: () {
+              Navigator.pop(dialogCtx);
+              _showEscrowCheckoutModal(context, item, 'CARD');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Escrow Checkout Modal ─────────────────────────────────────────────────
   void _showEscrowCheckoutModal(BuildContext ctx, AnnouncementModel item, String paymentMethod) async {
+    if (paymentMethod == 'PIX') {
+      _showPixComingSoonDialog(ctx, item);
+      return;
+    }
     showDialog(
       context: ctx,
       barrierDismissible: false,
