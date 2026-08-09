@@ -94,6 +94,7 @@ public class AuthService {
     @Transactional
     public AuthResponseDTO login(LoginRequestDTO request) {
         String cleanEmail = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
+        String cleanPassword = request.getPassword() != null ? request.getPassword().trim() : "";
         GlobalUser user = repository.findByEmailIgnoreCase(cleanEmail)
                 .orElseGet(() -> repository.findByEmail(request.getEmail())
                         .orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas.")));
@@ -101,7 +102,7 @@ public class AuthService {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         user.getEmail(),
-                        request.getPassword()
+                        cleanPassword
                 )
         );
         

@@ -79,7 +79,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     bool success = false;
     if (_isLoginMode) {
       final email = _emailController.text.trim();
-      final password = _passwordController.text;
+      final password = _passwordController.text.trim();
 
       final storage = ref.read(tokenStorageProvider);
       if (_rememberMe) {
