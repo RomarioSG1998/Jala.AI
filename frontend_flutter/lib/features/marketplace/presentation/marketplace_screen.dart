@@ -564,7 +564,24 @@ class _MarketplaceScreenState extends ConsumerState<MarketplaceScreen>
                     ),
                     onPressed: () {
                       Navigator.pop(ctx);
-                      _showEscrowCheckoutModal(context, item, 'PIX');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Row(
+                            children: [
+                              Icon(Icons.info_outline, color: Colors.white),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Olha, está sendo implementado, logo mais teremos opções de pagamento via Pix',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                          backgroundColor: Color(0xFF009688),
+                          duration: Duration(seconds: 4),
+                        ),
+                      );
                     },
                   ),
                 ),
