@@ -11,6 +11,7 @@ import com.aquasertao.api.modules.tenant.models.UserFarmLink;
 import com.aquasertao.api.modules.tenant.repositories.FarmTenantRepository;
 import com.aquasertao.api.modules.tenant.repositories.UserFarmLinkRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
