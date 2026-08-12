@@ -2,161 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend_flutter/features/saas_admin/providers/saas_providers.dart';
 import 'package:frontend_flutter/features/saas_admin/data/saas_models.dart';
-import 'package:intl/intl.dart';
-import 'package:frontend_flutter/features/tanks/providers/tanks_provider.dart';
 import 'package:frontend_flutter/features/saas_admin/presentation/widgets/tenant_summary_card.dart';
 
-class TenantsScreen extends ConsumerWidget {
+class TenantsScreen extends ConsumerStatefulWidget {
   const TenantsScreen({super.key});
-
-  static const _kNavyBlue = Color(0xFF003366);
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tenantsAsync = ref.watch(tenantsProvider);
-    final searchQuery = ref.watch(globalSearchQueryProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('Clientes / Tenants', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      ),
-      body: RefreshIndicator(
-        onRefresh: () => ref.read(tenantsProvider.notifier).refresh(),
-        child: tenantsAsync.when(
-          data: (tenants) {
-            final filtered = tenants.where((t) {
-              if (searchQuery.isEmpty) return true;
-              final query = searchQuery.toLowerCase();
-              final nameMatch = t.name.toLowerCase().contains(query);
-              final cnpjMatch = t.cnpj.toLowerCase().contains(query);
-              return nameMatch || cnpjMatch;
-            }).toList();
-
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 110),
-              children: [
-                Text(
-                  'Farms & Clientes SaaS',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Gerencie as fazendas e clientes integrados ao ecossistema AquaSertão.',
-                  style: TextStyle(fontSize: 12, color: isDark ? Colors.grey.shade400 : Colors.black54),
-                ),
-                const SizedBox(height: 20),
-                if (filtered.isEmpty)
-                  _buildEmptyState(context, message: searchQuery.isNotEmpty ? 'Nenhum tenant encontrado para "$searchQuery"' : 'Nenhum tenant cadastrado')
-                else
-                  Column(
-                    children: filtered
-                        .map((t) => TenantSummaryCard(tenant: t))
-                        .toList(),
-                  ),
-              ],
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(
-            child: Text(
-              'Erro ao carregar tenants: $e',
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
-        ),
-      ),
-
-    );
-  }
-
-  Widget _buildTenantCard(BuildContext context, FarmTenant t) {
-    final date = DateTime.tryParse(t.createdAt) ?? DateTime.now();
-    final dateStr = DateFormat('dd/MM/yyyy').format(date);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: const Color(0xFF263350), width: 1) : null,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: Colors.indigo.shade50,
-                radius: 20,
-                child: const Icon(Icons.business, color: Colors.indigo, size: 20),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      t.name,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'CNPJ: ${t.cnpj}',
-                      style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.black54, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Criado em: $dateStr',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 11),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context, {String message = 'Nenhum tenant cadastrado'}) {
-    return Container(
-      padding: const EdgeInsets.all(40),
-      alignment: Alignment.center,
-      child: Column(
-        children: [
-          Icon(Icons.business_outlined, size: 60, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : Colors.black54, fontWeight: FontWeight.w600),
-            textAlign: TextAlign.center,
-          ),
-          if (message == 'Nenhum tenant cadastrado') ...[
-            const SizedBox(height: 4),
-            const Text(
-              'Adicione um novo cliente tenant clicando no botão +',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 
   static void showAddTenantModal(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
@@ -172,6 +21,201 @@ class TenantsScreen extends ConsumerWidget {
         ),
         child: const _AddTenantForm(),
       ),
+    );
+  }
+
+  @override
+  ConsumerState<TenantsScreen> createState() => _TenantsScreenState();
+}
+
+class _TenantsScreenState extends ConsumerState<TenantsScreen> {
+  String _searchQuery = '';
+  String _selectedFilter = 'ALL'; // 'ALL', 'ACTIVE', 'DISABLED'
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tenantsAsync = ref.watch(tenantsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        title: const Text(
+          'Clientes / Tenants',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            tooltip: 'Atualizar Lista',
+            onPressed: () {
+              ref.invalidate(tenantsProvider);
+            },
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => TenantsScreen.showAddTenantModal(context, ref),
+        backgroundColor: const Color(0xFF13A538),
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add_business_rounded),
+        label: const Text('Novo Tenant', style: TextStyle(fontWeight: FontWeight.bold)),
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(tenantsProvider);
+        },
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // Campo de busca
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Buscar tenant por nome ou CNPJ...',
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF13A538)),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Theme.of(context).cardColor,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: isDark ? const Color(0xFF263350) : Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: isDark ? const Color(0xFF263350) : Colors.grey.shade300),
+                ),
+              ),
+              onChanged: (val) {
+                setState(() {
+                  _searchQuery = val.trim().toLowerCase();
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // Chips de Filtro
+            Row(
+              children: [
+                _filterChip('Todos', 'ALL', Colors.blue),
+                const SizedBox(width: 8),
+                _filterChip('Ativos', 'ACTIVE', const Color(0xFF13A538)),
+                const SizedBox(width: 8),
+                _filterChip('Desativados', 'DISABLED', Colors.redAccent),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            tenantsAsync.when(
+              data: (tenants) {
+                final filtered = tenants.where((t) {
+                  final matchesSearch = t.name.toLowerCase().contains(_searchQuery) || t.cnpj.contains(_searchQuery);
+                  if (!matchesSearch) return false;
+                  if (_selectedFilter == 'ACTIVE') return t.userActive;
+                  if (_selectedFilter == 'DISABLED') return !t.userActive;
+                  return true;
+                }).toList();
+
+                if (filtered.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(36),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(Icons.business_outlined, size: 48, color: Colors.grey.shade400),
+                        const SizedBox(height: 12),
+                        Text(
+                          _searchQuery.isNotEmpty
+                              ? 'Nenhum tenant encontrado para "$_searchQuery".'
+                              : 'Nenhum tenant cadastrado.',
+                          style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Exibindo ${filtered.length} de ${tenants.length} clientes',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.grey.shade400 : Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ...filtered.map((tenant) => TenantSummaryCard(tenant: tenant)),
+                    const SizedBox(height: 80), // Espaço para FAB
+                  ],
+                );
+              },
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(color: Color(0xFF13A538)),
+                ),
+              ),
+              error: (e, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text('Erro ao carregar clientes: $e', style: const TextStyle(color: Colors.red)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _filterChip(String label, String value, Color color) {
+    final isSelected = _selectedFilter == value;
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? Colors.white : color,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+      selected: isSelected,
+      selectedColor: color,
+      backgroundColor: color.withOpacity(0.12),
+      onSelected: (selected) {
+        if (selected) {
+          setState(() {
+            _selectedFilter = value;
+          });
+        }
+      },
     );
   }
 }
@@ -209,6 +253,9 @@ class _AddTenantFormState extends ConsumerState<_AddTenantForm> {
       setState(() => _isLoading = false);
       if (success) {
         Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cliente Tenant cadastrado com sucesso!')),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Falha ao adicionar cliente tenant')),
@@ -226,55 +273,65 @@ class _AddTenantFormState extends ConsumerState<_AddTenantForm> {
       child: SingleChildScrollView(
         child: Container(
           padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Novo Cliente Tenant',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nome da Fazenda / Tenant',
-                  border: OutlineInputBorder(),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Novo Cliente Tenant',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
                 ),
-                validator: (v) => v == null || v.isEmpty ? 'Obrigatório' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _cnpjController,
-                decoration: const InputDecoration(
-                  labelText: 'CNPJ',
-                  border: OutlineInputBorder(),
-                  hintText: '00.000.000/0000-00',
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome da Fazenda / Tenant',
+                    prefixIcon: Icon(Icons.business_rounded, color: Color(0xFF13A538)),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
                 ),
-                validator: (v) => v == null || v.isEmpty ? 'Obrigatório' : null,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF13A538),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _cnpjController,
+                  decoration: const InputDecoration(
+                    labelText: 'CNPJ',
+                    prefixIcon: Icon(Icons.badge_rounded, color: Color(0xFF13A538)),
+                    border: OutlineInputBorder(),
+                    hintText: '00.000.000/0000-00',
+                  ),
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Obrigatório' : null,
                 ),
-                child: _isLoading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Registrar Tenant', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF13A538),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text('Registrar Tenant', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 }

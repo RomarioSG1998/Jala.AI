@@ -41,6 +41,9 @@ class FarmTenant {
   final String name;
   final String cnpj;
   final String ownerId;
+  final String ownerName;
+  final String ownerEmail;
+  final bool userActive;
   final String createdAt;
 
   FarmTenant({
@@ -48,16 +51,22 @@ class FarmTenant {
     required this.name,
     required this.cnpj,
     required this.ownerId,
+    this.ownerName = 'Produtor',
+    this.ownerEmail = 'N/A',
+    this.userActive = true,
     required this.createdAt,
   });
 
   factory FarmTenant.fromJson(Map<String, dynamic> json) {
     return FarmTenant(
-      id: json['id'],
-      name: json['name'] ?? 'Unknown Farm',
+      id: json['id']?.toString() ?? '',
+      name: json['name'] ?? 'Fazenda',
       cnpj: json['cnpj'] ?? '',
-      ownerId: json['ownerId'] ?? '',
-      createdAt: json['createdAt'] ?? '',
+      ownerId: json['ownerId']?.toString() ?? '',
+      ownerName: json['ownerName']?.toString() ?? 'Produtor',
+      ownerEmail: json['ownerEmail']?.toString() ?? 'N/A',
+      userActive: json['userActive'] != false,
+      createdAt: json['createdAt']?.toString() ?? '',
     );
   }
 }
@@ -166,8 +175,10 @@ class TenantFinancialStatus {
   final String farmId;
   final String farmName;
   final String cnpj;
+  final String? ownerId;
   final String ownerName;
   final String ownerEmail;
+  final bool userActive;
   final String? planId;
   final String planName;
   final double priceMonthly;
@@ -182,8 +193,10 @@ class TenantFinancialStatus {
     required this.farmId,
     required this.farmName,
     required this.cnpj,
+    this.ownerId,
     required this.ownerName,
     required this.ownerEmail,
+    this.userActive = true,
     this.planId,
     required this.planName,
     required this.priceMonthly,
@@ -200,8 +213,10 @@ class TenantFinancialStatus {
       farmId: json['farmId']?.toString() ?? '',
       farmName: json['farmName']?.toString() ?? 'Fazenda',
       cnpj: json['cnpj']?.toString() ?? '',
+      ownerId: json['ownerId']?.toString(),
       ownerName: json['ownerName']?.toString() ?? 'Produtor',
       ownerEmail: json['ownerEmail']?.toString() ?? 'N/A',
+      userActive: json['userActive'] != false,
       planId: json['planId']?.toString(),
       planName: json['planName']?.toString() ?? 'Plano Gratuito',
       priceMonthly: (json['priceMonthly'] as num?)?.toDouble() ?? 0.0,
