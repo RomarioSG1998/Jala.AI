@@ -18,6 +18,10 @@ import 'package:frontend_flutter/features/tanks/data/tank_model.dart';
 import 'package:frontend_flutter/core/widgets/password_confirmation_dialog.dart';
 import 'package:frontend_flutter/core/api/secure_storage.dart';
 
+import 'package:frontend_flutter/features/notifications/data/notification_model.dart';
+import 'package:frontend_flutter/features/notifications/data/notification_repository.dart';
+import 'package:frontend_flutter/features/notifications/providers/notifications_provider.dart';
+
 // Presentation imports (for showAdd... modals)
 import 'package:frontend_flutter/features/tanks/presentation/tanks_screen.dart';
 import 'package:frontend_flutter/features/water_quality/presentation/water_quality_screen.dart';
@@ -276,78 +280,59 @@ class _AppShellState extends ConsumerState<AppShell> {
             child: Consumer(
               builder: (context, ref, child) {
                 final tasksAsync = ref.watch(maintenanceProvider);
-                final tenantsAsync = ref.watch(tenantsProvider);
                 final tanksAsync = ref.watch(tanksProvider);
+                final sysNotifsAsync = ref.watch(userNotificationsProvider);
                 final dismissed = ref.watch(dismissedNotificationsProvider);
 
                 final List<AppNotification> notifications = [];
 
-                if (role == 'SAAS_ADMIN') {
-                  final tenants = tenantsAsync.maybeWhen(data: (list) => list, orElse: () => <FarmTenant>[]);
-                  for (var t in tenants) {
-                    final empId = '${t.id}_employee';
-                    if (!dismissed.contains(empId)) {
-                      notifications.add(AppNotification(
-                        id: empId,
-                        title: 'Novo Funcionário Cadastrado',
-                        description: 'Um novo funcionário foi registrado na fazenda ${t.name}.',
-                        time: 'Recente',
-                        icon: Icons.person_add_rounded,
-                        iconColor: Colors.green,
-                      ));
-                    }
-                    final payId = '${t.id}_payment';
-                    if (!dismissed.contains(payId)) {
-                      notifications.add(AppNotification(
-                        id: payId,
-                        title: 'Pagamento Aprovado',
-                        description: 'Assinatura do Plano Profissional renovada para ${t.name}.',
-                        time: 'Hoje',
-                        icon: Icons.monetization_on_rounded,
-                        iconColor: Colors.blue,
-                      ));
-                    }
-                    final tankId = '${t.id}_tank';
-                    if (!dismissed.contains(tankId)) {
-                      notifications.add(AppNotification(
-                        id: tankId,
-                        title: 'Novo Tanque Adquirido',
-                        description: 'Fazenda ${t.name} registrou um novo tanque de piscicultura.',
-                        time: 'Ontem',
-                        icon: Icons.water_drop_rounded,
-                        iconColor: Colors.cyan,
-                      ));
-                    }
-                  }
-                } else if (role == 'FARM_OWNER' || role == 'CLIENT') {
-                  final tasks = tasksAsync.maybeWhen(data: (list) => list, orElse: () => <MaintenanceTask>[]);
-                  final completedTasks = tasks.where((t) => t.status.toUpperCase() == 'COMPLETED').toList();
-                  final tankMap = tanksAsync.maybeWhen(
-                    data: (list) => {for (var t in list) t.id: t.name},
-                    orElse: () => <String, String>{},
-                  );
+                // 1. Notificações Reais do Backend (/api/notifications/me)
+                final sysNotifs = sysNotifsAsync.maybeWhen(
+                  data: (list) => list,
+                  orElse: () => <SystemNotification>[],
+                );
 
-                  for (var task in completedTasks) {
-                    final notifId = 'completed_${task.id}';
-                    if (!dismissed.contains(notifId)) {
-                      final tankName = tankMap[task.tankId] ?? 'Tanque não identificado';
-                      String formattedDate = task.scheduledDate;
+                for (var n in sysNotifs) {
+                  if (!dismissed.contains(n.id)) {
+                    String timeStr = 'Recente';
+                    if (n.createdAt != null && n.createdAt!.isNotEmpty) {
                       try {
-                        final parsed = DateTime.parse(task.scheduledDate);
-                        formattedDate = DateFormat('dd/MM/yyyy').format(parsed);
-                      } catch (_) {}
-
-                      notifications.add(AppNotification(
-                        id: notifId,
-                        title: 'Tarefa Concluída',
-                        description: '${task.description} concluída no tanque $tankName.',
-                        time: formattedDate,
-                        icon: Icons.check_circle_rounded,
-                        iconColor: Colors.green,
-                      ));
+                        final parsed = DateTime.parse(n.createdAt!);
+                        timeStr = DateFormat('dd/MM/yyyy HH:mm').format(parsed);
+                      } catch (_) {
+                        timeStr = n.createdAt!.length >= 10 ? n.createdAt!.substring(0, 10) : 'Recente';
+                      }
                     }
+
+                    notifications.add(AppNotification(
+                      id: n.id,
+                      title: n.title,
+                      description: n.message,
+                      time: timeStr,
+                      icon: n.type == 'SUPPLIER_APPROVED'
+                          ? Icons.storefront_rounded
+                          : n.type == 'TENANT_REGISTERED'
+                              ? Icons.business_rounded
+                              : n.type == 'WATER_QUALITY_ALERT'
+                                  ? Icons.water_damage_rounded
+                                  : Icons.notifications_active_rounded,
+                      iconColor: n.type == 'WATER_QUALITY_ALERT'
+                          ? Colors.redAccent
+                          : n.type == 'SUPPLIER_APPROVED'
+                              ? Colors.purple
+                              : const Color(0xFF13A538),
+                      onAction: !n.isRead
+                          ? () async {
+                              await ref.read(notificationRepositoryProvider).markAsRead(n.id);
+                              ref.invalidate(userNotificationsProvider);
+                            }
+                          : null,
+                    ));
                   }
-                } else { // FIELD_OPERATOR
+                }
+
+                // 2. Tarefas Operacionais Reais Pendentes
+                if (role == 'FIELD_OPERATOR' || role == 'FARM_OWNER' || role == 'CLIENT') {
                   final tasks = tasksAsync.maybeWhen(data: (list) => list, orElse: () => <MaintenanceTask>[]);
                   final activeTasks = tasks.where((t) => t.status.toUpperCase() == 'PENDING' || t.status.toUpperCase() == 'IN_PROGRESS').toList();
                   final tankMap = tanksAsync.maybeWhen(
@@ -390,34 +375,17 @@ class _AppShellState extends ConsumerState<AppShell> {
                               );
                           if (success) {
                             ref.invalidate(farmSummaryProvider);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Tarefa marcada como concluída!'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Tarefa marcada como concluída!'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
                           }
                         },
                       ));
-                    }
-                  }
-                }
-
-                if (role != 'SAAS_ADMIN') {
-                  final activeTanks = tanksAsync.maybeWhen(data: (list) => list.where((t) => t.status == 'ACTIVE').toList(), orElse: () => <Tank>[]);
-                  if (activeTanks.isNotEmpty) {
-                    final tank = activeTanks.first;
-                    if (!dismissed.contains('alert_feed')) {
-                      notifications.add(AppNotification(id: 'alert_feed', title: 'Hora de Alimentar', description: 'Tanque ${tank.name} necessita de arraçoamento.', time: 'Agora', icon: Icons.restaurant, iconColor: Colors.orange));
-                    }
-                    if (!dismissed.contains('alert_biometrics')) {
-                      notifications.add(AppNotification(id: 'alert_biometrics', title: 'Fazer Biometria', description: 'A biometria do tanque ${tank.name} está pendente.', time: 'Hoje', icon: Icons.monitor_weight_outlined, iconColor: Colors.teal));
-                    }
-                    if (!dismissed.contains('alert_water')) {
-                      notifications.add(AppNotification(id: 'alert_water', title: 'Renovação de Água', description: 'Agendamento de TPA para o tanque ${tank.name}.', time: 'Em 2 dias', icon: Icons.water_drop, iconColor: Colors.blue));
-                    }
-                    if (!dismissed.contains('alert_harvest')) {
-                      notifications.add(AppNotification(id: 'alert_harvest', title: 'Despesca Prevista', description: 'Tanque ${tank.name} se aproxima do peso de abate.', time: 'Próxima semana', icon: Icons.agriculture, iconColor: Colors.green));
                     }
                   }
                 }
@@ -432,8 +400,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                   });
                 }
 
-                final isLoading = (role == 'SAAS_ADMIN' && tenantsAsync.isLoading) ||
-                                  (role != 'SAAS_ADMIN' && tasksAsync.isLoading);
+                final isLoading = sysNotifsAsync.isLoading;
 
                 return Column(
                   mainAxisSize: MainAxisSize.min,
@@ -576,11 +543,12 @@ class _AppShellState extends ConsumerState<AppShell> {
                                         ),
                                       IconButton(
                                         icon: const Icon(Icons.delete_outline, color: Colors.grey, size: 20),
-                                        tooltip: 'Ignorar',
+                                        tooltip: 'Remover',
                                         onPressed: () async {
-                                          final confirmed = await PasswordConfirmationDialog.confirm(context, ref);
-                                          if (confirmed) {
-                                            ref.read(dismissedNotificationsProvider.notifier).dismiss(item.id);
+                                          ref.read(dismissedNotificationsProvider.notifier).dismiss(item.id);
+                                          if (!item.id.startsWith('pending_') && !item.id.startsWith('completed_')) {
+                                            await ref.read(notificationRepositoryProvider).deleteNotification(item.id);
+                                            ref.invalidate(userNotificationsProvider);
                                           }
                                         },
                                       ),
@@ -637,43 +605,17 @@ class _AppShellState extends ConsumerState<AppShell> {
     final role = authState.accountType ?? '';
     final currentIndex = widget.navigationShell.currentIndex;
     final tasksAsync = ref.watch(maintenanceProvider);
-    final tenantsAsync = ref.watch(tenantsProvider);
-    final tanksAsync = ref.watch(tanksProvider);
+    final sysNotifsAsync = ref.watch(userNotificationsProvider);
     final dismissed = ref.watch(dismissedNotificationsProvider);
     final seen = ref.watch(seenNotificationsProvider);
 
-    int notificationCount = 0;
+    final sysNotifs = sysNotifsAsync.maybeWhen(data: (list) => list, orElse: () => <SystemNotification>[]);
+    int notificationCount = sysNotifs.where((n) => !n.isRead && !dismissed.contains(n.id) && !seen.contains(n.id)).length;
 
-    if (role == 'SAAS_ADMIN') {
-      final tenants = tenantsAsync.maybeWhen(data: (list) => list, orElse: () => <FarmTenant>[]);
-      int count = 0;
-      for (var t in tenants) {
-        final empId = '${t.id}_employee';
-        final payId = '${t.id}_payment';
-        final tankId = '${t.id}_tank';
-        if (!dismissed.contains(empId) && !seen.contains(empId)) count++;
-        if (!dismissed.contains(payId) && !seen.contains(payId)) count++;
-        if (!dismissed.contains(tankId) && !seen.contains(tankId)) count++;
-      }
-      notificationCount = count;
-    } else if (role == 'FARM_OWNER' || role == 'CLIENT') {
-      final tasks = tasksAsync.maybeWhen(data: (list) => list, orElse: () => <MaintenanceTask>[]);
-      final completed = tasks.where((t) => t.status.toUpperCase() == 'COMPLETED').toList();
-      notificationCount = completed.where((t) => !dismissed.contains('completed_${t.id}') && !seen.contains('completed_${t.id}')).length;
-    } else { // FIELD_OPERATOR
+    if (role == 'FIELD_OPERATOR' || role == 'FARM_OWNER' || role == 'CLIENT') {
       final tasks = tasksAsync.maybeWhen(data: (list) => list, orElse: () => <MaintenanceTask>[]);
       final active = tasks.where((t) => t.status.toUpperCase() == 'PENDING' || t.status.toUpperCase() == 'IN_PROGRESS').toList();
-      notificationCount = active.where((t) => !dismissed.contains('pending_${t.id}') && !seen.contains('pending_${t.id}')).length;
-    }
-
-    if (role != 'SAAS_ADMIN') {
-      final activeTanks = tanksAsync.maybeWhen(data: (list) => list.where((t) => t.status == 'ACTIVE').toList(), orElse: () => <Tank>[]);
-      if (activeTanks.isNotEmpty) {
-        if (!dismissed.contains('alert_feed') && !seen.contains('alert_feed')) notificationCount++;
-        if (!dismissed.contains('alert_biometrics') && !seen.contains('alert_biometrics')) notificationCount++;
-        if (!dismissed.contains('alert_water') && !seen.contains('alert_water')) notificationCount++;
-        if (!dismissed.contains('alert_harvest') && !seen.contains('alert_harvest')) notificationCount++;
-      }
+      notificationCount += active.where((t) => !dismissed.contains('pending_${t.id}') && !seen.contains('pending_${t.id}')).length;
     }
 
     final isSearchVisible = ref.watch(searchBarVisibleProvider);
@@ -780,14 +722,30 @@ class _AppShellState extends ConsumerState<AppShell> {
                 alignment: Alignment.centerLeft,
                 child: Row(
                   children: [
-                    SizedBox(
-                      height: 50,
-                      width: 50,
-                      child: Image.asset(
-                        'web/logo_emblem.png',
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.water, color: Colors.white, size: 36),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/images/logo_emblem.png',
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Image.asset(
+                            'web/logo_emblem.png',
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.water, color: Colors.white, size: 26),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -870,13 +828,19 @@ class _AppShellState extends ConsumerState<AppShell> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Início', currentIndex == 0),
+              _buildNavItem(
+                0,
+                Icons.home_rounded,
+                Icons.home_outlined,
+                'Início',
+                isSaasAdmin ? widget.currentLocation == '/dashboard' : currentIndex == 0,
+              ),
               _buildNavItem(
                 1,
                 isSaasAdmin ? Icons.business_rounded : Icons.water_drop_rounded,
                 isSaasAdmin ? Icons.business_outlined : Icons.water_drop_outlined,
                 isSaasAdmin ? 'Clientes' : 'Tanques',
-                currentIndex == 1,
+                isSaasAdmin ? widget.currentLocation == '/tenants' : currentIndex == 1,
               ),
               const SizedBox(width: 48), // Espaço reservado para o FAB central
               _buildNavItem(
@@ -884,9 +848,15 @@ class _AppShellState extends ConsumerState<AppShell> {
                 isSaasAdmin ? Icons.handshake_rounded : Icons.bar_chart_rounded,
                 isSaasAdmin ? Icons.handshake_outlined : Icons.bar_chart_outlined,
                 isSaasAdmin ? 'Fornecedores' : 'Qualidade',
-                currentIndex == 2,
+                isSaasAdmin ? widget.currentLocation == '/suppliers' : currentIndex == 2,
               ),
-              _buildNavItem(3, Icons.apps_rounded, Icons.apps_outlined, 'Menu', currentIndex == 3),
+              _buildNavItem(
+                3,
+                Icons.apps_rounded,
+                Icons.apps_outlined,
+                'Menu',
+                isSaasAdmin ? widget.currentLocation == '/more' : currentIndex == 3,
+              ),
             ],
           ),
         ),
@@ -904,10 +874,24 @@ class _AppShellState extends ConsumerState<AppShell> {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
-          if (index == 3 && widget.currentLocation != '/more') {
-            context.go('/more');
+          final authState = ref.read(authNotifierProvider);
+          final role = authState.accountType ?? '';
+          if (role == 'SAAS_ADMIN') {
+            if (index == 0) {
+              context.go('/dashboard');
+            } else if (index == 1) {
+              context.go('/tenants');
+            } else if (index == 2) {
+              context.go('/suppliers');
+            } else if (index == 3 && widget.currentLocation != '/more') {
+              context.go('/more');
+            }
           } else {
-            widget.navigationShell.goBranch(index);
+            if (index == 3 && widget.currentLocation != '/more') {
+              context.go('/more');
+            } else {
+              widget.navigationShell.goBranch(index);
+            }
           }
         },
         child: Column(
@@ -1059,11 +1043,14 @@ class AppDrawer extends ConsumerWidget {
                 }),
 
                 if (role == 'SAAS_ADMIN') ...[
-                  _section(context, 'Administrador'),
-                  _tile(context, Icons.business, 'Tenants', Colors.indigo, () {
+                  _section(context, 'Administrador Master'),
+                  _tile(context, Icons.analytics_rounded, 'Dashboard Financeiro', Colors.teal, () {
+                    Navigator.pop(context); context.go('/saas-dashboard');
+                  }),
+                  _tile(context, Icons.business_rounded, 'Clientes / Tenants', Colors.indigo, () {
                     Navigator.pop(context); context.go('/tenants');
                   }),
-                  _tile(context, Icons.local_shipping, 'Fornecedores', Colors.brown, () {
+                  _tile(context, Icons.local_shipping_rounded, 'Fornecedores', Colors.brown, () {
                     Navigator.pop(context); context.go('/suppliers');
                   }),
                   _tile(context, Icons.layers_rounded, 'Planos & Assinaturas', Colors.purple, () {

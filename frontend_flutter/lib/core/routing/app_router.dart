@@ -12,6 +12,7 @@ import 'package:frontend_flutter/features/inventory/presentation/inventory_scree
 import 'package:frontend_flutter/features/harvests/presentation/harvests_screen.dart';
 import 'package:frontend_flutter/features/maintenance/presentation/maintenance_screen.dart';
 import 'package:frontend_flutter/features/saas_admin/presentation/saas_dashboard_screen.dart';
+import 'package:frontend_flutter/features/saas_admin/presentation/saas_financial_dashboard_screen.dart';
 import 'package:frontend_flutter/features/saas_admin/presentation/plans_screen.dart';
 import 'package:frontend_flutter/features/finances/presentation/finances_screen.dart';
 import 'package:frontend_flutter/features/suppliers/presentation/suppliers_screen.dart';
@@ -181,7 +182,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: '/saas-dashboard',
-                builder: (context, state) => const SaasDashboardScreen(),
+                builder: (context, state) => const SaasFinancialDashboardScreen(),
               ),
               GoRoute(
                 path: '/inventory',

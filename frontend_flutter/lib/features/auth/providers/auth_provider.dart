@@ -13,6 +13,7 @@ import 'package:frontend_flutter/features/mortality/providers/mortality_provider
 import 'package:frontend_flutter/features/employees/providers/employees_provider.dart';
 import 'package:frontend_flutter/features/suppliers/providers/supplier_provider.dart';
 import 'package:frontend_flutter/features/approvals/providers/approval_provider.dart';
+import 'package:frontend_flutter/features/saas_admin/providers/saas_providers.dart';
 import 'dart:convert';
 
 // Represents the authentication state of the app
@@ -349,6 +350,10 @@ class AuthNotifier extends Notifier<AuthState> {
     ref.invalidate(employeesProvider);
     ref.invalidate(supplierProvider);
     ref.invalidate(approvalNotifierProvider);
+    ref.invalidate(tenantsProvider);
+    ref.invalidate(masterOverviewProvider);
+    ref.invalidate(tenantsFinancialReportProvider);
+    ref.invalidate(plansProvider);
   }
 
   Future<void> logout() async {

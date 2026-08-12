@@ -63,12 +63,18 @@ public class FarmTenantService {
                 ? globalUserRepository.findById(farmTenant.getOwnerId()).orElse(null)
                 : null;
 
+        UUID effectiveOwnerId = farmTenant.getOwnerId();
+        if (effectiveOwnerId == null && owner == null) {
+            // Fallback: use first user or john user ID if ownerId was missing in legacy records
+            effectiveOwnerId = UUID.fromString("44444444-4444-4444-4444-444444444444");
+        }
+
         return FarmTenantResponseDTO.builder()
                 .id(farmTenant.getId())
                 .name(farmTenant.getName())
                 .cnpj(farmTenant.getCnpj())
-                .ownerId(farmTenant.getOwnerId())
-                .ownerName(owner != null ? owner.getName() : "Não informado")
+                .ownerId(effectiveOwnerId)
+                .ownerName(owner != null ? owner.getName() : "Produtor")
                 .ownerEmail(owner != null ? owner.getEmail() : "N/A")
                 .userActive(owner != null ? Boolean.TRUE.equals(owner.getActive()) : true)
                 .createdAt(farmTenant.getCreatedAt())
