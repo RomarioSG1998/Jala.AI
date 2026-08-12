@@ -15,6 +15,7 @@ import java.util.UUID;
 public class NotificationResponseDTO {
     private UUID id;
     private UUID targetUserId;
+    private String title;
     private String type;
     private String message;
     private Boolean isRead;

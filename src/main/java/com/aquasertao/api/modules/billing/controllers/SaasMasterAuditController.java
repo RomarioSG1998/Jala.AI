@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.aquasertao.api.modules.general.services.NotificationService;
+
 @RestController
 @RequestMapping("/api/saas/master")
 @RequiredArgsConstructor
@@ -37,13 +39,13 @@ public class SaasMasterAuditController {
     private final MarketplaceOrderRepository marketplaceOrderRepository;
     private final GlobalUserRepository globalUserRepository;
     private final StripeService stripeService;
+    private final NotificationService notificationService;
 
     @GetMapping("/overview")
     public ResponseEntity<SaasMasterOverviewDTO> getMasterOverview() {
-        long totalFarms = farmTenantRepository.count();
-        long totalTanks = tankRepository.count();
-
         List<TenantFinancialStatusDTO> financialReport = buildFinancialReport();
+        long totalFarms = Math.max(farmTenantRepository.count(), (long) financialReport.size());
+        long totalTanks = tankRepository.count();
 
         // Only count subscriptions as ACTIVE if they have a valid Stripe Subscription ID AND status == 'ACTIVE'
         long activeSubscriptions = financialReport.stream()
@@ -90,16 +92,42 @@ public class SaasMasterAuditController {
 
     @GetMapping("/financial-report")
     public ResponseEntity<List<TenantFinancialStatusDTO>> getTenantsFinancialReport() {
-        return ResponseEntity.ok(buildFinancialReport());
+        try {
+            return ResponseEntity.ok(buildFinancialReport());
+        } catch (Exception e) {
+            return ResponseEntity.ok(new ArrayList<>());
+        }
     }
 
     private List<TenantFinancialStatusDTO> buildFinancialReport() {
         List<FarmTenant> farms = farmTenantRepository.findAll();
         List<TenantFinancialStatusDTO> report = new ArrayList<>();
+        java.util.Set<UUID> processedUserIds = new java.util.HashSet<>();
 
         for (FarmTenant farm : farms) {
-            GlobalUser owner = globalUserRepository.findById(farm.getOwnerId()).orElse(null);
-            SubscriptionDetailsDTO subDetails = stripeService.getSubscriptionDetails(farm.getId());
+            GlobalUser owner = farm.getOwnerId() != null
+                    ? globalUserRepository.findById(farm.getOwnerId()).orElse(null)
+                    : null;
+            if (owner != null) {
+                processedUserIds.add(owner.getId());
+            }
+
+            SubscriptionDetailsDTO subDetails;
+            try {
+                subDetails = stripeService.getSubscriptionDetails(farm.getId());
+            } catch (Exception e) {
+                subDetails = null;
+            }
+
+            if (subDetails == null) {
+                subDetails = SubscriptionDetailsDTO.builder()
+                        .farmId(farm.getId())
+                        .status("FREE")
+                        .planName("Plano Gratuito")
+                        .priceMonthly(BigDecimal.ZERO)
+                        .paymentMethodType("N/A")
+                        .build();
+            }
 
             String statusLabel = "Plano Gratuito";
             String rawStatus = subDetails.getStatus() != null ? subDetails.getStatus().toUpperCase() : "FREE";
@@ -129,8 +157,10 @@ public class SaasMasterAuditController {
                     .farmId(farm.getId())
                     .farmName(farm.getName())
                     .cnpj(farm.getCnpj())
+                    .ownerId(owner != null ? owner.getId() : farm.getOwnerId())
                     .ownerName(owner != null ? owner.getName() : "Não informado")
                     .ownerEmail(owner != null ? owner.getEmail() : "N/A")
+                    .userActive(owner != null ? Boolean.TRUE.equals(owner.getActive()) : true)
                     .planId(subDetails.getPlanId())
                     .planName("FREE".equals(rawStatus) ? "Plano Gratuito" : subDetails.getPlanName())
                     .priceMonthly("FREE".equals(rawStatus) ? BigDecimal.ZERO : (subDetails.getPriceMonthly() != null ? subDetails.getPriceMonthly() : BigDecimal.ZERO))
@@ -145,7 +175,69 @@ public class SaasMasterAuditController {
             report.add(dto);
         }
 
+        // Include any registered users who do not own a farm tenant yet (e.g., Google sign-ups)
+        List<GlobalUser> allUsers = globalUserRepository.findAll();
+        for (GlobalUser user : allUsers) {
+            if ("SAAS_ADMIN".equalsIgnoreCase(user.getAccountType())) {
+                continue;
+            }
+            if (!processedUserIds.contains(user.getId())) {
+                String cleanName = (user.getName() != null && !user.getName().isBlank()) ? user.getName() : "Usuário Cadastrado";
+                TenantFinancialStatusDTO dto = TenantFinancialStatusDTO.builder()
+                        .farmId(null)
+                        .farmName("Fazenda de " + cleanName)
+                        .cnpj("Cadastro Direto")
+                        .ownerId(user.getId())
+                        .ownerName(user.getName())
+                        .ownerEmail(user.getEmail())
+                        .userActive(Boolean.TRUE.equals(user.getActive()))
+                        .planId(null)
+                        .planName("Plano Gratuito")
+                        .priceMonthly(BigDecimal.ZERO)
+                        .status("FREE")
+                        .statusLabel("Plano Gratuito")
+                        .nextBillingDate(null)
+                        .stripeCustomerId(null)
+                        .stripeSubscriptionId(null)
+                        .paymentMethodType("N/A")
+                        .build();
+
+                report.add(dto);
+            }
+        }
+
         return report;
+    }
+
+    @PostMapping("/users/{userId}/toggle-active")
+    public ResponseEntity<Map<String, Object>> toggleUserActiveStatus(@PathVariable UUID userId) {
+        GlobalUser user = globalUserRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
+
+        if ("SAAS_ADMIN".equalsIgnoreCase(user.getAccountType())) {
+            throw new IllegalArgumentException("Não é permitido desativar a conta do Administrador Master.");
+        }
+
+        boolean newActiveStatus = !Boolean.TRUE.equals(user.getActive());
+        user.setActive(newActiveStatus);
+        globalUserRepository.save(user);
+
+        try {
+            notificationService.createNotification(
+                    user.getId(),
+                    newActiveStatus ? "Sua Conta Foi Ativada" : "Sua Conta Foi Desativada",
+                    "USER_STATUS",
+                    newActiveStatus
+                            ? "Sua conta do AquaGestor foi reativada pelo Administrador. Você já pode acessar todos os módulos."
+                            : "Sua conta foi temporariamente desativada pelo Administrador Master."
+            );
+        } catch (Exception ignored) {}
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("userId", userId);
+        res.put("active", newActiveStatus);
+        res.put("message", newActiveStatus ? "Usuário ativado com sucesso." : "Usuário desativado com sucesso.");
+        return ResponseEntity.ok(res);
     }
 
     @PostMapping("/tenants/{farmId}/toggle-status")
@@ -181,8 +273,10 @@ public class SaasMasterAuditController {
         private UUID farmId;
         private String farmName;
         private String cnpj;
+        private UUID ownerId;
         private String ownerName;
         private String ownerEmail;
+        private Boolean userActive;
         private UUID planId;
         private String planName;
         private BigDecimal priceMonthly;

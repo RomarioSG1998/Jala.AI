@@ -11,12 +11,49 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+import com.aquasertao.api.modules.core.models.GlobalUser;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+
+import java.util.List;
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
 public class NotificationController {
 
     private final NotificationService notificationService;
+
+    @GetMapping("/me")
+    public ResponseEntity<List<NotificationResponseDTO>> getMyNotifications(
+            @AuthenticationPrincipal GlobalUser currentUser
+    ) {
+        if (currentUser == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(notificationService.getMyNotifications(currentUser.getId()));
+    }
+
+    @PutMapping("/me/read-all")
+    public ResponseEntity<Void> markAllAsRead(
+            @AuthenticationPrincipal GlobalUser currentUser
+    ) {
+        if (currentUser != null) {
+            notificationService.markAllAsRead(currentUser.getId());
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{notificationId}")
+    public ResponseEntity<Void> deleteNotification(
+            @PathVariable UUID notificationId,
+            @AuthenticationPrincipal GlobalUser currentUser
+    ) {
+        if (currentUser != null) {
+            notificationService.deleteNotification(notificationId, currentUser.getId());
+        }
+        return ResponseEntity.noContent().build();
+    }
 
     @PostMapping
     public ResponseEntity<NotificationResponseDTO> sendNotification(@RequestBody NotificationRequestDTO requestDTO) {

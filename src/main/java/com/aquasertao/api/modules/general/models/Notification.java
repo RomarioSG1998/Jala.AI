@@ -25,6 +25,9 @@ public class Notification {
     @Column(name = "target_user_id", nullable = false)
     private UUID targetUserId;
 
+    @Column(length = 255)
+    private String title;
+
     @Column(nullable = false, length = 100)
     private String type;
 
