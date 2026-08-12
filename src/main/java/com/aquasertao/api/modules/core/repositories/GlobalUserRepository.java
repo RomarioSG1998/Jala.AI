@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface GlobalUserRepository extends JpaRepository<GlobalUser, UUID> {
     Optional<GlobalUser> findByEmail(String email);
     Optional<GlobalUser> findByEmailIgnoreCase(String email);
+    java.util.List<GlobalUser> findByAccountType(String accountType);
 }

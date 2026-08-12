@@ -17,5 +17,8 @@ public class FarmTenantResponseDTO {
     private String name;
     private String cnpj;
     private UUID ownerId;
+    private String ownerName;
+    private String ownerEmail;
+    private Boolean userActive;
     private LocalDateTime createdAt;
 }

@@ -41,6 +41,10 @@ public class GlobalUser implements UserDetails {
     @Column(name = "profile_image", columnDefinition = "TEXT")
     private String profileImage;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean active = true;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -48,6 +52,9 @@ public class GlobalUser implements UserDetails {
     public void prePersist() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
+        }
+        if (active == null) {
+            active = true;
         }
     }
 
@@ -80,6 +87,6 @@ public class GlobalUser implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return active != null ? active : true;
     }
 }

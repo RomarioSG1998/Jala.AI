@@ -101,6 +101,10 @@ public class AuthService {
                 .orElseGet(() -> repository.findByEmail(request.getEmail())
                         .orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas.")));
 
+        if (!user.isEnabled() || Boolean.FALSE.equals(user.getActive())) {
+            throw new IllegalArgumentException("Sua conta está desativada. Entre em contato com o suporte do sistema.");
+        }
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         user.getEmail(),
@@ -145,6 +149,7 @@ public class AuthService {
                     .accountType(requestedAccountType)
                     .profileImage(photoUrl)
                     .createdAt(LocalDateTime.now())
+                    .active(true)
                     .build();
             GlobalUser saved = repository.save(newUser);
 
@@ -154,10 +159,23 @@ public class AuthService {
             return saved;
         });
 
+        if (!user.isEnabled() || Boolean.FALSE.equals(user.getActive())) {
+            throw new IllegalArgumentException("Sua conta está desativada. Entre em contato com o suporte do sistema.");
+        }
+
+        // Ensure accountType is defined if missing
+        if (user.getAccountType() == null || user.getAccountType().isBlank()) {
+            user.setAccountType(requestedAccountType);
+            user = repository.save(user);
+        }
+
         if ((user.getProfileImage() == null || user.getProfileImage().isBlank()) && photoUrl != null && !photoUrl.isBlank()) {
             user.setProfileImage(photoUrl);
             user = repository.save(user);
         }
+
+        // Ensure FarmTenant exists for CLIENT users
+        UUID farmId = getUserFarmId(user.getId());
 
         var jwtToken = jwtService.generateToken(user);
 
@@ -167,7 +185,7 @@ public class AuthService {
                 .name(user.getName())
                 .accountType(user.getAccountType())
                 .userId(user.getId())
-                .farmId(getUserFarmId(user.getId()))
+                .farmId(farmId)
                 .isNewUser(isNewUser)
                 .build();
     }
@@ -223,7 +241,16 @@ public class AuthService {
      private UUID getUserFarmId(UUID userId) {
          try {
              GlobalUser user = repository.findById(userId).orElse(null);
-             if (user == null || user.getAccountType() == null || !"CLIENT".equalsIgnoreCase(user.getAccountType().trim())) {
+             if (user == null) {
+                 return null;
+             }
+
+             if (user.getAccountType() == null || user.getAccountType().isBlank()) {
+                 user.setAccountType("CLIENT");
+                 user = repository.save(user);
+             }
+
+             if (!"CLIENT".equalsIgnoreCase(user.getAccountType().trim())) {
                  return null;
              }
 

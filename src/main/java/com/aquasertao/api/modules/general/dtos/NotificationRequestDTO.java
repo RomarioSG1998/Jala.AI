@@ -13,6 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class NotificationRequestDTO {
     private UUID targetUserId;
+    private String title;
     private String type;
     private String message;
 }
